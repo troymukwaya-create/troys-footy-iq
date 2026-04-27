@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: troys-footy-iq-api
+    runtime: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APISPORTS_KEY
+        sync: false
+      - key: FOOTBALLDATA_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: troys-footy-iq-db
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false
+
+databases:
+  - name: troys-footy-iq-db
+    plan: free
+    databaseName: football
