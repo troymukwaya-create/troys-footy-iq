@@ -58,6 +58,7 @@ import h2hRouter from './routes/h2h.js';
 import aiRouter from './routes/ai.js';
 import matchDataRouter from './routes/matchData.js';
 import analysisRouter from './routes/analysis.js';
+import engineRouter from './routes/engine.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -145,6 +146,7 @@ safeMount('/api/h2h', h2hRouter, 'h2h');
 safeMount('/api/ai', aiRouter, 'ai');
 safeMount('/api/match-data', matchDataRouter, 'match-data');
 safeMount('/api/analysis', analysisRouter, 'analysis');
+safeMount('/api/engine', engineRouter, 'engine');
 
 // ─── SEED INITIAL DATA ─────────────────────────────────────────────
 async function seedInitialData() {

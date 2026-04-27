@@ -9,6 +9,7 @@ const router = express.Router();
 import api from '../services/apisports.js';
 import * as fd from '../services/footballdata.js';
 import cacheService from '../services/cache.js';
+import { predictStatic } from '../engine/inferenceEngine.js';
 
 // Hardcoded fallback — site is NEVER empty
 const DEMO = [
@@ -72,7 +73,7 @@ router.get('/all', async (req, res) => {
       }
       fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
       
-      // Inject AI Risk indicators & Probabilities from cache
+      // Inject AI Risk indicators & Probabilities from cache or engine
       fixtures.forEach(f => {
         const cached = cacheService.get('full_analysis_' + f.id);
         if (cached) {
@@ -83,6 +84,18 @@ router.get('/all', async (req, res) => {
           if (cached.probability) {
             f.probability = cached.probability;
           }
+        }
+        // Fallback: generate from hybrid engine if no cached probability
+        if (!f.probability) {
+          try {
+            const pred = predictStatic({}, {});
+            f.probability = {
+              riskLevel: pred.riskLevel,
+              probabilities: pred.probabilities,
+              topScorelines: (pred.topScorelines || []).slice(0, 2),
+              model: pred.model || 'hybrid-dixon-coles-v2',
+            };
+          } catch { /* ignore prediction errors */ }
         }
       });
 
