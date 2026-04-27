@@ -32,7 +32,7 @@ export function useRealTime() {
 
           case 'LIVE_SCORES_UPDATE':
             setLiveMatches(payload);
-            payload.forEach(m => updateFixtureScore(m.id, m.score, m.minute, m.status));
+            payload.forEach(m => updateFixtureScore(m.id, m.score, m.minute, m.status, m.probability));
             break;
 
           case 'GOAL_SCORED':

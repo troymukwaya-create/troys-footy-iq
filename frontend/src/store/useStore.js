@@ -11,11 +11,19 @@ export const useStore = create((set, get) => ({
   liveMatches: [],
   setLiveMatches: (liveMatches) => set({ liveMatches }),
 
-  // Update a specific fixture's score in place (no full re-render)
-  updateFixtureScore: (id, score, minute, status) => set(state => ({
-    fixtures: state.fixtures.map(f => f.id === id ? { ...f, score, minute, status } : f),
-    liveMatches: state.liveMatches.map(f => f.id === id ? { ...f, score, minute, status } : f),
-  })),
+  // Update a specific fixture's live data in place
+  updateFixtureScore: (id, score, minute, status, probability) => set(state => {
+    const updateFn = f => {
+      if (f.id !== id) return f;
+      const updated = { ...f, score, minute, status };
+      if (probability) updated.probability = probability;
+      return updated;
+    };
+    return {
+      fixtures: state.fixtures.map(updateFn),
+      liveMatches: state.liveMatches.map(updateFn),
+    };
+  }),
 
   markMatchLive: (id) => set(state => ({
     fixtures: state.fixtures.map(f => f.id === id ? { ...f, status: 'IN_PLAY' } : f),

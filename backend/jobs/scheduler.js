@@ -3,6 +3,7 @@ import { query } from '../db/index.js';
 import dataRouter from '../services/dataRouter.js';
 import { broadcast } from '../server.js';
 import { FD_LEAGUES } from '../constants/leagues.js';
+import { processEvent, predictInPlay, registerMatch, getMatchState, predictPreMatch } from '../engine/inferenceEngine.js';
 
 let previousScores = {};
 
@@ -37,6 +38,12 @@ async function livePollLoop() {
     for (const match of liveMatches) {
       const prev = previousScores[match.id];
 
+      // Ensure match is registered in the engine
+      if (!getMatchState(match.id)) {
+        // Mock pre-match context for now if not available
+        registerMatch(match.id, { lambdaHome: 1.4, lambdaAway: 1.2 });
+      }
+
       // Goal detection — compare actual score numbers
       if (prev &&
           prev.score.home !== null && match.score.home !== null &&
@@ -56,6 +63,13 @@ async function livePollLoop() {
           minute:      match.minute,
           league:      match.league.name,
         });
+
+        // Feed event to Engine
+        processEvent(match.id, { 
+          event_type: 'GOAL', 
+          team: homeScored ? 'home' : 'away', 
+          minute: match.minute 
+        });
       }
 
       // Status change detection
@@ -71,6 +85,22 @@ async function livePollLoop() {
         if (match.status === 'PAUSED') {
           broadcast('HALF_TIME', match);
         }
+      }
+
+      // Feed clock update to Engine
+      if (match.status === 'IN_PLAY') {
+        processEvent(match.id, { event_type: 'CLOCK_UPDATE', minute: match.minute });
+      }
+
+      // Attach live prediction to broadcast payload
+      const livePrediction = predictInPlay(match.id);
+      if (livePrediction) {
+        match.probability = {
+          riskLevel: livePrediction.riskLevel,
+          probabilities: livePrediction.probabilities,
+          topScorelines: (livePrediction.topScorelines || []).slice(0, 2),
+          model: livePrediction.model
+        };
       }
 
       previousScores[match.id] = match;

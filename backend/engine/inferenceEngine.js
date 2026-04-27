@@ -23,6 +23,11 @@ import {
   computeResidualCorrection,
 } from './featureEngine.js';
 
+import {
+  calibrateOutcomes,
+  calibrateGoals,
+} from './calibrationLayer.js';
+
 // ─── Active match states (in-memory store) ─────────────────────────
 const liveMatches = new Map();
 
@@ -44,6 +49,10 @@ export function predictPreMatch(homeStats, awayStats, options = {}) {
   );
 
   const result = generateProbabilities(lambdaHome, lambdaAway, rho);
+
+  // Apply Phase 3 Calibration
+  result.probabilities = calibrateOutcomes(result.probabilities);
+  result.overUnder = calibrateGoals(result.overUnder);
 
   return {
     ...result,
@@ -115,16 +124,19 @@ export function predictInPlay(matchId) {
   let adjDraw = matchProbs.draw * (1 + residuals.drawDelta);
   let adjAway = matchProbs.away * (1 + residuals.awayDelta);
 
-  // ─── Layer 3: Normalization ─────────────────────────────────
-  const total = adjHome + adjDraw + adjAway;
+  // ─── Layer 3: Calibration & Normalization ─────────────────────
+  let total = adjHome + adjDraw + adjAway;
   adjHome = (adjHome / total) * 100;
   adjDraw = (adjDraw / total) * 100;
   adjAway = (adjAway / total) * 100;
 
+  // Apply Isotonic Calibration
+  const calibrated = calibrateOutcomes({ home: adjHome, draw: adjDraw, away: adjAway });
+  
   const inferenceLatency = Date.now() - startTime;
 
   // Risk classification
-  const maxProb = Math.max(adjHome, adjDraw, adjAway);
+  const maxProb = Math.max(calibrated.home, calibrated.draw, calibrated.away);
   const riskLevel = maxProb > 62 ? 'LOW' : maxProb >= 42 ? 'MEDIUM' : 'HIGH';
 
   return {
@@ -134,9 +146,9 @@ export function predictInPlay(matchId) {
     period: ctx.period,
     score: { home: ctx.scoreHome, away: ctx.scoreAway },
     probabilities: {
-      home: round(adjHome, 1),
-      draw: round(adjDraw, 1),
-      away: round(adjAway, 1),
+      home: calibrated.home,
+      draw: calibrated.draw,
+      away: calibrated.away,
     },
     expectedGoals: {
       home: round(ctx.preMatchLambdaHome, 2),
