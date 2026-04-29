@@ -1,5 +1,7 @@
 // ─── React Query hooks for all data fetching ───────────────────────
 // Centralized data hooks with caching, error handling, and deduplication.
+// IMPORTANT: Each hook specifies staleTime, retry, and enabled conditions
+// to prevent rendering partial or invalid data.
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import axios from 'axios';
@@ -13,7 +15,7 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// Retry interceptor
+// Retry interceptor for network errors
 api.interceptors.response.use(
   response => response,
   async error => {
@@ -38,8 +40,10 @@ export function useFixtures() {
       const source = data?.source || 'api';
       return { fixtures, source };
     },
-    refetchInterval: 10 * 60 * 1000, // Refresh every 10 minutes
+    refetchInterval: 10 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }
 
@@ -50,8 +54,9 @@ export function useLiveMatches() {
       const { data } = await api.get('/fixtures/live');
       return Array.isArray(data) ? data : [];
     },
-    refetchInterval: 60 * 1000, // Refresh every 60 seconds
+    refetchInterval: 60 * 1000,
     staleTime: 30 * 1000,
+    retry: 2,
   });
 }
 
@@ -62,11 +67,25 @@ export function useAnalysis(matchId) {
     queryKey: ['analysis', matchId],
     queryFn: async () => {
       const { data } = await api.get(`/analysis/${matchId}`);
+
+      // Validate response structure
+      if (!data || data.error) {
+        throw new Error(data?.message || 'Analysis request failed');
+      }
+
       return data;
     },
     enabled: !!matchId,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    staleTime: (query) => {
+      // Dynamic staleTime based on data quality
+      const quality = query?.state?.data?.dataQuality;
+      if (quality === 'COMPLETE') return 24 * 60 * 60 * 1000; // 24h
+      if (quality === 'PARTIAL') return 5 * 60 * 1000; // 5 min — retry soon
+      return 60 * 1000; // 1 min for insufficient — retry aggressively
+    },
     gcTime: 24 * 60 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 15000),
   });
 }
 
@@ -82,6 +101,7 @@ export function useAIAnalysis(matchId, fixture) {
     enabled: !!matchId && !!fixture,
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
+    retry: 1,
   });
 }
 
@@ -99,14 +119,18 @@ export function useAIChat() {
 // ─── BRIEFING ───────────────────────────────────────────────────────
 
 export function useBriefing(fixtures) {
+  const hasFixtures = Array.isArray(fixtures) && fixtures.length > 0;
+
   return useQuery({
-    queryKey: ['briefing'],
+    queryKey: ['briefing', hasFixtures ? fixtures.length : 0],
     queryFn: async () => {
       const { data } = await api.post('/ai/briefing', { fixtures: fixtures || [] });
       return data;
     },
-    enabled: true,
-    staleTime: 30 * 60 * 1000, // 30 minutes
+    // Only fire when we actually have fixture data
+    enabled: hasFixtures,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
   });
 }
 
@@ -121,6 +145,7 @@ export function useStandings(leagueCode) {
     },
     enabled: !!leagueCode,
     staleTime: 24 * 60 * 60 * 1000,
+    retry: 1,
   });
 }
 
@@ -134,6 +159,7 @@ export function useStatus() {
       return data;
     },
     staleTime: 60 * 1000,
+    retry: 1,
   });
 }
 
@@ -147,8 +173,9 @@ export function useOdds(fixtureId) {
       return data?.data || null;
     },
     enabled: !!fixtureId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    retry: 1,
   });
 }
 
@@ -161,6 +188,7 @@ export function useValueEdges(fixtureId) {
     },
     enabled: !!fixtureId,
     staleTime: 10 * 60 * 1000,
+    retry: 1,
   });
 }
 

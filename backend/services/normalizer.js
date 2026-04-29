@@ -54,12 +54,17 @@ export function normalizeFixture(raw) {
 
 /**
  * Normalize team statistics into a consistent shape.
+ *
+ * CRITICAL: When raw data is null/missing, we now return an explicit
+ * `isValid: false` flag instead of silently returning league-average
+ * defaults that would produce misleading predictions.
  */
 export function normalizeTeamStats(raw) {
   if (!raw) {
     return {
-      avgGoalsFor: 1.35,
-      avgGoalsAgainst: 1.15,
+      isValid: false,
+      avgGoalsFor: 0,
+      avgGoalsAgainst: 0,
       cleanSheets: 0,
       form: 'N/A',
       played: 0,
@@ -77,8 +82,9 @@ export function normalizeTeamStats(raw) {
   const goalsAgainst = raw.goals_against || raw.goalsAgainst || raw.all?.goals?.against || 0;
 
   return {
-    avgGoalsFor: played > 0 ? parseFloat((goalsFor / played).toFixed(2)) : 1.35,
-    avgGoalsAgainst: played > 0 ? parseFloat((goalsAgainst / played).toFixed(2)) : 1.15,
+    isValid: played > 0,
+    avgGoalsFor: played > 0 ? parseFloat((goalsFor / played).toFixed(2)) : 0,
+    avgGoalsAgainst: played > 0 ? parseFloat((goalsAgainst / played).toFixed(2)) : 0,
     cleanSheets: raw.clean_sheets || raw.cleanSheets || 0,
     form: raw.form || 'N/A',
     played,
@@ -88,6 +94,42 @@ export function normalizeTeamStats(raw) {
     goalsFor,
     goalsAgainst,
     lastUpdated: raw.last_updated || raw.lastUpdated || new Date().toISOString(),
+  };
+}
+
+/**
+ * Validate that team stats contain enough real data to run predictions.
+ * Returns { valid, reason } tuple.
+ */
+export function validateStatsForPrediction(homeStats, awayStats) {
+  const issues = [];
+
+  if (!homeStats || !homeStats.isValid) {
+    issues.push('Home team stats missing or incomplete');
+  }
+  if (!awayStats || !awayStats.isValid) {
+    issues.push('Away team stats missing or incomplete');
+  }
+
+  // Require at least 3 matches played for meaningful averages
+  if (homeStats?.isValid && homeStats.played < 3) {
+    issues.push(`Home team: only ${homeStats.played} matches played (need ≥3)`);
+  }
+  if (awayStats?.isValid && awayStats.played < 3) {
+    issues.push(`Away team: only ${awayStats.played} matches played (need ≥3)`);
+  }
+
+  // Check for obviously wrong data (averages > 5 goals per game)
+  if (homeStats?.isValid && homeStats.avgGoalsFor > 5) {
+    issues.push(`Home team: avgGoalsFor=${homeStats.avgGoalsFor} is unrealistic`);
+  }
+  if (awayStats?.isValid && awayStats.avgGoalsFor > 5) {
+    issues.push(`Away team: avgGoalsFor=${awayStats.avgGoalsFor} is unrealistic`);
+  }
+
+  return {
+    valid: issues.length === 0,
+    issues,
   };
 }
 
@@ -182,6 +224,7 @@ export function successResponse(data, meta = {}) {
 export default {
   normalizeFixture,
   normalizeTeamStats,
+  validateStatsForPrediction,
   normalizeH2H,
   errorResponse,
   successResponse,

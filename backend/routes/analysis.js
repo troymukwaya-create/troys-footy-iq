@@ -1,7 +1,10 @@
 // ─── ANALYSIS ROUTE ─────────────────────────────────────────────────
 // GET /api/analysis/:matchId
-// Pipeline: Fetch normalized data → Run probability engine → AI analysis
-// Returns structured analysis with probability, risk, and AI insights.
+// Pipeline: Fetch → Validate → Predict (only if ready) → AI → Respond
+//
+// CRITICAL: Predictions are NEVER computed on incomplete data.
+// The response includes a `dataQuality` field so the frontend
+// knows whether to render predictions or show a loading/error state.
 
 import dotenv from 'dotenv';
 import path from 'path';
@@ -16,7 +19,12 @@ const router = express.Router();
 import * as fd from '../services/footballdata.js';
 import api from '../services/apisports.js';
 import cacheService from '../services/cache.js';
-import { normalizeTeamStats, normalizeH2H, errorResponse } from '../services/normalizer.js';
+import {
+  normalizeTeamStats,
+  normalizeH2H,
+  validateStatsForPrediction,
+  errorResponse,
+} from '../services/normalizer.js';
 import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../services/probabilityEngine.js';
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
@@ -29,39 +37,42 @@ router.get('/:matchId', async (req, res) => {
     return res.status(400).json(errorResponse('Match ID is required'));
   }
 
-  // Check cache first (24h TTL)
-  const cacheKey = `full_analysis_${matchId}`;
+  // Check cache first (only valid analyses are cached)
+  const cacheKey = `full_analysis_v2_${matchId}`;
   const cached = cacheService.get(cacheKey);
   if (cached) {
-    console.log(`[analysis] Cache HIT for ${matchId}`);
+    console.log(`[analysis] Cache HIT for ${matchId} (quality: ${cached.dataQuality})`);
     return res.json(cached);
   }
 
   try {
     console.log(`[analysis] Building analysis for ${matchId}...`);
 
-    // 1. Determine source and fetch match data
+    // ─── STEP 1: Fetch match + raw data ────────────────────────
     let match = null;
-    let homeStats = null;
-    let awayStats = null;
+    let rawHomeStats = null;
+    let rawAwayStats = null;
     let h2hData = null;
+    let fetchErrors = [];
 
     if (matchId.startsWith('fd_')) {
-      // Football-data.org source
       const cleanId = matchId.replace('fd_', '');
-      match = await fd.getMatch(cleanId).catch(() => null);
+      match = await fd.getMatch(cleanId).catch(err => {
+        fetchErrors.push(`Match fetch failed: ${err.message}`);
+        return null;
+      });
 
       if (match) {
         const homeTeamId = parseInt(match.homeTeam.id.replace('fd_t_', ''));
         const awayTeamId = parseInt(match.awayTeam.id.replace('fd_t_', ''));
         const leagueCode = match.league?.code;
 
-        // Fetch context data in parallel
+        // Fetch context data in parallel — track individual failures
         const [h2hRaw, homeMatches, awayMatches, standings] = await Promise.all([
-          fd.getH2H(cleanId, 8).catch(() => ({ matches: [] })),
-          fd.getTeamMatches(homeTeamId, { status: 'FINISHED', limit: 10 }).catch(() => ({ matches: [] })),
-          fd.getTeamMatches(awayTeamId, { status: 'FINISHED', limit: 10 }).catch(() => ({ matches: [] })),
-          fd.getStandings(leagueCode).catch(() => ({ standings: [] })),
+          fd.getH2H(cleanId, 8).catch(err => { fetchErrors.push(`H2H: ${err.message}`); return { matches: [] }; }),
+          fd.getTeamMatches(homeTeamId, { status: 'FINISHED', limit: 10 }).catch(err => { fetchErrors.push(`Home matches: ${err.message}`); return { matches: [] }; }),
+          fd.getTeamMatches(awayTeamId, { status: 'FINISHED', limit: 10 }).catch(err => { fetchErrors.push(`Away matches: ${err.message}`); return { matches: [] }; }),
+          fd.getStandings(leagueCode).catch(err => { fetchErrors.push(`Standings: ${err.message}`); return { standings: [] }; }),
         ]);
 
         // Extract stats from standings
@@ -69,52 +80,104 @@ router.get('/:matchId', async (req, res) => {
         const hPos = table.find(t => t.team.id === homeTeamId);
         const aPos = table.find(t => t.team.id === awayTeamId);
 
-        homeStats = normalizeTeamStats(hPos ? {
-          played: hPos.playedGames,
-          goalsFor: hPos.goalsFor,
-          goalsAgainst: hPos.goalsAgainst,
-          wins: hPos.won,
-          draws: hPos.draw,
-          losses: hPos.lost,
-          form: hPos.form || computeFormFromMatches(homeMatches.matches || [], homeTeamId),
-        } : null);
+        if (hPos) {
+          rawHomeStats = {
+            played: hPos.playedGames,
+            goalsFor: hPos.goalsFor,
+            goalsAgainst: hPos.goalsAgainst,
+            wins: hPos.won,
+            draws: hPos.draw,
+            losses: hPos.lost,
+            form: hPos.form || computeFormFromMatches(homeMatches.matches || [], homeTeamId),
+          };
+        } else {
+          fetchErrors.push('Home team not found in standings');
+        }
 
-        awayStats = normalizeTeamStats(aPos ? {
-          played: aPos.playedGames,
-          goalsFor: aPos.goalsFor,
-          goalsAgainst: aPos.goalsAgainst,
-          wins: aPos.won,
-          draws: aPos.draw,
-          losses: aPos.lost,
-          form: aPos.form || computeFormFromMatches(awayMatches.matches || [], awayTeamId),
-        } : null);
+        if (aPos) {
+          rawAwayStats = {
+            played: aPos.playedGames,
+            goalsFor: aPos.goalsFor,
+            goalsAgainst: aPos.goalsAgainst,
+            wins: aPos.won,
+            draws: aPos.draw,
+            losses: aPos.lost,
+            form: aPos.form || computeFormFromMatches(awayMatches.matches || [], awayTeamId),
+          };
+        } else {
+          fetchErrors.push('Away team not found in standings');
+        }
 
         h2hData = normalizeH2H(h2hRaw, match.homeTeam.name, match.awayTeam.name);
       }
     } else if (matchId.startsWith('apf_')) {
-      // API-Sports source
-      match = await api.getFixture(matchId).catch(() => null);
+      match = await api.getFixture(matchId).catch(err => {
+        fetchErrors.push(`APF fixture fetch failed: ${err.message}`);
+        return null;
+      });
 
       if (match) {
         const numHomeId = match.homeTeam.id.replace('apf_t_', '');
         const numAwayId = match.awayTeam.id.replace('apf_t_', '');
 
         const [h2hRaw, predictions] = await Promise.all([
-          api.getH2H(numHomeId, numAwayId).catch(() => []),
-          api.getPredictions(matchId).catch(() => null),
+          api.getH2H(numHomeId, numAwayId).catch(err => { fetchErrors.push(`APF H2H: ${err.message}`); return []; }),
+          api.getPredictions(matchId).catch(err => { fetchErrors.push(`APF predictions: ${err.message}`); return null; }),
         ]);
 
-        homeStats = normalizeTeamStats(predictions?.comparison ? {
-          goalsFor: parseFloat(predictions.goals?.home || '1.35') * 10,
-          goalsAgainst: 12,
-          played: 10,
-        } : null);
+        // Extract real stats from predictions if available
+        if (predictions?.teams?.home?.league) {
+          const hl = predictions.teams.home.league;
+          rawHomeStats = {
+            played: hl.fixtures?.played?.total || 0,
+            goalsFor: hl.goals?.for?.total?.total || 0,
+            goalsAgainst: hl.goals?.against?.total?.total || 0,
+            wins: hl.fixtures?.wins?.total || 0,
+            draws: hl.fixtures?.draws?.total || 0,
+            losses: hl.fixtures?.loses?.total || 0,
+            form: hl.form || 'N/A',
+          };
+        } else if (predictions?.comparison) {
+          // Fallback: extract what we can from comparison data
+          const homeGoalsStr = predictions.goals?.home || '';
+          const awayGoalsStr = predictions.goals?.away || '';
+          const homeGoalsParsed = parseFloat(homeGoalsStr);
+          const awayGoalsParsed = parseFloat(awayGoalsStr);
 
-        awayStats = normalizeTeamStats(predictions?.comparison ? {
-          goalsFor: parseFloat(predictions.goals?.away || '1.15') * 10,
-          goalsAgainst: 14,
-          played: 10,
-        } : null);
+          if (!isNaN(homeGoalsParsed) && !isNaN(awayGoalsParsed)) {
+            rawHomeStats = {
+              played: 10,
+              goalsFor: Math.round(homeGoalsParsed * 10),
+              goalsAgainst: Math.round(awayGoalsParsed * 10),
+              wins: 0, draws: 0, losses: 0,
+              form: 'N/A',
+            };
+            rawAwayStats = {
+              played: 10,
+              goalsFor: Math.round(awayGoalsParsed * 10),
+              goalsAgainst: Math.round(homeGoalsParsed * 10),
+              wins: 0, draws: 0, losses: 0,
+              form: 'N/A',
+            };
+          } else {
+            fetchErrors.push('APF predictions data unparseable');
+          }
+        } else {
+          fetchErrors.push('APF predictions returned no usable data');
+        }
+
+        if (predictions?.teams?.away?.league) {
+          const al = predictions.teams.away.league;
+          rawAwayStats = {
+            played: al.fixtures?.played?.total || 0,
+            goalsFor: al.goals?.for?.total?.total || 0,
+            goalsAgainst: al.goals?.against?.total?.total || 0,
+            wins: al.fixtures?.wins?.total || 0,
+            draws: al.fixtures?.draws?.total || 0,
+            losses: al.fixtures?.loses?.total || 0,
+            form: al.form || 'N/A',
+          };
+        }
 
         h2hData = normalizeH2H(h2hRaw, match.homeTeam.name, match.awayTeam.name);
       }
@@ -124,24 +187,61 @@ router.get('/:matchId', async (req, res) => {
       return res.status(404).json(errorResponse('Match not found'));
     }
 
-    // 2. Run probability engine
-    const probabilityResult = analyzeMatch(homeStats, awayStats);
+    // ─── STEP 2: Normalize stats ────────────────────────────────
+    const homeStats = normalizeTeamStats(rawHomeStats);
+    const awayStats = normalizeTeamStats(rawAwayStats);
 
-    // 3. Run AI analysis (non-blocking — fallback if it fails)
+    // ─── STEP 3: Validate data readiness ────────────────────────
+    const validation = validateStatsForPrediction(homeStats, awayStats);
+
+    // Log inputs for debugging
+    console.log(`[analysis] ${matchId} data validation:`, {
+      homeValid: homeStats.isValid,
+      awayValid: awayStats.isValid,
+      homePlayed: homeStats.played,
+      awayPlayed: awayStats.played,
+      homeAvgGF: homeStats.avgGoalsFor,
+      awayAvgGF: awayStats.avgGoalsFor,
+      validationPassed: validation.valid,
+      issues: validation.issues,
+      fetchErrors: fetchErrors.length > 0 ? fetchErrors : 'none',
+    });
+
+    // ─── STEP 4: Determine data quality ─────────────────────────
+    let dataQuality; // COMPLETE | PARTIAL | INSUFFICIENT
+    let probabilityResult = null;
+
+    if (validation.valid) {
+      // Full data available — run predictions
+      dataQuality = 'COMPLETE';
+      probabilityResult = analyzeMatch(homeStats, awayStats);
+    } else if (homeStats.isValid || awayStats.isValid) {
+      // One team has data — run with caution flag
+      dataQuality = 'PARTIAL';
+      probabilityResult = analyzeMatch(homeStats, awayStats);
+      console.warn(`[analysis] ${matchId} running with PARTIAL data: ${validation.issues.join(', ')}`);
+    } else {
+      // No usable data — do NOT predict
+      dataQuality = 'INSUFFICIENT';
+      console.warn(`[analysis] ${matchId} SKIPPING prediction: ${validation.issues.join(', ')}`);
+    }
+
+    // ─── STEP 5: AI analysis (only if we have data) ─────────────
     let aiAnalysis = null;
-    if (ANTHROPIC_KEY && ANTHROPIC_KEY.length > 20) {
-      aiAnalysis = await getAIInsights(match, homeStats, awayStats, h2hData, probabilityResult).catch(err => {
-        console.error('[analysis] AI error:', err.message);
-        return null;
-      });
+    if (dataQuality !== 'INSUFFICIENT' && ANTHROPIC_KEY && ANTHROPIC_KEY.length > 20) {
+      aiAnalysis = await getAIInsights(match, homeStats, awayStats, h2hData || emptyH2H(), probabilityResult)
+        .catch(err => {
+          console.error('[analysis] AI error:', err.message);
+          return null;
+        });
     }
 
-    // Build fallback AI if Claude fails
-    if (!aiAnalysis) {
-      aiAnalysis = buildFallbackAI(match, probabilityResult, homeStats, awayStats, h2hData);
+    // Build fallback AI if Claude unavailable and we have predictions
+    if (!aiAnalysis && probabilityResult) {
+      aiAnalysis = buildFallbackAI(match, probabilityResult, homeStats, awayStats, h2hData || emptyH2H());
     }
 
-    // 4. Assemble response
+    // ─── STEP 6: Assemble response ──────────────────────────────
     const result = {
       match: {
         id: match.id,
@@ -153,16 +253,25 @@ router.get('/:matchId', async (req, res) => {
         score: match.score,
         league: match.league,
       },
+      // Data quality flag — frontend uses this to decide what to render
+      dataQuality,
+      dataIssues: validation.valid ? [] : validation.issues,
+      // Only include probability if data is sufficient
       probability: probabilityResult,
-      homeStats,
-      awayStats,
-      h2h: h2hData,
+      homeStats: homeStats.isValid ? homeStats : null,
+      awayStats: awayStats.isValid ? awayStats : null,
+      h2h: h2hData || emptyH2H(),
       ai: aiAnalysis,
       generatedAt: new Date().toISOString(),
     };
 
-    // 5. Cache result (24h)
-    cacheService.set(cacheKey, result, 86400);
+    // ─── STEP 7: Cache ONLY complete/partial analyses ───────────
+    if (dataQuality === 'COMPLETE') {
+      cacheService.set(cacheKey, result, 86400); // 24h
+    } else if (dataQuality === 'PARTIAL') {
+      cacheService.set(cacheKey, result, 1800); // 30 min — allow retry
+    }
+    // INSUFFICIENT data is NEVER cached
 
     res.json(result);
   } catch (err) {
@@ -171,7 +280,12 @@ router.get('/:matchId', async (req, res) => {
   }
 });
 
-// ─── HELPER: Compute form string from match results ─────────────────
+// ─── HELPERS ────────────────────────────────────────────────────────
+
+function emptyH2H() {
+  return { totalMatches: 0, homeWins: 0, awayWins: 0, draws: 0, avgGoals: 0, matches: [] };
+}
+
 function computeFormFromMatches(matches, teamId) {
   if (!matches || matches.length === 0) return 'N/A';
   return matches.slice(0, 5).map(m => {
@@ -207,8 +321,8 @@ POISSON MODEL OUTPUT:
 - Risk Level: ${prob.riskLevel}
 
 TEAM STATS:
-${home}: Form ${homeStats.form} | Avg scored ${homeStats.avgGoalsFor} | Avg conceded ${homeStats.avgGoalsAgainst} | P${homeStats.played} W${homeStats.wins} D${homeStats.draws} L${homeStats.losses}
-${away}: Form ${awayStats.form} | Avg scored ${awayStats.avgGoalsFor} | Avg conceded ${awayStats.avgGoalsAgainst} | P${awayStats.played} W${awayStats.wins} D${awayStats.draws} L${awayStats.losses}
+${home}: Form ${homeStats?.form || 'N/A'} | Avg scored ${homeStats?.avgGoalsFor || 'N/A'} | Avg conceded ${homeStats?.avgGoalsAgainst || 'N/A'} | P${homeStats?.played || 0} W${homeStats?.wins || 0} D${homeStats?.draws || 0} L${homeStats?.losses || 0}
+${away}: Form ${awayStats?.form || 'N/A'} | Avg scored ${awayStats?.avgGoalsFor || 'N/A'} | Avg conceded ${awayStats?.avgGoalsAgainst || 'N/A'} | P${awayStats?.played || 0} W${awayStats?.wins || 0} D${awayStats?.draws || 0} L${awayStats?.losses || 0}
 
 H2H (last ${h2h.totalMatches} meetings):
 ${home} wins: ${h2h.homeWins} | Draws: ${h2h.draws} | ${away} wins: ${h2h.awayWins} | Avg goals: ${h2h.avgGoals}
@@ -250,8 +364,8 @@ function buildFallbackAI(match, prob, homeStats, awayStats, h2h) {
   return {
     verdict: `Statistical model gives ${home} a ${prob.probabilities.home}% win probability vs ${away} at ${prob.probabilities.away}%. ${prob.overUnder.over25 > 55 ? `Over 2.5 goals is favoured at ${prob.overUnder.over25}%.` : 'A tight, low-scoring match is expected.'}`,
     keyInsights: [
-      `${home} averaging ${homeStats.avgGoalsFor} goals/game, conceding ${homeStats.avgGoalsAgainst}`,
-      `${away} averaging ${awayStats.avgGoalsFor} goals/game, conceding ${awayStats.avgGoalsAgainst}`,
+      homeStats?.isValid ? `${home} averaging ${homeStats.avgGoalsFor} goals/game, conceding ${homeStats.avgGoalsAgainst}` : `${home}: stats unavailable`,
+      awayStats?.isValid ? `${away} averaging ${awayStats.avgGoalsFor} goals/game, conceding ${awayStats.avgGoalsAgainst}` : `${away}: stats unavailable`,
       h2h.totalMatches > 0 ? `H2H: ${h2h.homeWins}W ${h2h.draws}D ${h2h.awayWins}L in last ${h2h.totalMatches} meetings` : 'No H2H data available',
       `Most likely scoreline: ${prob.topScorelines?.[0]?.score || 'N/A'}`,
     ],

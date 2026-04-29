@@ -41,10 +41,20 @@ function poisson(k, lambda) {
  * @returns {{ lambdaHome: number, lambdaAway: number }}
  */
 export function computeExpectedGoals(homeStats, awayStats) {
-  const homeAttack = homeStats?.avgGoalsFor || LEAGUE_AVG_GOALS;
-  const homeDefense = homeStats?.avgGoalsAgainst || LEAGUE_AVG_GOALS;
-  const awayAttack = awayStats?.avgGoalsFor || LEAGUE_AVG_GOALS;
-  const awayDefense = awayStats?.avgGoalsAgainst || LEAGUE_AVG_GOALS;
+  // Use real stats if valid, otherwise fall back to league average
+  // but LOG when we're using fallbacks so it's traceable
+  const homeAttack = (homeStats?.isValid && homeStats.avgGoalsFor > 0) ? homeStats.avgGoalsFor : LEAGUE_AVG_GOALS;
+  const homeDefense = (homeStats?.isValid && homeStats.avgGoalsAgainst > 0) ? homeStats.avgGoalsAgainst : LEAGUE_AVG_GOALS;
+  const awayAttack = (awayStats?.isValid && awayStats.avgGoalsFor > 0) ? awayStats.avgGoalsFor : LEAGUE_AVG_GOALS;
+  const awayDefense = (awayStats?.isValid && awayStats.avgGoalsAgainst > 0) ? awayStats.avgGoalsAgainst : LEAGUE_AVG_GOALS;
+
+  const usingDefaults = (!homeStats?.isValid || !awayStats?.isValid);
+  if (usingDefaults) {
+    console.warn('[probEngine] computeExpectedGoals using fallback values:', {
+      homeValid: homeStats?.isValid, awayValid: awayStats?.isValid,
+      homeAttack, homeDefense, awayAttack, awayDefense,
+    });
+  }
 
   // Attack strength = team's goals / league average
   // Defense weakness = opponent's conceded / league average
@@ -63,6 +73,13 @@ export function computeExpectedGoals(homeStats, awayStats) {
   return {
     lambdaHome: parseFloat(lambdaHome.toFixed(3)),
     lambdaAway: parseFloat(lambdaAway.toFixed(3)),
+    params: {
+      homeAttackStrength: parseFloat(homeAttackStrength.toFixed(3)),
+      awayDefenseWeakness: parseFloat(awayDefenseWeakness.toFixed(3)),
+      awayAttackStrength: parseFloat(awayAttackStrength.toFixed(3)),
+      homeDefenseWeakness: parseFloat(homeDefenseWeakness.toFixed(3)),
+      usingDefaults: (!homeStats?.isValid || !awayStats?.isValid),
+    },
   };
 }
 

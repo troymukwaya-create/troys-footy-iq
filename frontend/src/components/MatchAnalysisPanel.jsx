@@ -18,6 +18,9 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
   const status = fixture?.status || 'SCHEDULED';
   const isLive = status === 'IN_PLAY' || status === 'PAUSED';
 
+  // ─── Data quality gate ─────────────────────────────────────
+  const dataQuality = analysis?.dataQuality || null;
+  const dataIssues = analysis?.dataIssues || [];
   const prob = analysis?.probability || null;
   const homeStats = analysis?.homeStats || null;
   const awayStats = analysis?.awayStats || null;
@@ -82,8 +85,8 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
           </div>
         </div>
 
-        {/* Win Probability Bar */}
-        {prob && (
+        {/* Win Probability Bar — only show with valid data */}
+        {prob && dataQuality !== 'INSUFFICIENT' && (
           <div style={{ marginTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{prob.probabilities?.home || 0}%</span>
@@ -104,6 +107,43 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
         )}
       </div>
 
+      {/* ─── Data Quality Banners ─────────────────────────── */}
+      {dataQuality === 'PARTIAL' && (
+        <div style={{
+          padding: '10px 16px', borderRadius: 'var(--radius-md)', marginBottom: 12,
+          background: 'var(--warning-muted)', border: '1px solid rgba(234,179,8,0.20)',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontSize: 14 }}>⚠️</span>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--warning)' }}>Partial Data</div>
+            <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+              {dataIssues.length > 0 ? dataIssues[0] : 'Some team statistics are unavailable. Predictions may be less accurate.'}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dataQuality === 'INSUFFICIENT' && !isLoading && (
+        <div style={{
+          padding: '24px 16px', borderRadius: 'var(--radius-lg)', marginBottom: 12,
+          background: 'var(--danger-muted)', border: '1px solid rgba(239,68,68,0.20)',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 24, marginBottom: 8 }}>📊</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', marginBottom: 4 }}>Insufficient Data</div>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+            Team statistics are not yet available for this fixture.
+            Predictions cannot be generated without reliable data.
+          </div>
+          {dataIssues.length > 0 && (
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+              {dataIssues.join(' · ')}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Loading */}
       {isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -111,8 +151,8 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
         </div>
       )}
 
-      {/* Tabs */}
-      {!isLoading && prob && (
+      {/* Tabs — only render when we have probability data */}
+      {!isLoading && prob && dataQuality !== 'INSUFFICIENT' && (
         <>
           <div style={{ display: 'flex', gap: 4, marginBottom: 16, padding: 4, background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)' }}>
             {tabs.map(tab => (
