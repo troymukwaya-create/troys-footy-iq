@@ -186,7 +186,8 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
         </div>
       )}
 
-      {!isLoading && prob && dataQuality !== 'INSUFFICIENT' && (
+      {/* Tabs — always show when not loading */}
+      {!isLoading && (
         <>
           <div style={{ display: 'flex', gap: 4, marginBottom: 16, padding: 4, background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)' }}>
             {tabs.map(tab => (
@@ -209,71 +210,104 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
           {/* Analysis Tab */}
           {activeTab === 'analysis' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {/* Expected Goals */}
-              <div className="card" style={{ padding: 16 }}>
-                <div className="section-title" style={{ marginBottom: 12 }}>Expected Goals</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, textAlign: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)' }}>{prob.expectedGoals?.home || '–'}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{home}</div>
+              {prob ? (
+                <>
+                  {/* Expected Goals */}
+                  <div className="card" style={{ padding: 16 }}>
+                    <div className="section-title" style={{ marginBottom: 12 }}>Expected Goals</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, textAlign: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)' }}>{prob.expectedGoals?.home || '–'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{home}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-secondary)' }}>{prob.expectedGoals?.total || '–'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Total</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--warning)' }}>{prob.expectedGoals?.away || '–'}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{away}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-secondary)' }}>{prob.expectedGoals?.total || '–'}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Total</div>
+
+                  {/* Risk Level */}
+                  <div className={prob.riskLevel === 'LOW' ? 'risk-low' : prob.riskLevel === 'MEDIUM' ? 'risk-medium' : 'risk-high'}
+                    style={{ borderRadius: 'var(--radius-lg)', padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 20 }}>
+                      {prob.riskLevel === 'LOW' ? '🟢' : prob.riskLevel === 'MEDIUM' ? '🟡' : '🔴'}
+                    </span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{prob.riskLevel} RISK</div>
+                      <div style={{ fontSize: 11, opacity: 0.7 }}>
+                        {prob.riskLevel === 'LOW' ? 'Strong statistical confidence' : prob.riskLevel === 'MEDIUM' ? 'Multiple outcomes possible' : 'Unpredictable match'}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--warning)' }}>{prob.expectedGoals?.away || '–'}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{away}</div>
+
+                  {/* Scorelines */}
+                  <ScorelineGrid topScorelines={prob.topScorelines} />
+
+                  {/* Goal Markets */}
+                  <div className="card" style={{ padding: 16 }}>
+                    <div className="section-title" style={{ marginBottom: 12 }}>Goal Markets</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <MarketBar label="Over 2.5" value={prob.overUnder?.over25} />
+                      <MarketBar label="Under 2.5" value={prob.overUnder?.under25} />
+                      <MarketBar label="Over 1.5" value={prob.overUnder?.over15} />
+                      <MarketBar label="Over 3.5" value={prob.overUnder?.over35} />
+                      <MarketBar label="BTTS Yes" value={prob.btts?.yes} />
+                      <MarketBar label="BTTS No" value={prob.btts?.no} />
+                    </div>
+                  </div>
+                </>
+              ) : analysis?.status === 'FINISHED' ? (
+                <div className="card" style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 24, marginBottom: 8 }}>✅</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Match Completed</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)', marginBottom: 8 }}>
+                    {analysis.result?.home ?? '?'} — {analysis.result?.away ?? '?'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    Final score · Predictions are not available for finished matches
                   </div>
                 </div>
-              </div>
-
-              {/* Risk Level */}
-              <div className={prob.riskLevel === 'LOW' ? 'risk-low' : prob.riskLevel === 'MEDIUM' ? 'risk-medium' : 'risk-high'}
-                style={{ borderRadius: 'var(--radius-lg)', padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 20 }}>
-                  {prob.riskLevel === 'LOW' ? '🟢' : prob.riskLevel === 'MEDIUM' ? '🟡' : '🔴'}
-                </span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{prob.riskLevel} RISK</div>
-                  <div style={{ fontSize: 11, opacity: 0.7 }}>
-                    {prob.riskLevel === 'LOW' ? 'Strong statistical confidence' : prob.riskLevel === 'MEDIUM' ? 'Multiple outcomes possible' : 'Unpredictable match'}
+              ) : (
+                <div className="card" style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 20, marginBottom: 8 }}>📊</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-tertiary)' }}>
+                    Analysis unavailable
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                    {dataQuality === 'INSUFFICIENT' ? 'Insufficient data for predictions.' : 'Check back closer to kick-off.'}
                   </div>
                 </div>
-              </div>
-
-              {/* Scorelines */}
-              <ScorelineGrid topScorelines={prob.topScorelines} />
-
-              {/* Goal Markets */}
-              <div className="card" style={{ padding: 16 }}>
-                <div className="section-title" style={{ marginBottom: 12 }}>Goal Markets</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <MarketBar label="Over 2.5" value={prob.overUnder?.over25} />
-                  <MarketBar label="Under 2.5" value={prob.overUnder?.under25} />
-                  <MarketBar label="Over 1.5" value={prob.overUnder?.over15} />
-                  <MarketBar label="Over 3.5" value={prob.overUnder?.over35} />
-                  <MarketBar label="BTTS Yes" value={prob.btts?.yes} />
-                  <MarketBar label="BTTS No" value={prob.btts?.no} />
-                </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* Stats Tab */}
           {activeTab === 'stats' && (
             <div className="card animate-fade-in" style={{ padding: 16 }}>
-              <div className="section-title" style={{ marginBottom: 16 }}>Team Comparison</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <StatRow label="Avg Goals Scored" home={homeStats?.avgGoalsFor} away={awayStats?.avgGoalsFor} />
-                <StatRow label="Avg Goals Conceded" home={homeStats?.avgGoalsAgainst} away={awayStats?.avgGoalsAgainst} inverted />
-                <StatRow label="Matches Played" home={homeStats?.played} away={awayStats?.played} />
-                <StatRow label="Wins" home={homeStats?.wins} away={awayStats?.wins} />
-                <StatRow label="Draws" home={homeStats?.draws} away={awayStats?.draws} />
-                <StatRow label="Losses" home={homeStats?.losses} away={awayStats?.losses} inverted />
-                <StatRow label="Goals For" home={homeStats?.goalsFor} away={awayStats?.goalsFor} />
-                <StatRow label="Goals Against" home={homeStats?.goalsAgainst} away={awayStats?.goalsAgainst} inverted />
-              </div>
+              {homeStats || awayStats ? (
+                <>
+                  <div className="section-title" style={{ marginBottom: 16 }}>Team Comparison</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <StatRow label="Avg Goals Scored" home={homeStats?.avgGoalsFor} away={awayStats?.avgGoalsFor} />
+                    <StatRow label="Avg Goals Conceded" home={homeStats?.avgGoalsAgainst} away={awayStats?.avgGoalsAgainst} inverted />
+                    <StatRow label="Matches Played" home={homeStats?.played} away={awayStats?.played} />
+                    <StatRow label="Wins" home={homeStats?.wins} away={awayStats?.wins} />
+                    <StatRow label="Draws" home={homeStats?.draws} away={awayStats?.draws} />
+                    <StatRow label="Losses" home={homeStats?.losses} away={awayStats?.losses} inverted />
+                    <StatRow label="Goals For" home={homeStats?.goalsFor} away={awayStats?.goalsFor} />
+                    <StatRow label="Goals Against" home={homeStats?.goalsAgainst} away={awayStats?.goalsAgainst} inverted />
+                  </div>
+                </>
+              ) : (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 12 }}>
+                  Team statistics are not available for this fixture.
+                </div>
+              )}
             </div>
           )}
 
