@@ -48,7 +48,7 @@ class ErrorBoundary extends React.Component {
           </div>
           <div style={{ fontSize: 12, color: '#6b7280', maxWidth: 500, textAlign: 'center' }}>
             Open browser console (F12) for the full error.
-            Check that the backend is running at localhost:3001.
+            Check that the backend is running and accessible.
           </div>
           <button
             onClick={() => { this.setState({ error: null, info: null }); window.location.reload(); }}

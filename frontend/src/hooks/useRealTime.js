@@ -1,7 +1,17 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../store/useStore';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+// Derive WebSocket URL from environment
+// Priority: VITE_WS_URL > auto-derive from VITE_API_URL > localhost fallback
+function getWsUrl() {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL;
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/^http/, 'ws');
+  }
+  return 'ws://localhost:3001';
+}
+const WS_URL = getWsUrl();
+
 
 export function useRealTime() {
   const ws = useRef(null);
