@@ -11,7 +11,7 @@ import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { MatchAnalysisPanel } from './components/MatchAnalysisPanel.jsx';
 import { AIInsightsPanel } from './components/AIInsightsPanel.jsx';
-import { ParlayBuilder } from './components/ParlayBuilder.jsx';
+import { ParlayBuilderPanel } from './components/ParlayBuilderPanel.jsx';
 
 export default function App() {
   useRealTime();
@@ -175,13 +175,16 @@ export default function App() {
         </main>
 
         {/* ═══ RIGHT PANEL ═══ */}
-        <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
+        <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto' }}>
           <AIInsightsPanel fixture={selectedFixture} analysis={analysis} isLoading={analysisLoading} />
+          <div style={{ padding: '0 12px 12px' }}>
+            <ParlayBuilderPanel />
+          </div>
         </aside>
       </div>
 
       <MobileNav activeTab={mobileTab} onTabChange={setMobileTab} />
-      <ParlayBuilder />
+
 
       {/* Footer */}
       <div style={{ padding: '8px 16px', background: 'var(--bg-base)', borderTop: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)', textAlign: 'center' }}>

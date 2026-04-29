@@ -163,8 +163,23 @@ export function useStatus() {
   });
 }
 
-// ─── ODDS ────────────────────────────────────────────────────────────
+// ─── ODDS (NEW: OUTCOME-GROUPED MARKETS) ─────────────────────────
 
+export function useMarkets(fixtureId) {
+  return useQuery({
+    queryKey: ['markets', fixtureId],
+    queryFn: async () => {
+      const { data } = await api.get(`/odds/${fixtureId}/markets`);
+      return data?.data || [];
+    },
+    enabled: !!fixtureId,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+// Legacy hooks — kept for backward compatibility
 export function useOdds(fixtureId) {
   return useQuery({
     queryKey: ['odds', fixtureId],

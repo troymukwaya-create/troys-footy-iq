@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LiveOddsPanel } from './LiveOddsPanel.jsx';
+import { MarketsPanel } from './MarketsPanel.jsx';
 
 /**
  * MatchAnalysisPanel — Center panel for match analysis.
@@ -332,7 +332,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
           {/* Markets Tab */}
           {activeTab === 'markets' && (
             <div className="animate-fade-in">
-              <LiveOddsPanel fixture={fixture} />
+              <MarketsPanel fixture={fixture} />
             </div>
           )}
         </>

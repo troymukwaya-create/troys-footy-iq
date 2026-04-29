@@ -9,7 +9,150 @@ import cache from '../services/cache.js';
 
 const router = Router();
 
-// ─── GET ODDS FOR A FIXTURE ────────────────────────────────────────
+// ─── RESTRUCTURED MARKETS ENDPOINT ────────────────────────────────
+// GET /api/odds/:fixtureId/markets
+// Returns odds grouped by market → outcome (not by bookmaker).
+// Each outcome includes best odds, alternatives, and value analysis.
+router.get('/:fixtureId/markets', async (req, res) => {
+  try {
+    const { fixtureId } = req.params;
+
+    // Check cache
+    const cacheKey = `markets_v2_${fixtureId}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json({ error: false, data: cached, source: 'cache' });
+
+    // Fetch raw odds
+    let odds = await getFixtureOdds(fixtureId);
+    if (!odds) odds = generateDemoOdds(fixtureId);
+
+    // Get model probabilities for value edges
+    let modelProbs = null;
+    try {
+      const pred = predictStatic({}, {});
+      modelProbs = pred?.probabilities || null;
+    } catch { /* ignore */ }
+
+    // Transform from bookmaker-grouped → outcome-grouped
+    const markets = transformToOutcomeGrouped(odds, modelProbs);
+
+    // Cache for 15 min
+    cache.set(cacheKey, markets, 900);
+
+    res.json({ error: false, data: markets, source: 'live' });
+  } catch (err) {
+    console.error('[ODDS/MARKETS] Error:', err.message);
+    const fallback = generateDemoOdds(req.params.fixtureId);
+    const markets = transformToOutcomeGrouped(fallback, null);
+    res.json({ error: false, data: markets, source: 'fallback' });
+  }
+});
+
+/**
+ * Transform bookmaker-grouped odds into outcome-grouped format.
+ * 
+ * FROM: markets.1X2.bookmakers[{name, outcomes[{name, odd}]}]
+ * TO:   markets[{type, label, outcomes[{name, best_odds, best_bookmaker, odds[], model_probability, market_probability, value_edge}]}]
+ */
+function transformToOutcomeGrouped(oddsData, modelProbs) {
+  if (!oddsData?.markets) return [];
+
+  const result = [];
+
+  // Model prob mapping
+  const modelMap = {
+    'Home': modelProbs?.home || null,
+    'Draw': modelProbs?.draw || null,
+    'Away': modelProbs?.away || null,
+    'Over 2.5': null,
+    'Under 2.5': null,
+    'Yes': null,
+    'No': null,
+  };
+
+  // Derive over/under and BTTS from model if available
+  if (modelProbs) {
+    // Over 2.5 can be derived from over25 probability if present
+    if (modelProbs.over25 != null) {
+      modelMap['Over 2.5'] = modelProbs.over25;
+      modelMap['Under 2.5'] = 100 - modelProbs.over25;
+    }
+    if (modelProbs.bttsYes != null) {
+      modelMap['Yes'] = modelProbs.bttsYes;
+      modelMap['No'] = 100 - modelProbs.bttsYes;
+    }
+  }
+
+  for (const [marketKey, marketData] of Object.entries(oddsData.markets)) {
+    if (!marketData?.bookmakers?.length) continue;
+
+    // Collect all outcomes across bookmakers
+    const outcomeMap = new Map();
+
+    for (const bk of marketData.bookmakers) {
+      for (const outcome of bk.outcomes) {
+        if (!outcomeMap.has(outcome.name)) {
+          outcomeMap.set(outcome.name, []);
+        }
+        outcomeMap.get(outcome.name).push({
+          bookmaker: bk.name,
+          value: outcome.odd,
+          is_top: bk.isTop || false,
+        });
+      }
+    }
+
+    // Build outcome-grouped entries
+    const outcomes = [];
+    for (const [outcomeName, oddsList] of outcomeMap) {
+      // Sort by odds descending (best first)
+      oddsList.sort((a, b) => b.value - a.value);
+
+      const bestEntry = oddsList[0];
+      const bestOdd = bestEntry.value;
+      const marketProbability = bestOdd > 0 ? round(1 / bestOdd, 4) : 0;
+      const modelProbability = modelMap[outcomeName] != null
+        ? round(modelMap[outcomeName] / 100, 4) // Convert from % to decimal
+        : null;
+
+      const valueEdge = modelProbability != null
+        ? round(modelProbability - marketProbability, 4)
+        : null;
+
+      outcomes.push({
+        name: outcomeName,
+        best_odds: bestOdd,
+        best_bookmaker: bestEntry.bookmaker,
+        odds: oddsList.map(o => ({
+          bookmaker: o.bookmaker,
+          value: o.value,
+        })),
+        model_probability: modelProbability,
+        market_probability: marketProbability,
+        value_edge: valueEdge,
+        value_signal: getValueSignal(valueEdge),
+      });
+    }
+
+    result.push({
+      type: marketKey,
+      label: marketData.label || marketKey,
+      outcomes,
+    });
+  }
+
+  return result;
+}
+
+function getValueSignal(edge) {
+  if (edge == null) return null;
+  if (edge >= 0.05) return 'STRONG_VALUE';
+  if (edge >= 0.02) return 'VALUE';
+  if (edge >= -0.02) return 'FAIR';
+  return 'NO_VALUE';
+}
+
+// ─── GET ODDS FOR A FIXTURE (legacy format) ───────────────────────
 // GET /api/odds/:fixtureId
 router.get('/:fixtureId', async (req, res) => {
   try {
@@ -17,7 +160,6 @@ router.get('/:fixtureId', async (req, res) => {
     const odds = await getFixtureOdds(fixtureId);
 
     if (!odds) {
-      // Return demo odds when API unavailable
       return res.json({
         error: false,
         data: generateDemoOdds(fixtureId),
@@ -45,21 +187,17 @@ router.get('/', async (_req, res) => {
 
 // ─── VALUE COMPARISON ──────────────────────────────────────────────
 // GET /api/odds/:fixtureId/value
-// Compares bookmaker odds against our model probabilities
 router.get('/:fixtureId/value', async (req, res) => {
   try {
     const { fixtureId } = req.params;
 
-    // Get odds
     let odds = await getFixtureOdds(fixtureId);
     if (!odds) odds = generateDemoOdds(fixtureId);
 
-    // Get model probabilities
     const homeStats = req.query.homeStats ? JSON.parse(req.query.homeStats) : {};
     const awayStats = req.query.awayStats ? JSON.parse(req.query.awayStats) : {};
     const prediction = predictStatic(homeStats, awayStats);
 
-    // Compute edges
     const edges = computeValueEdges(odds, prediction.probabilities);
 
     res.json({
@@ -80,7 +218,6 @@ router.get('/:fixtureId/value', async (req, res) => {
 
 // ─── PARLAY CALCULATION ────────────────────────────────────────────
 // POST /api/odds/parlay/calculate
-// Body: { selections: [{ fixtureId, outcome, market, odd }] }
 router.post('/parlay/calculate', (req, res) => {
   try {
     const { selections } = req.body;
@@ -99,11 +236,22 @@ router.post('/parlay/calculate', (req, res) => {
  * Generate realistic demo odds when API is unavailable.
  */
 function generateDemoOdds(fixtureId) {
-  // Generate slightly randomized but realistic odds
   const seed = hashCode(String(fixtureId));
   const homeOdd = 1.5 + (seed % 30) / 10;
   const drawOdd = 2.8 + (seed % 15) / 10;
   const awayOdd = 3.2 + (seed % 40) / 10;
+
+  const bookmakers = [
+    { name: 'Bet365', factor: [1.00, 1.00, 1.00] },
+    { name: 'Pinnacle', factor: [1.02, 0.98, 1.01] },
+    { name: '1xBet', factor: [1.04, 1.02, 0.99] },
+    { name: 'Unibet', factor: [0.98, 1.01, 1.03] },
+  ];
+
+  const ou25Over = 1.7 + (seed % 10) / 20;
+  const ou25Under = 2.0 + (seed % 8) / 20;
+  const bttsYes = 1.65 + (seed % 12) / 20;
+  const bttsNo = 2.0 + (seed % 10) / 20;
 
   return {
     fixtureId,
@@ -111,84 +259,57 @@ function generateDemoOdds(fixtureId) {
       '1X2': {
         market: '1X2',
         label: 'Match Winner',
-        bookmakers: [
-          {
-            name: 'Bet365', isTop: true,
-            outcomes: [
-              { name: 'Home', odd: round(homeOdd, 2), impliedProbability: round(100 / homeOdd, 1) },
-              { name: 'Draw', odd: round(drawOdd, 2), impliedProbability: round(100 / drawOdd, 1) },
-              { name: 'Away', odd: round(awayOdd, 2), impliedProbability: round(100 / awayOdd, 1) },
-            ],
-          },
-          {
-            name: 'Pinnacle', isTop: true,
-            outcomes: [
-              { name: 'Home', odd: round(homeOdd * 1.02, 2), impliedProbability: round(100 / (homeOdd * 1.02), 1) },
-              { name: 'Draw', odd: round(drawOdd * 0.98, 2), impliedProbability: round(100 / (drawOdd * 0.98), 1) },
-              { name: 'Away', odd: round(awayOdd * 1.01, 2), impliedProbability: round(100 / (awayOdd * 1.01), 1) },
-            ],
-          },
-          {
-            name: '1xBet', isTop: true,
-            outcomes: [
-              { name: 'Home', odd: round(homeOdd * 1.04, 2), impliedProbability: round(100 / (homeOdd * 1.04), 1) },
-              { name: 'Draw', odd: round(drawOdd * 1.02, 2), impliedProbability: round(100 / (drawOdd * 1.02), 1) },
-              { name: 'Away', odd: round(awayOdd * 0.99, 2), impliedProbability: round(100 / (awayOdd * 0.99), 1) },
-            ],
-          },
-        ],
+        bookmakers: bookmakers.map(bk => ({
+          name: bk.name,
+          isTop: true,
+          outcomes: [
+            { name: 'Home', odd: round(homeOdd * bk.factor[0], 2), impliedProbability: round(100 / (homeOdd * bk.factor[0]), 1) },
+            { name: 'Draw', odd: round(drawOdd * bk.factor[1], 2), impliedProbability: round(100 / (drawOdd * bk.factor[1]), 1) },
+            { name: 'Away', odd: round(awayOdd * bk.factor[2], 2), impliedProbability: round(100 / (awayOdd * bk.factor[2]), 1) },
+          ],
+        })),
         bestOdds: {
           'Home': { odd: round(homeOdd * 1.04, 2), bookmaker: '1xBet', impliedProbability: round(100 / (homeOdd * 1.04), 1) },
           'Draw': { odd: round(drawOdd * 1.02, 2), bookmaker: '1xBet', impliedProbability: round(100 / (drawOdd * 1.02), 1) },
-          'Away': { odd: round(awayOdd * 1.01, 2), bookmaker: 'Pinnacle', impliedProbability: round(100 / (awayOdd * 1.01), 1) },
+          'Away': { odd: round(awayOdd * 1.03, 2), bookmaker: 'Unibet', impliedProbability: round(100 / (awayOdd * 1.03), 1) },
         },
       },
       'OU25': {
         market: 'OU25',
         label: 'Over/Under 2.5',
-        bookmakers: [
-          {
-            name: 'Bet365', isTop: true,
-            outcomes: [
-              { name: 'Over 2.5', odd: round(1.7 + (seed % 10) / 20, 2), impliedProbability: 0 },
-              { name: 'Under 2.5', odd: round(2.0 + (seed % 8) / 20, 2), impliedProbability: 0 },
-            ],
-          },
-        ],
-        bestOdds: {},
+        bookmakers: bookmakers.slice(0, 3).map((bk, i) => ({
+          name: bk.name,
+          isTop: true,
+          outcomes: [
+            { name: 'Over 2.5', odd: round(ou25Over * (1 + (i * 0.02)), 2), impliedProbability: round(100 / (ou25Over * (1 + (i * 0.02))), 1) },
+            { name: 'Under 2.5', odd: round(ou25Under * (1 - (i * 0.01)), 2), impliedProbability: round(100 / (ou25Under * (1 - (i * 0.01))), 1) },
+          ],
+        })),
+        bestOdds: {
+          'Over 2.5': { odd: round(ou25Over * 1.04, 2), bookmaker: '1xBet', impliedProbability: round(100 / (ou25Over * 1.04), 1) },
+          'Under 2.5': { odd: round(ou25Under, 2), bookmaker: 'Bet365', impliedProbability: round(100 / ou25Under, 1) },
+        },
       },
       'BTTS': {
         market: 'BTTS',
         label: 'Both Teams Score',
-        bookmakers: [
-          {
-            name: 'Bet365', isTop: true,
-            outcomes: [
-              { name: 'Yes', odd: round(1.65 + (seed % 12) / 20, 2), impliedProbability: 0 },
-              { name: 'No', odd: round(2.0 + (seed % 10) / 20, 2), impliedProbability: 0 },
-            ],
-          },
-        ],
-        bestOdds: {},
+        bookmakers: bookmakers.slice(0, 3).map((bk, i) => ({
+          name: bk.name,
+          isTop: true,
+          outcomes: [
+            { name: 'Yes', odd: round(bttsYes * (1 + (i * 0.015)), 2), impliedProbability: round(100 / (bttsYes * (1 + (i * 0.015))), 1) },
+            { name: 'No', odd: round(bttsNo * (1 - (i * 0.01)), 2), impliedProbability: round(100 / (bttsNo * (1 - (i * 0.01))), 1) },
+          ],
+        })),
+        bestOdds: {
+          'Yes': { odd: round(bttsYes * 1.03, 2), bookmaker: '1xBet', impliedProbability: round(100 / (bttsYes * 1.03), 1) },
+          'No': { odd: round(bttsNo, 2), bookmaker: 'Bet365', impliedProbability: round(100 / bttsNo, 1) },
+        },
       },
     },
     fetchedAt: new Date().toISOString(),
-    bookmakerCount: 3,
+    bookmakerCount: 4,
   };
-}
-
-// Fill in implied probabilities for demo data OU25/BTTS
-function fillImplied(data) {
-  for (const mk of Object.values(data.markets)) {
-    for (const bk of mk.bookmakers) {
-      for (const o of bk.outcomes) {
-        if (!o.impliedProbability && o.odd) {
-          o.impliedProbability = round(100 / o.odd, 1);
-        }
-      }
-    }
-  }
-  return data;
 }
 
 function hashCode(str) {
