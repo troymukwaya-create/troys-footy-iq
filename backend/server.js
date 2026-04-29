@@ -104,17 +104,30 @@ app.use(cors({
 app.use(express.json());
 
 // ─── HEALTH CHECK ───────────────────────────────────────────────────
-app.get('/health', (_req, res) => res.json({ 
-  status: 'ok', 
-  time: new Date().toISOString(),
-  env: {
-    hasDBUrl:    !!DB_URL,
-    hasApisports: isValidKey(APISPORTS_KEY),
-    hasFootballdata: isValidKey(FD_TOKEN),
-    hasClaude:   isValidKey(CLAUDE_KEY, 20),
-    nodeEnv:     process.env.NODE_ENV || 'development',
-  }
-}));
+app.get('/health', (_req, res) => {
+  const hasDb      = !!DB_URL;
+  const hasApi     = isValidKey(APISPORTS_KEY);
+  const hasFd      = isValidKey(FD_TOKEN);
+  const hasClaude  = isValidKey(CLAUDE_KEY, 20);
+
+  const warnings = [];
+  if (!hasDb)     warnings.push('DATABASE_URL not set — predictions will not be persisted');
+  if (!hasApi && !hasFd) warnings.push('No data API keys set — demo mode active');
+  if (!hasClaude) warnings.push('ANTHROPIC_API_KEY not set — AI analysis disabled');
+
+  res.json({
+    status: 'ok',
+    time: new Date().toISOString(),
+    env: {
+      hasDBUrl:       hasDb,
+      hasApisports:   !!hasApi,
+      hasFootballdata: !!hasFd,
+      hasClaude:      !!hasClaude,
+      nodeEnv:        process.env.NODE_ENV || 'development',
+    },
+    warnings: warnings.length ? warnings : null,
+  });
+});
 
 // ─── API STATUS ─────────────────────────────────────────────────────
 app.get('/api/status', (_req, res) => {
