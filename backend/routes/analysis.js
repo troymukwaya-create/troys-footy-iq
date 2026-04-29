@@ -63,6 +63,20 @@ router.get('/:matchId', async (req, res) => {
       });
 
       if (match) {
+        // Lifecycle State Check
+        if (match.status === 'FINISHED' || match.status === 'FT') {
+          return res.json({
+            status: 'FINISHED',
+            result: { home: match.score?.home, away: match.score?.away }
+          });
+        }
+        if (match.status === 'IN_PLAY' || match.status === 'PAUSED' || match.status === 'LIVE') {
+          return res.json({
+            status: 'LIVE',
+            liveStats: null // FD doesn't support live stats
+          });
+        }
+
         const homeTeamId = parseInt(match.homeTeam.id.replace('fd_t_', ''));
         const awayTeamId = parseInt(match.awayTeam.id.replace('fd_t_', ''));
         const leagueCode = match.league?.code;
@@ -117,6 +131,24 @@ router.get('/:matchId', async (req, res) => {
       });
 
       if (match) {
+        // Lifecycle State Check
+        if (match.status === 'FINISHED' || match.status === 'FT') {
+          return res.json({
+            status: 'FINISHED',
+            result: { home: match.score?.home, away: match.score?.away }
+          });
+        }
+        if (match.status === 'IN_PLAY' || match.status === 'PAUSED' || match.status === 'LIVE') {
+          const liveStats = await api.getFixtureStats(matchId).catch(err => {
+            console.error(`[analysis] APF live stats failed: ${err.message}`);
+            return null;
+          });
+          return res.json({
+            status: 'LIVE',
+            liveStats
+          });
+        }
+
         const numHomeId = match.homeTeam.id.replace('apf_t_', '');
         const numAwayId = match.awayTeam.id.replace('apf_t_', '');
 

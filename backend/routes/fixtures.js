@@ -45,123 +45,139 @@ const DEMO = [
     probability: { riskLevel: 'MEDIUM', probabilities: { home: 42, draw: 31, away: 27 }, topScorelines: [{score: '1-0'}, {score: '1-1'}] } },
 ];
 
-// GET /api/fixtures/all — MAIN ENDPOINT
+// Helper to get all fixtures data
+async function getAllFixturesData() {
+  const hasToken = process.env.FOOTBALLDATA_TOKEN?.length > 10;
+  const hasApsKey = api.hasKey();
+
+  // PRIMARY: football-data.org (free plan supports upcoming & recent fixtures)
+  if (hasToken) {
+    console.log('[fixtures] Fetching from football-data.org...');
+    const today = new Date().toISOString().split('T')[0];
+    const past  = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
+    const future = new Date(Date.now() + 9 * 86400000).toISOString().split('T')[0];
+
+    const [recent, upcoming] = await Promise.allSettled([
+      fd.client.get('matches', { params: { competitions: fd.LEAGUE_CODES.join(','), dateFrom: past, dateTo: today } }).then(r => (r.data.matches || []).map(fd.normalise)).catch(e => { console.error('[fixtures] FD recent error:', e.response?.status, e.message); return []; }),
+      fd.client.get('matches', { params: { competitions: fd.LEAGUE_CODES.join(','), dateFrom: today, dateTo: future } }).then(r => (r.data.matches || []).map(fd.normalise)).catch(e => { console.error('[fixtures] FD upcoming error:', e.response?.status, e.message); return []; }),
+    ]);
+
+    const recentData   = recent.status === 'fulfilled'   ? recent.value   : [];
+    const upcomingData = upcoming.status === 'fulfilled' ? upcoming.value : [];
+
+    const seen = new Set();
+    const fixtures = [];
+    for (const f of [...recentData, ...upcomingData]) {
+      if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); }
+    }
+    fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    fixtures.forEach(f => {
+      const cached = cacheService.get('full_analysis_' + f.id);
+      if (cached) {
+        if (cached.ai) {
+          f.ai_risk = cached.ai.risk_level || (cached.ai.confidence >= 70 ? 'LOW' : cached.ai.confidence >= 55 ? 'MEDIUM' : 'HIGH');
+          f.ai_pick = cached.ai.recommendedPick || cached.ai.recommendedMarket;
+        }
+        if (cached.probability) {
+          f.probability = cached.probability;
+        }
+      }
+      if (!f.probability) {
+        try {
+          const pred = predictStatic({}, {});
+          f.probability = {
+            riskLevel: pred.riskLevel,
+            probabilities: pred.probabilities,
+            topScorelines: (pred.topScorelines || []).slice(0, 2),
+            model: pred.model || 'hybrid-dixon-coles-v2',
+          };
+        } catch { /* ignore prediction errors */ }
+      }
+    });
+
+    if (fixtures.length > 0) {
+      return { fixtures, source: 'footballdata' };
+    }
+  }
+
+  // SECONDARY: api-sports
+  if (hasApsKey) {
+    console.log('[fixtures] Fetching from API-Sports...');
+    const [recent, todayMatches, upcoming] = await Promise.all([
+      api.getRecentFixtures(2),
+      api.getTodayFixtures(),
+      api.getUpcomingFixtures(14),
+    ]);
+    const seen = new Set();
+    const fixtures = [];
+    for (const f of [...recent, ...todayMatches, ...upcoming]) {
+      if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); }
+    }
+    fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    fixtures.forEach(f => {
+      const cached = cacheService.get('full_analysis_' + f.id);
+      if (cached) {
+        if (cached.ai) {
+          f.ai_risk = cached.ai.risk_level || (cached.ai.confidence >= 70 ? 'LOW' : cached.ai.confidence >= 55 ? 'MEDIUM' : 'HIGH');
+          f.ai_pick = cached.ai.recommendedPick || cached.ai.recommendedMarket;
+        }
+        if (cached.probability) {
+          f.probability = cached.probability;
+        }
+      }
+    });
+    if (fixtures.length > 0) {
+      return { fixtures, source: 'apisports' };
+    }
+  }
+
+  // FALLBACK
+  return { fixtures: DEMO, source: 'demo' };
+}
+
+// GET /api/fixtures/all
 router.get('/all', async (req, res) => {
   try {
-    const hasToken = process.env.FOOTBALLDATA_TOKEN?.length > 10;
-    const hasApsKey = api.hasKey();
-
-    // PRIMARY: football-data.org (free plan supports upcoming & recent fixtures)
-    if (hasToken) {
-      console.log('[fixtures/all] Fetching from football-data.org...');
-      const today = new Date().toISOString().split('T')[0];
-      const past  = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
-      const future = new Date(Date.now() + 9 * 86400000).toISOString().split('T')[0]; // Max allowed for FD free tier ~10 days
-
-      const [recent, upcoming] = await Promise.allSettled([
-        fd.client.get('matches', { params: { competitions: fd.LEAGUE_CODES.join(','), dateFrom: past, dateTo: today } }).then(r => (r.data.matches || []).map(fd.normalise)).catch(e => { console.error('[fixtures/all] FD recent error:', e.response?.status, e.message); return []; }),
-        fd.client.get('matches', { params: { competitions: fd.LEAGUE_CODES.join(','), dateFrom: today, dateTo: future } }).then(r => (r.data.matches || []).map(fd.normalise)).catch(e => { console.error('[fixtures/all] FD upcoming error:', e.response?.status, e.message); return []; }),
-      ]);
-
-      const recentData   = recent.status === 'fulfilled'   ? recent.value   : [];
-      const upcomingData = upcoming.status === 'fulfilled' ? upcoming.value : [];
-
-      const seen = new Set();
-      const fixtures = [];
-      for (const f of [...recentData, ...upcomingData]) {
-        if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); }
-      }
-      fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
-      
-      // Inject AI Risk indicators & Probabilities from cache or engine
-      fixtures.forEach(f => {
-        const cached = cacheService.get('full_analysis_' + f.id);
-        if (cached) {
-          if (cached.ai) {
-            f.ai_risk = cached.ai.risk_level || (cached.ai.confidence >= 70 ? 'LOW' : cached.ai.confidence >= 55 ? 'MEDIUM' : 'HIGH');
-            f.ai_pick = cached.ai.recommendedPick || cached.ai.recommendedMarket;
-          }
-          if (cached.probability) {
-            f.probability = cached.probability;
-          }
-        }
-        // Fallback: generate from hybrid engine if no cached probability
-        if (!f.probability) {
-          try {
-            const pred = predictStatic({}, {});
-            f.probability = {
-              riskLevel: pred.riskLevel,
-              probabilities: pred.probabilities,
-              topScorelines: (pred.topScorelines || []).slice(0, 2),
-              model: pred.model || 'hybrid-dixon-coles-v2',
-            };
-          } catch { /* ignore prediction errors */ }
-        }
-      });
-
-      console.log('[fixtures/all] football-data.org — Total:', fixtures.length,
-        '| Recent:', recentData.length, '| Upcoming:', upcomingData.length);
-
-      if (fixtures.length > 0) {
-        return res.json({ fixtures, source: 'footballdata', total: fixtures.length });
-      }
-      console.log('[fixtures/all] football-data.org returned 0, trying apisports...');
-    }
-
-    // SECONDARY: api-sports
-    if (hasApsKey) {
-      console.log('[fixtures/all] Fetching from API-Sports...');
-      const [recent, todayMatches, upcoming] = await Promise.all([
-        api.getRecentFixtures(2),
-        api.getTodayFixtures(),
-        api.getUpcomingFixtures(14),
-      ]);
-      const seen = new Set();
-      const fixtures = [];
-      for (const f of [...recent, ...todayMatches, ...upcoming]) {
-        if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); }
-      }
-      fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      fixtures.forEach(f => {
-        const cached = cacheService.get('full_analysis_' + f.id);
-        if (cached) {
-          if (cached.ai) {
-            f.ai_risk = cached.ai.risk_level || (cached.ai.confidence >= 70 ? 'LOW' : cached.ai.confidence >= 55 ? 'MEDIUM' : 'HIGH');
-            f.ai_pick = cached.ai.recommendedPick || cached.ai.recommendedMarket;
-          }
-          if (cached.probability) {
-            f.probability = cached.probability;
-          }
-        }
-      });
-      console.log('[fixtures/all] API-Sports Total:', fixtures.length);
-      if (fixtures.length > 0) {
-        return res.json({ fixtures, source: 'apisports', total: fixtures.length });
-      }
-    }
-
-    // FALLBACK: demo data
-    if (!hasToken && !hasApsKey) {
-      console.log('[fixtures/all] No API keys — serving demo');
-    } else {
-      console.log('[fixtures/all] All APIs returned 0 — using demo');
-    }
-    res.json({ fixtures: DEMO, source: 'demo', total: DEMO.length });
-
+    const data = await getAllFixturesData();
+    res.json({ fixtures: data.fixtures, source: data.source, total: data.fixtures.length });
   } catch (err) {
     console.error('[fixtures/all] Error:', err.message);
     res.json({ fixtures: DEMO, source: 'demo_error', total: DEMO.length });
   }
 });
 
+// GET /api/fixtures/upcoming
+router.get('/upcoming', async (req, res) => {
+  try {
+    const data = await getAllFixturesData();
+    const filtered = data.fixtures.filter(f => f.status === 'SCHEDULED' || f.status === 'NS');
+    res.json({ fixtures: filtered, source: data.source, total: filtered.length });
+  } catch (err) {
+    res.json({ fixtures: DEMO.filter(f => f.status === 'SCHEDULED'), source: 'demo_error', total: 0 });
+  }
+});
+
+// GET /api/fixtures/finished
+router.get('/finished', async (req, res) => {
+  try {
+    const data = await getAllFixturesData();
+    const filtered = data.fixtures.filter(f => f.status === 'FINISHED' || f.status === 'FT');
+    res.json({ fixtures: filtered, source: data.source, total: filtered.length });
+  } catch (err) {
+    res.json({ fixtures: DEMO.filter(f => f.status === 'FINISHED'), source: 'demo_error', total: 0 });
+  }
+});
+
 // GET /api/fixtures/live
 router.get('/live', async (req, res) => {
   try {
-    const live = api.hasKey() ? await api.getLiveFixtures() : DEMO.filter(f => f.status === 'IN_PLAY');
+    const live = api.hasKey() ? await api.getLiveFixtures() : DEMO.filter(f => f.status === 'IN_PLAY' || f.status === 'PAUSED' || f.status === 'LIVE');
     res.json(live);
   } catch (err) { res.json([]); }
 });
+
 
 router.get('/team/:id',          async (req, res) => { try { res.json(await api.getTeamInfo(req.params.id) || {}); } catch(e) { res.json({}); } });
 router.get('/squad/:id',         async (req, res) => { try { res.json(await api.getSquad(req.params.id) || []); } catch(e) { res.json([]); } });

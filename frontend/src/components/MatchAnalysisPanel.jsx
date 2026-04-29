@@ -151,7 +151,41 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
         </div>
       )}
 
-      {/* Tabs — only render when we have probability data */}
+      {/* Live Stats — only render for live matches */}
+      {!isLoading && isLive && analysis?.liveStats && (
+        <div className="card animate-fade-in" style={{ padding: 16, marginTop: 12 }}>
+          <div className="section-title" style={{ marginBottom: 16 }}>Live Match Statistics</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {Object.keys(analysis.liveStats[Object.keys(analysis.liveStats)[0]] || {}).map((statType, idx) => {
+              const teamNames = Object.keys(analysis.liveStats);
+              const hName = teamNames[0];
+              const aName = teamNames[1];
+              const hVal = analysis.liveStats[hName]?.[statType] ?? 0;
+              const aVal = analysis.liveStats[aName]?.[statType] ?? 0;
+              
+              return (
+                <StatRow 
+                  key={idx} 
+                  label={statType} 
+                  home={hVal} 
+                  away={aVal}
+                  inverted={statType.toLowerCase().includes('fouls') || statType.toLowerCase().includes('cards') || statType.toLowerCase().includes('offsides')}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!isLoading && isLive && !analysis?.liveStats && (
+        <div className="card animate-fade-in" style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-tertiary)', marginTop: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>Live Match Stats</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+            Real-time tracking is currently unavailable for this fixture.
+          </div>
+        </div>
+      )}
+
       {!isLoading && prob && dataQuality !== 'INSUFFICIENT' && (
         <>
           <div style={{ display: 'flex', gap: 4, marginBottom: 16, padding: 4, background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)' }}>
