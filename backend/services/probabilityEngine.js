@@ -1,6 +1,9 @@
 // ─── POISSON-BASED PROBABILITY ENGINE ──────────────────────────────
 // Core probability modeling for football match prediction.
 // Uses the Dixon-Coles adjusted Poisson model with home advantage factor.
+// Enhanced with ensemble blending (Poisson + ML residual + Market consensus).
+
+import { ensemblePredict, applyMLCorrection, oddsToImpliedProbs } from '../engine/ensemble.js';
 
 const HOME_ADVANTAGE = 1.12; // Historical home advantage multiplier (~12% boost)
 const LEAGUE_AVG_GOALS = 1.35; // Average goals per team per match across top leagues
@@ -189,13 +192,55 @@ export function generateProbabilities(lambdaHome, lambdaAway) {
  * Build a complete market analysis from team stats.
  * This is the main entry point for probability calculations.
  *
+ * Pipeline:
+ *   1. Compute expected goals (Poisson λ)
+ *   2. Generate scoreline matrix → baseline probabilities
+ *   3. Apply ensemble (Poisson + ML residual + market consensus)
+ *   4. Build ranked market list with risk tags
+ *
  * @param {Object} homeStats - Normalized home team stats
  * @param {Object} awayStats - Normalized away team stats
+ * @param {Object} context   - Optional: { odds, h2h, homePosition, awayPosition }
  * @returns {Object} Full probability output
  */
-export function analyzeMatch(homeStats, awayStats) {
+export function analyzeMatch(homeStats, awayStats, context = {}) {
   const { lambdaHome, lambdaAway } = computeExpectedGoals(homeStats, awayStats);
   const result = generateProbabilities(lambdaHome, lambdaAway);
+
+  // ─── Ensemble: blend Poisson baseline with ML correction ───────
+  let finalProbs = result.probabilities;
+  let ensembleMethod = 'poisson_only';
+
+  try {
+    // ML residual correction (rule-based for now, XGBoost later)
+    const mlProbs = applyMLCorrection(result.probabilities, homeStats, awayStats, {
+      lambdaHome, lambdaAway,
+      h2h: context.h2h,
+    });
+
+    // Market consensus (when odds available)
+    let marketProbs = null;
+    if (context.odds?.home && context.odds?.draw && context.odds?.away) {
+      marketProbs = oddsToImpliedProbs(context.odds);
+    }
+
+    const ensemble = ensemblePredict(result.probabilities, mlProbs, marketProbs, {
+      applyCalibration: true,
+    });
+
+    finalProbs = { home: ensemble.home, draw: ensemble.draw, away: ensemble.away };
+    ensembleMethod = ensemble.method || 'ensemble';
+  } catch (e) {
+    // Ensemble failed — use Poisson baseline (graceful degradation)
+    ensembleMethod = 'poisson_only';
+  }
+
+  // Override result probabilities with ensemble output
+  result.probabilities = finalProbs;
+
+  // Recalculate risk level based on ensemble probabilities
+  const maxProb = Math.max(finalProbs.home, finalProbs.draw, finalProbs.away);
+  result.riskLevel = maxProb >= 65 ? 'LOW' : maxProb >= 45 ? 'MEDIUM' : 'HIGH';
 
   // Build ranked market list with risk tags
   const markets = buildMarketList(result);
@@ -207,6 +252,7 @@ export function analyzeMatch(homeStats, awayStats) {
     lowRiskMarkets: markets.filter(m => m.risk === 'LOW'),
     mediumRiskMarkets: markets.filter(m => m.risk === 'MEDIUM'),
     highRiskMarkets: markets.filter(m => m.risk === 'HIGH'),
+    ensembleMethod,
   };
 }
 
