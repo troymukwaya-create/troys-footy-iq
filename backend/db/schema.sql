@@ -154,3 +154,76 @@ CREATE INDEX IF NOT EXISTS idx_team_stats_team ON team_season_stats(team_id, sea
 CREATE INDEX IF NOT EXISTS idx_h2h_teams ON h2h(team_a, team_b);
 CREATE INDEX IF NOT EXISTS idx_cache_key ON api_cache(cache_key);
 CREATE INDEX IF NOT EXISTS idx_cache_expires ON api_cache(expires_at);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- PREDICTION SYSTEM TABLES (v3)
+-- ═══════════════════════════════════════════════════════════════════
+
+-- ─── PREDICTIONS LOG ────────────────────────────────────────────────
+-- Every pre-match prediction stored BEFORE kickoff for evaluation.
+CREATE TABLE IF NOT EXISTS predictions (
+  id SERIAL PRIMARY KEY,
+  fixture_id INT REFERENCES fixtures(id),
+  model_version VARCHAR(30) NOT NULL DEFAULT 'v1',
+  prob_home FLOAT NOT NULL,
+  prob_draw FLOAT NOT NULL,
+  prob_away FLOAT NOT NULL,
+  lambda_home FLOAT,
+  lambda_away FLOAT,
+  risk_level VARCHAR(10),
+  confidence FLOAT,
+  features JSONB,
+  actual_result VARCHAR(10), -- filled after match: 'HOME','DRAW','AWAY'
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  evaluated_at TIMESTAMPTZ
+);
+
+-- ─── MODEL PERFORMANCE RUNS ────────────────────────────────────────
+-- Each backtest or weekly evaluation stores a summary row.
+CREATE TABLE IF NOT EXISTS model_runs (
+  id SERIAL PRIMARY KEY,
+  model_version VARCHAR(30) NOT NULL,
+  run_type VARCHAR(20) NOT NULL, -- 'backtest', 'weekly_eval', 'retrain'
+  matches_evaluated INT DEFAULT 0,
+  accuracy FLOAT,
+  brier_score FLOAT,
+  log_loss FLOAT,
+  ece FLOAT,
+  details JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── ODDS HISTORY ───────────────────────────────────────────────────
+-- Snapshots of bookmaker odds for CLV tracking and value backtesting.
+CREATE TABLE IF NOT EXISTS odds_history (
+  id SERIAL PRIMARY KEY,
+  fixture_id INT REFERENCES fixtures(id),
+  bookmaker VARCHAR(50) NOT NULL,
+  market VARCHAR(20) NOT NULL,
+  outcome VARCHAR(30) NOT NULL,
+  odds_value FLOAT NOT NULL,
+  implied_prob FLOAT,
+  captured_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(fixture_id, bookmaker, market, outcome, captured_at)
+);
+
+-- ─── FITTED MODEL PARAMETERS ───────────────────────────────────────
+-- Stores serialized model weights, calibration curves, Dixon-Coles params.
+CREATE TABLE IF NOT EXISTS model_params (
+  id SERIAL PRIMARY KEY,
+  model_version VARCHAR(30) UNIQUE NOT NULL,
+  param_type VARCHAR(30) NOT NULL, -- 'dixon_coles', 'xgboost', 'calibration'
+  params JSONB NOT NULL,
+  metrics JSONB, -- evaluation metrics at time of fitting
+  is_active BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── PREDICTION SYSTEM INDEXES ──────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_predictions_fixture ON predictions(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_predictions_model ON predictions(model_version);
+CREATE INDEX IF NOT EXISTS idx_predictions_unevaluated ON predictions(actual_result) WHERE actual_result IS NULL;
+CREATE INDEX IF NOT EXISTS idx_model_runs_version ON model_runs(model_version, created_at);
+CREATE INDEX IF NOT EXISTS idx_odds_history_fixture ON odds_history(fixture_id, market);
+CREATE INDEX IF NOT EXISTS idx_model_params_active ON model_params(is_active) WHERE is_active = true;
+

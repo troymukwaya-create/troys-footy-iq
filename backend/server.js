@@ -150,6 +150,25 @@ safeMount('/api/analysis', analysisRouter, 'analysis');
 safeMount('/api/engine', engineRouter, 'engine');
 safeMount('/api/odds', oddsRouter, 'odds');
 
+// ─── MODEL PERFORMANCE ENDPOINT ─────────────────────────────────────
+app.get('/api/model/performance', async (_req, res) => {
+  try {
+    const { getModelPerformance } = await import('./pipeline/evaluate.js');
+    const runs = await getModelPerformance(20);
+    const predCount = await query('SELECT COUNT(*) as total, COUNT(actual_result) as evaluated FROM predictions');
+    res.json({
+      model_runs: runs,
+      predictions: {
+        total: parseInt(predCount.rows[0]?.total || 0),
+        evaluated: parseInt(predCount.rows[0]?.evaluated || 0),
+        pending: parseInt(predCount.rows[0]?.total || 0) - parseInt(predCount.rows[0]?.evaluated || 0),
+      },
+    });
+  } catch (err) {
+    res.json({ model_runs: [], predictions: { total: 0, evaluated: 0, pending: 0 }, error: err.message });
+  }
+});
+
 // ─── SEED INITIAL DATA ─────────────────────────────────────────────
 async function seedInitialData() {
   console.log('Seeding initial data...');

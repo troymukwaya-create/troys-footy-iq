@@ -26,6 +26,8 @@ import {
   errorResponse,
 } from '../services/normalizer.js';
 import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../services/probabilityEngine.js';
+import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
+import { logPrediction } from '../pipeline/evaluate.js';
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
 
@@ -256,6 +258,19 @@ router.get('/:matchId', async (req, res) => {
       // No usable data — do NOT predict
       dataQuality = 'INSUFFICIENT';
       console.warn(`[analysis] ${matchId} SKIPPING prediction: ${validation.issues.join(', ')}`);
+    }
+
+    // ─── STEP 4b: Log prediction for continuous learning ────────
+    if (probabilityResult && match.status !== 'FINISHED') {
+      try {
+        const features = computePreMatchFeatures(homeStats, awayStats, {
+          h2h: h2hData || emptyH2H(),
+        });
+        // Fire-and-forget — don't block the response
+        logPrediction(matchId, probabilityResult, features).catch(() => {});
+      } catch (logErr) {
+        // Non-critical: prediction logging should never break analysis
+      }
     }
 
     // ─── STEP 5: AI analysis (only if we have data) ─────────────

@@ -4,6 +4,7 @@ import dataRouter from '../services/dataRouter.js';
 import { broadcast } from '../server.js';
 import { FD_LEAGUES } from '../constants/leagues.js';
 import { processEvent, predictInPlay, registerMatch, getMatchState, predictPreMatch } from '../engine/inferenceEngine.js';
+import { evaluateStoredPredictions } from '../pipeline/evaluate.js';
 
 let previousScores = {};
 
@@ -150,6 +151,16 @@ export default function initJobs() {
     for (const code of Object.keys(FD_LEAGUES)) {
       await updateAndBroadcastStandings(code);
       await new Promise(r => setTimeout(r, 7000));
+    }
+  });
+  // Weekly model evaluation — every Monday at 03:00
+  cron.schedule('0 3 * * 1', async () => {
+    console.log('[SCHEDULER] Running weekly model evaluation...');
+    try {
+      const metrics = await evaluateStoredPredictions();
+      console.log('[SCHEDULER] Evaluation complete:', metrics);
+    } catch (err) {
+      console.error('[SCHEDULER] Evaluation failed:', err.message);
     }
   });
 }
