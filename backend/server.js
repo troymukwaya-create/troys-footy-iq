@@ -59,6 +59,7 @@ import aiRouter from './routes/ai.js';
 import matchDataRouter from './routes/matchData.js';
 import analysisRouter from './routes/analysis.js';
 import engineRouter from './routes/engine.js';
+import oddsRouter from './routes/odds.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -147,6 +148,7 @@ safeMount('/api/ai', aiRouter, 'ai');
 safeMount('/api/match-data', matchDataRouter, 'match-data');
 safeMount('/api/analysis', analysisRouter, 'analysis');
 safeMount('/api/engine', engineRouter, 'engine');
+safeMount('/api/odds', oddsRouter, 'odds');
 
 // ─── SEED INITIAL DATA ─────────────────────────────────────────────
 async function seedInitialData() {

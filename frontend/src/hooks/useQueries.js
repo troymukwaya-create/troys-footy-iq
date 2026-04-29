@@ -137,4 +137,31 @@ export function useStatus() {
   });
 }
 
+// ─── ODDS ────────────────────────────────────────────────────────────
+
+export function useOdds(fixtureId) {
+  return useQuery({
+    queryKey: ['odds', fixtureId],
+    queryFn: async () => {
+      const { data } = await api.get(`/odds/${fixtureId}`);
+      return data?.data || null;
+    },
+    enabled: !!fixtureId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+export function useValueEdges(fixtureId) {
+  return useQuery({
+    queryKey: ['value-edges', fixtureId],
+    queryFn: async () => {
+      const { data } = await api.get(`/odds/${fixtureId}/value`);
+      return data?.data || null;
+    },
+    enabled: !!fixtureId,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 export { api };

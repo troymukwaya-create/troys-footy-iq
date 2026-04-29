@@ -75,4 +75,48 @@ export const useStore = create((set, get) => ({
   // Odds format
   oddsFormat: 'decimal',
   setOddsFormat: (format) => set({ oddsFormat: format }),
+
+  // ─── PARLAY BUILDER ─────────────────────────────────────────────
+  parlaySelections: [],
+
+  addParlaySelection: (selection) => set(state => {
+    // Prevent duplicate: same fixture + same outcome
+    const exists = state.parlaySelections.some(
+      s => s.fixtureId === selection.fixtureId && s.outcome === selection.outcome && s.market === selection.market
+    );
+    if (exists) return state;
+    // Only one selection per fixture per market
+    const filtered = state.parlaySelections.filter(
+      s => !(s.fixtureId === selection.fixtureId && s.market === selection.market)
+    );
+    return { parlaySelections: [...filtered, selection] };
+  }),
+
+  removeParlaySelection: (fixtureId, market) => set(state => ({
+    parlaySelections: state.parlaySelections.filter(
+      s => !(s.fixtureId === fixtureId && s.market === market)
+    ),
+  })),
+
+  clearParlay: () => set({ parlaySelections: [] }),
+
+  getParlayOdds: () => {
+    const selections = get().parlaySelections;
+    if (selections.length === 0) return { totalOdds: 0, impliedProb: 0, risk: 'N/A' };
+    let totalOdds = 1;
+    let combinedProb = 1;
+    for (const s of selections) {
+      const odd = parseFloat(s.odd) || 1;
+      totalOdds *= odd;
+      combinedProb *= (1 / odd);
+    }
+    const impliedProb = parseFloat((combinedProb * 100).toFixed(1));
+    const risk = impliedProb > 40 ? 'LOW' : impliedProb > 20 ? 'MEDIUM' : impliedProb > 8 ? 'HIGH' : 'VERY HIGH';
+    return {
+      totalOdds: parseFloat(totalOdds.toFixed(2)),
+      impliedProb,
+      risk,
+      count: selections.length,
+    };
+  },
 }));

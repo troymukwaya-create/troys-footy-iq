@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { LiveOddsPanel } from './LiveOddsPanel.jsx';
 
 /**
  * MatchAnalysisPanel — Center panel showing full match analysis.
@@ -292,41 +293,10 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
             </div>
           )}
 
-          {/* ─── Markets Tab ───────────────────────────────────────── */}
+          {/* ─── Markets Tab (Live Odds) ──────────────────────────── */}
           {activeTab === 'markets' && (
-            <div className="glass-panel rounded-xl p-4 animate-fade-in">
-              <h3 className="text-[10px] uppercase tracking-widest text-cyan-400/50 font-bold mb-3">All Markets</h3>
-              <div className="space-y-2">
-                {(prob.markets || []).map((m, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-white/[0.03] last:border-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-1.5 h-1.5 rounded-full ${
-                        m.risk === 'LOW' ? 'bg-emerald-400' :
-                        m.risk === 'MEDIUM' ? 'bg-amber-400' :
-                        'bg-red-400'
-                      }`} />
-                      <span className="text-xs text-white/70">{m.name}</span>
-                      <span className="text-[9px] text-white/20">{m.category}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 prob-bar">
-                        <div
-                          className="prob-bar-fill"
-                          style={{
-                            width: `${Math.min(m.probability, 100)}%`,
-                            background: m.risk === 'LOW' ? '#22c55e' : m.risk === 'MEDIUM' ? '#f59e0b' : '#ef4444',
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold w-10 text-right" style={{
-                        color: m.risk === 'LOW' ? '#4ade80' : m.risk === 'MEDIUM' ? '#fbbf24' : '#f87171',
-                      }}>
-                        {m.probability}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="animate-fade-in">
+              <LiveOddsPanel fixture={fixture} />
             </div>
           )}
         </>

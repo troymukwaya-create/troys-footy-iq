@@ -12,6 +12,7 @@ import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { MatchAnalysisPanel } from './components/MatchAnalysisPanel.jsx';
 import { AIInsightsPanel } from './components/AIInsightsPanel.jsx';
+import { ParlayBuilder } from './components/ParlayBuilder.jsx';
 
 export default function App() {
   useRealTime();
@@ -233,6 +234,9 @@ export default function App() {
       </div>
 
       <MobileNav activeTab={mobileTab} onTabChange={setMobileTab} />
+
+      {/* Parlay Builder Overlay */}
+      <ParlayBuilder />
 
       {/* Footer */}
       <div className="px-4 py-2.5 bg-[#080c16] border-t border-white/[0.04] text-[9px] text-white/20 text-center z-10">
