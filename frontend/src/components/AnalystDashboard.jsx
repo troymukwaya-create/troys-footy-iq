@@ -3,7 +3,7 @@ import { useBriefing } from '../hooks/useQueries.js';
 
 /**
  * AnalystDashboard — Center panel when no fixture is selected.
- * Shows daily briefing, live matches overview, and upcoming fixtures.
+ * Structured sections: Briefing → Live → Upcoming → Results.
  */
 export function AnalystDashboard({ fixtures = [], onSelect }) {
   const { data: briefing } = useBriefing(fixtures);
@@ -26,210 +26,148 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
   );
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-5">
-      {/* Header */}
-      <div className="animate-fade-in">
-        <h1 className="text-xl md:text-2xl font-headline font-black tracking-tight">
-          <span className="text-cyan-400">Analytics</span> Dashboard
+    <div style={{ padding: '24px', maxWidth: 960, margin: '0 auto' }}>
+      {/* Page Header */}
+      <div className="animate-fade-in" style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 4 }}>
+          Dashboard
         </h1>
-        <p className="text-xs text-white/30 mt-1">
+        <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
           {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </div>
 
       {/* Daily Briefing */}
       {briefing && (
-        <div className="glass-panel-solid rounded-2xl p-5 animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg">📋</span>
-            <h2 className="text-xs font-black uppercase tracking-widest text-cyan-400/60">Daily Briefing</h2>
-          </div>
+        <div className="card animate-fade-in" style={{ padding: 20, marginBottom: 24 }}>
+          <h2 className="section-title" style={{ marginBottom: 12 }}>Today's Insights</h2>
 
           {briefing.headline && (
-            <p className="text-sm text-white/70 font-medium mb-4">{briefing.headline}</p>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 16 }}>{briefing.headline}</p>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+            {briefing.topPick && (
+              <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--success-muted)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--success)', letterSpacing: '0.06em', marginBottom: 4 }}>TOP PICK</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{briefing.topPick.fixture}</div>
+                {briefing.topPick.market && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{briefing.topPick.market}</div>}
+                {briefing.topPick.confidence && (
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--success)', marginTop: 4 }}>{briefing.topPick.confidence}%</div>
+                )}
+              </div>
+            )}
             {briefing.gameOfTheDay && (
-              <div className="rounded-xl p-3 bg-cyan-500/[0.05] border border-cyan-500/10">
-                <div className="text-[9px] uppercase tracking-widest text-cyan-400/40 font-bold mb-1">Game of the Day</div>
-                <div className="text-xs font-bold text-white/80 mb-1">{briefing.gameOfTheDay.fixture}</div>
-                <div className="text-[10px] text-white/40">{briefing.gameOfTheDay.why}</div>
+              <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--accent-muted)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em', marginBottom: 4 }}>GAME OF THE DAY</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{briefing.gameOfTheDay.fixture}</div>
+                {briefing.gameOfTheDay.why && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{briefing.gameOfTheDay.why}</div>}
               </div>
             )}
             {briefing.avoid && (
-              <div className="rounded-xl p-3 bg-red-500/[0.05] border border-red-500/10">
-                <div className="text-[9px] uppercase tracking-widest text-red-400/40 font-bold mb-1">Avoid</div>
-                <div className="text-xs font-bold text-white/80 mb-1">{briefing.avoid.fixture}</div>
-                <div className="text-[10px] text-white/40">{briefing.avoid.why}</div>
+              <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--danger-muted)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--danger)', letterSpacing: '0.06em', marginBottom: 4 }}>AVOID</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{briefing.avoid.fixture}</div>
+                {briefing.avoid.why && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{briefing.avoid.why}</div>}
               </div>
             )}
           </div>
 
-          {briefing.topPick && (
-            <div className="mt-3 rounded-xl p-3 bg-emerald-500/[0.05] border border-emerald-500/10">
-              <div className="text-[9px] uppercase tracking-widest text-emerald-400/40 font-bold mb-1">Top Pick</div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-white/80">{briefing.topPick.fixture}</span>
-                  <span className="text-xs text-white/40 ml-2">— {briefing.topPick.market}</span>
-                </div>
-                {briefing.topPick.confidence && (
-                  <span className="text-xs font-bold text-emerald-400">{briefing.topPick.confidence}%</span>
-                )}
-              </div>
-              {briefing.topPick.reasoning && (
-                <div className="text-[10px] text-white/30 mt-1">{briefing.topPick.reasoning}</div>
-              )}
-            </div>
-          )}
-
           {briefing.summary && (
-            <p className="text-[10px] text-white/25 mt-3">{briefing.summary}</p>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>{briefing.summary}</p>
           )}
         </div>
       )}
 
       {/* Live Matches */}
       {liveMatches.length > 0 && (
-        <div className="animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <h2 className="text-xs font-black uppercase tracking-widest text-emerald-400/60">Live Now</h2>
-            <span className="text-[10px] text-white/20">{liveMatches.length}</span>
+        <div className="animate-fade-in" style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
+            <h2 className="section-title" style={{ color: 'var(--success)' }}>Live Now</h2>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{liveMatches.length}</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {liveMatches.map(f => (
-              <LiveMatchCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} />
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 8 }}>
+            {liveMatches.map(f => <DashboardMatchCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} variant="live" />)}
           </div>
         </div>
       )}
 
       {/* Upcoming Today */}
       {upcomingToday.length > 0 && (
-        <div className="animate-fade-in">
-          <h2 className="text-xs font-black uppercase tracking-widest text-white/30 mb-3">Coming Up Today</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {upcomingToday.slice(0, 8).map(f => (
-              <UpcomingCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} />
-            ))}
+        <div className="animate-fade-in" style={{ marginBottom: 24 }}>
+          <h2 className="section-title" style={{ marginBottom: 12 }}>Coming Up</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 8 }}>
+            {upcomingToday.slice(0, 8).map(f => <DashboardMatchCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} variant="upcoming" />)}
           </div>
         </div>
       )}
 
       {/* Recent Results */}
       {recentResults.length > 0 && (
-        <div className="animate-fade-in">
-          <h2 className="text-xs font-black uppercase tracking-widest text-white/30 mb-3">Recent Results</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {recentResults.map(f => (
-              <ResultCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} />
-            ))}
+        <div className="animate-fade-in" style={{ marginBottom: 24 }}>
+          <h2 className="section-title" style={{ marginBottom: 12 }}>Recent Results</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 8 }}>
+            {recentResults.map(f => <DashboardMatchCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} variant="result" />)}
           </div>
         </div>
       )}
 
       {/* Empty State */}
       {fixtures.length === 0 && (
-        <div className="text-center py-20 text-white/30">
-          <div className="text-4xl mb-3">⚽</div>
-          <div className="text-sm font-semibold mb-1">No fixtures available</div>
-          <div className="text-xs text-white/20">Check that the backend is running at localhost:3001</div>
+        <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-tertiary)' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⚽</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No fixtures available</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Check that the backend is running</div>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────
+function DashboardMatchCard({ fixture, onClick, variant }) {
+  const isLive = variant === 'live';
+  const isResult = variant === 'result';
+  const homeWon = isResult && (fixture.score?.home ?? 0) > (fixture.score?.away ?? 0);
+  const awayWon = isResult && (fixture.score?.away ?? 0) > (fixture.score?.home ?? 0);
 
-function LiveMatchCard({ fixture, onClick }) {
-  return (
-    <div
-      onClick={onClick}
-      className="match-card glass-panel rounded-xl p-3 border border-emerald-500/10 cursor-pointer"
-    >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] text-white/25">{fixture.league?.name || ''}</span>
-        <div className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[9px] text-emerald-400 font-bold">{fixture.minute ? `${fixture.minute}'` : 'LIVE'}</span>
-        </div>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {fixture.homeTeam?.crest && <img src={fixture.homeTeam.crest} alt="" className="w-5 h-5 object-contain" onError={e => e.target.style.display='none'} />}
-          <span className="text-xs font-semibold text-white/80 truncate">{fixture.homeTeam?.name || 'Home'}</span>
-        </div>
-        <span className="text-sm font-black text-emerald-400 px-2">
-          {fixture.score?.home ?? 0} - {fixture.score?.away ?? 0}
-        </span>
-        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <span className="text-xs font-semibold text-white/80 truncate text-right">{fixture.awayTeam?.name || 'Away'}</span>
-          {fixture.awayTeam?.crest && <img src={fixture.awayTeam.crest} alt="" className="w-5 h-5 object-contain" onError={e => e.target.style.display='none'} />}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function UpcomingCard({ fixture, onClick }) {
   const time = fixture.date
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '';
 
   return (
-    <div onClick={onClick} className="match-card glass-panel rounded-xl p-3 border border-white/[0.03] cursor-pointer">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] text-white/25">{fixture.league?.name || ''}</span>
-        <span className="text-[9px] text-white/20">{time}</span>
+    <div onClick={onClick} className="match-card card" style={{ padding: '12px 16px', cursor: 'pointer', opacity: isResult ? 0.75 : 1 }}>
+      {/* League + Time */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{fixture.league?.name || ''}</span>
+        {isLive ? (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--success)', fontWeight: 700 }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
+            {fixture.minute ? `${fixture.minute}'` : 'LIVE'}
+          </span>
+        ) : isResult ? (
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>FT</span>
+        ) : (
+          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{time}</span>
+        )}
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {fixture.homeTeam?.crest && <img src={fixture.homeTeam.crest} alt="" className="w-5 h-5 object-contain" onError={e => e.target.style.display='none'} />}
-          <span className="text-xs text-white/60 truncate">{fixture.homeTeam?.name || 'Home'}</span>
-        </div>
-        <span className="text-[10px] text-white/15 px-2">vs</span>
-        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <span className="text-xs text-white/60 truncate text-right">{fixture.awayTeam?.name || 'Away'}</span>
-          {fixture.awayTeam?.crest && <img src={fixture.awayTeam.crest} alt="" className="w-5 h-5 object-contain" onError={e => e.target.style.display='none'} />}
-        </div>
-      </div>
-      {fixture.ai_risk && (
-        <div className="flex items-center gap-1 mt-2">
-          <span className={`w-1.5 h-1.5 rounded-full ${
-            fixture.ai_risk === 'LOW' ? 'bg-emerald-400' :
-            fixture.ai_risk === 'MEDIUM' ? 'bg-amber-400' : 'bg-red-400'
-          }`} />
-          <span className="text-[9px] text-white/20">{fixture.ai_pick || fixture.ai_risk}</span>
-        </div>
-      )}
-    </div>
-  );
-}
 
-function ResultCard({ fixture, onClick }) {
-  const homeWon = (fixture.score?.home ?? 0) > (fixture.score?.away ?? 0);
-  const awayWon = (fixture.score?.away ?? 0) > (fixture.score?.home ?? 0);
-
-  return (
-    <div onClick={onClick} className="match-card glass-panel rounded-xl p-3 border border-white/[0.03] cursor-pointer opacity-70 hover:opacity-100">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] text-white/25">{fixture.league?.name || ''}</span>
-        <span className="text-[9px] text-white/15">FT</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {fixture.homeTeam?.crest && <img src={fixture.homeTeam.crest} alt="" className="w-5 h-5 object-contain" onError={e => e.target.style.display='none'} />}
-          <span className={`text-xs truncate ${homeWon ? 'font-bold text-white/80' : 'text-white/40'}`}>{fixture.homeTeam?.name || 'Home'}</span>
+      {/* Teams */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+          {fixture.homeTeam?.crest && <img src={fixture.homeTeam.crest} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
+          <span style={{ fontSize: 13, fontWeight: homeWon ? 600 : 400, color: homeWon ? 'var(--text-primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {fixture.homeTeam?.name || 'Home'}
+          </span>
         </div>
-        <span className="text-xs font-black text-white/50 px-2">
-          {fixture.score?.home ?? '?'} - {fixture.score?.away ?? '?'}
+        <span style={{ fontSize: 15, fontWeight: 800, color: isLive ? 'var(--success)' : 'var(--text-secondary)', padding: '0 8px', fontVariantNumeric: 'tabular-nums' }}>
+          {fixture.score?.home ?? (isResult ? '?' : '–')} - {fixture.score?.away ?? (isResult ? '?' : '–')}
         </span>
-        <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-          <span className={`text-xs truncate text-right ${awayWon ? 'font-bold text-white/80' : 'text-white/40'}`}>{fixture.awayTeam?.name || 'Away'}</span>
-          {fixture.awayTeam?.crest && <img src={fixture.awayTeam.crest} alt="" className="w-5 h-5 object-contain" onError={e => e.target.style.display='none'} />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
+          <span style={{ fontSize: 13, fontWeight: awayWon ? 600 : 400, color: awayWon ? 'var(--text-primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
+            {fixture.awayTeam?.name || 'Away'}
+          </span>
+          {fixture.awayTeam?.crest && <img src={fixture.awayTeam.crest} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
         </div>
       </div>
     </div>

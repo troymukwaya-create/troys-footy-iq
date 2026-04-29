@@ -1,145 +1,91 @@
 import React, { useState } from 'react';
 
 const LEAGUE_TREE = [
-  {
-    country: 'England', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-    leagues: [
-      { code: 'PL', name: 'Premier League' },
-      { code: 'ELC', name: 'Championship' },
-    ]
-  },
-  {
-    country: 'Spain', flag: '🇪🇸',
-    leagues: [
-      { code: 'PD', name: 'La Liga' },
-    ]
-  },
-  {
-    country: 'Germany', flag: '🇩🇪',
-    leagues: [
-      { code: 'BL1', name: 'Bundesliga' },
-    ]
-  },
-  {
-    country: 'Italy', flag: '🇮🇹',
-    leagues: [
-      { code: 'SA', name: 'Serie A' },
-    ]
-  },
-  {
-    country: 'France', flag: '🇫🇷',
-    leagues: [
-      { code: 'FL1', name: 'Ligue 1' },
-    ]
-  },
-  {
-    country: 'Brazil', flag: '🇧🇷',
-    leagues: [
-      { code: 'BSA', name: 'Brasileirao A' },
-    ]
-  },
-  {
-    country: 'UEFA', flag: '🇪🇺',
-    leagues: [
-      { code: 'CL', name: 'Champions League' },
-      { code: 'EL', name: 'Europa League' },
-    ]
-  },
-  {
-    country: 'Netherlands', flag: '🇳🇱',
-    leagues: [{ code: 'ERE', name: 'Eredivisie' }]
-  },
-  {
-    country: 'Portugal', flag: '🇵🇹',
-    leagues: [{ code: 'PPL', name: 'Primeira Liga' }]
-  },
+  { country: 'England', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', leagues: [{ code: 'PL', name: 'Premier League' }, { code: 'ELC', name: 'Championship' }] },
+  { country: 'Spain', flag: '🇪🇸', leagues: [{ code: 'PD', name: 'La Liga' }] },
+  { country: 'Germany', flag: '🇩🇪', leagues: [{ code: 'BL1', name: 'Bundesliga' }] },
+  { country: 'Italy', flag: '🇮🇹', leagues: [{ code: 'SA', name: 'Serie A' }] },
+  { country: 'France', flag: '🇫🇷', leagues: [{ code: 'FL1', name: 'Ligue 1' }] },
+  { country: 'Brazil', flag: '🇧🇷', leagues: [{ code: 'BSA', name: 'Brasileirão' }] },
+  { country: 'UEFA', flag: '🇪🇺', leagues: [{ code: 'CL', name: 'Champions League' }, { code: 'EL', name: 'Europa League' }] },
+  { country: 'Netherlands', flag: '🇳🇱', leagues: [{ code: 'ERE', name: 'Eredivisie' }] },
+  { country: 'Portugal', flag: '🇵🇹', leagues: [{ code: 'PPL', name: 'Primeira Liga' }] },
 ];
 
 export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, onSelectLeague, onGoDashboard }) {
-  const [expanded, setExpanded] = useState({
-    'England': true,
-    'Spain': true,
-    'UEFA': true,
-  });
-
-  const toggle = (country) => setExpanded(prev => ({ ...prev, [country]: !prev[country] }));
+  const [expanded, setExpanded] = useState({ England: true, Spain: true, UEFA: true });
+  const toggle = (c) => setExpanded(prev => ({ ...prev, [c]: !prev[c] }));
 
   const liveCount = (liveMatches || []).length || (fixtures || []).filter(f => f.status === 'IN_PLAY' || f.status === 'PAUSED').length;
 
   return (
-    <div className="flex flex-col border-b border-white/[0.04]">
+    <div style={{ display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border-subtle)' }}>
       {/* Quick Filters */}
-      <nav className="px-2 pt-3 pb-2 space-y-0.5">
-        <SidebarBtn
-          active={activeLeague === 'ALL'}
-          onClick={onGoDashboard}
-          icon="⚽"
-          label="All Matches"
-        />
-        <SidebarBtn
+      <nav style={{ padding: '12px 8px 8px' }}>
+        <FilterBtn active={activeLeague === 'ALL'} onClick={onGoDashboard} label="All Matches" />
+        <FilterBtn
           active={activeLeague === 'LIVE'}
           onClick={() => onSelectLeague?.({ code: 'LIVE' })}
-          icon={<span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
           label="Live"
           badge={liveCount > 0 ? liveCount : null}
-          badgeColor="emerald"
+          isLive
         />
-        <SidebarBtn
-          active={activeLeague === 'TODAY'}
-          onClick={() => onSelectLeague?.({ code: 'TODAY' })}
-          icon="📅"
-          label="Today"
-        />
-        <SidebarBtn
-          active={activeLeague === 'TOMORROW'}
-          onClick={() => onSelectLeague?.({ code: 'TOMORROW' })}
-          icon="📆"
-          label="Tomorrow"
-        />
+        <FilterBtn active={activeLeague === 'TODAY'} onClick={() => onSelectLeague?.({ code: 'TODAY' })} label="Today" />
+        <FilterBtn active={activeLeague === 'TOMORROW'} onClick={() => onSelectLeague?.({ code: 'TOMORROW' })} label="Tomorrow" />
       </nav>
 
       {/* Divider */}
-      <div className="mx-3 border-t border-white/[0.04] my-1" />
+      <div style={{ margin: '0 12px', borderTop: '1px solid var(--border-subtle)' }} />
 
       {/* League Groups */}
-      <div className="flex-1 overflow-y-auto px-2 pb-2 max-h-[200px]">
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px', maxHeight: 220 }}>
         {LEAGUE_TREE.map(group => {
           const isExpanded = expanded[group.country] ?? false;
-
           return (
-            <div key={group.country} className="mb-0.5">
+            <div key={group.country} style={{ marginBottom: 2 }}>
               <button
                 onClick={() => toggle(group.country)}
-                className="flex items-center w-full px-2 py-1.5 text-white/30 hover:text-white/50 transition-colors"
+                style={{
+                  display: 'flex', alignItems: 'center', width: '100%', padding: '6px 8px',
+                  background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer',
+                }}
               >
-                <span className="mr-2 text-sm">{group.flag}</span>
-                <span className="flex-1 text-left text-[9px] font-black uppercase tracking-[0.15em]">{group.country}</span>
-                <span className={`text-[8px] opacity-30 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`}>▼</span>
+                <span style={{ marginRight: 8, fontSize: 13 }}>{group.flag}</span>
+                <span style={{ flex: 1, textAlign: 'left', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {group.country}
+                </span>
+                <span style={{ fontSize: 8, opacity: 0.4, transition: 'transform 200ms', transform: isExpanded ? 'none' : 'rotate(-90deg)' }}>▼</span>
               </button>
 
               {isExpanded && group.leagues.map(league => {
                 const active = activeLeague === league.code;
                 const todayStr = new Date().toDateString();
                 const count = (fixtures || []).filter(f =>
-                  f.league?.code === league.code &&
-                  new Date(f.date).toDateString() === todayStr
+                  f.league?.code === league.code && new Date(f.date).toDateString() === todayStr
                 ).length;
 
                 return (
                   <button
                     key={league.code}
                     onClick={() => onSelectLeague?.(league)}
-                    className={`flex items-center w-full px-3 py-1.5 pl-8 rounded-md text-xs transition-all ${
-                      active
-                        ? 'bg-cyan-500/10 text-cyan-400 font-semibold border-l-2 border-cyan-400'
-                        : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03] border-l-2 border-transparent'
-                    }`}
+                    style={{
+                      display: 'flex', alignItems: 'center', width: '100%',
+                      padding: '6px 12px 6px 32px', borderRadius: 'var(--radius-sm)',
+                      background: active ? 'var(--accent-muted)' : 'transparent',
+                      border: 'none', borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+                      color: active ? 'var(--accent)' : 'var(--text-tertiary)',
+                      fontSize: 12, fontWeight: active ? 600 : 400,
+                      cursor: 'pointer', transition: 'all 150ms ease',
+                    }}
                   >
-                    <span className="flex-1 text-left">{league.name}</span>
+                    <span style={{ flex: 1, textAlign: 'left' }}>{league.name}</span>
                     {count > 0 && (
-                      <span className="text-[9px] bg-cyan-500/10 text-cyan-400/60 px-1.5 py-0.5 rounded-full font-bold">
-                        {count}
-                      </span>
+                      <span style={{
+                        fontSize: 10, padding: '1px 6px', borderRadius: 10,
+                        background: active ? 'rgba(59,130,246,0.15)' : 'var(--bg-raised)',
+                        color: active ? 'var(--accent)' : 'var(--text-muted)',
+                        fontWeight: 700,
+                      }}>{count}</span>
                     )}
                   </button>
                 );
@@ -152,26 +98,29 @@ export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, o
   );
 }
 
-function SidebarBtn({ active, onClick, icon, label, badge, badgeColor = 'cyan' }) {
+function FilterBtn({ active, onClick, label, badge, isLive }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-lg transition-all text-left text-xs ${
-        active
-          ? 'bg-cyan-500/10 text-white/90 font-semibold'
-          : 'text-white/40 hover:text-white/60 hover:bg-white/[0.03]'
-      }`}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+        padding: '8px 12px', borderRadius: 'var(--radius-md)',
+        background: active ? 'var(--accent-muted)' : 'transparent',
+        border: 'none', color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+        fontSize: 12, fontWeight: active ? 600 : 400, cursor: 'pointer',
+        transition: 'all 150ms ease', textAlign: 'left',
+      }}
     >
-      <span className="text-sm flex items-center justify-center w-5">{icon}</span>
-      <span className="flex-1">{label}</span>
+      {isLive && (
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} className="animate-pulse" />
+      )}
+      <span style={{ flex: 1 }}>{label}</span>
       {badge && (
-        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
-          badgeColor === 'emerald'
-            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
-            : 'bg-cyan-500/10 text-cyan-400/60'
-        }`}>
-          {badge}
-        </span>
+        <span style={{
+          fontSize: 10, padding: '2px 6px', borderRadius: 10, fontWeight: 700,
+          background: 'var(--success-muted)', color: 'var(--success)',
+          border: '1px solid rgba(34,197,94,0.20)',
+        }}>{badge}</span>
       )}
     </button>
   );

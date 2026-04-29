@@ -1,17 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════
+   DESIGN SYSTEM — Troy's Footy IQ
+   Disciplined, data-first, professional analytics UI.
+   ═══════════════════════════════════════════════════════ */
+
+/* ─── DESIGN TOKENS ─────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg-base:     #080b14;
+  --bg-surface:  #0d1221;
+  --bg-raised:   #131a2e;
+  --bg-hover:    #171f36;
+
+  /* Borders */
+  --border-subtle:  rgba(255,255,255, 0.05);
+  --border-default: rgba(255,255,255, 0.08);
+  --border-strong:  rgba(255,255,255, 0.12);
+
+  /* Text */
+  --text-primary:   rgba(255,255,255, 0.92);
+  --text-secondary: rgba(255,255,255, 0.60);
+  --text-tertiary:  rgba(255,255,255, 0.36);
+  --text-muted:     rgba(255,255,255, 0.20);
+
+  /* Accent */
+  --accent:        #3b82f6;
+  --accent-muted:  rgba(59,130,246, 0.15);
+
+  /* Semantic */
+  --success:       #22c55e;
+  --success-muted: rgba(34,197,94, 0.12);
+  --warning:       #eab308;
+  --warning-muted: rgba(234,179,8, 0.12);
+  --danger:        #ef4444;
+  --danger-muted:  rgba(239,68,68, 0.12);
+
+  /* Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
 @layer base {
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
   body {
-    background-color: #080c16;
-    color: #e7eafb;
-    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -19,184 +69,142 @@
 }
 
 @layer components {
-  /* ─── Glass Panels ─────────────────────────────────── */
-  .glass-panel {
-    background: rgba(20, 28, 45, 0.65);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+
+  /* ─── SURFACE CARDS ───────────────────────────────── */
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .card:hover {
+    border-color: var(--border-default);
+  }
+  .card-raised {
+    background: var(--bg-raised);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
   }
 
-  .glass-panel-solid {
-    background: linear-gradient(160deg, rgba(20, 30, 50, 0.8) 0%, rgba(10, 16, 28, 0.95) 100%);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* ─── SECTION HEADERS ─────────────────────────────── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
   }
 
-  /* ─── Glow Effects ─────────────────────────────────── */
-  .glow-cyan {
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), 0 0 60px rgba(0, 229, 255, 0.05);
-  }
-
-  .glow-green {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
-  }
-
-  .glow-amber {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
-  }
-
-  .glow-red {
-    box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
-  }
-
-  /* ─── Risk Level Badges ────────────────────────────── */
-  .risk-low {
-    background: rgba(34, 197, 94, 0.12);
-    color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.25);
-  }
-
-  .risk-medium {
-    background: rgba(245, 158, 11, 0.12);
-    color: #fbbf24;
-    border: 1px solid rgba(245, 158, 11, 0.25);
-  }
-
-  .risk-high {
-    background: rgba(239, 68, 68, 0.12);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.25);
-  }
-
-  /* ─── Score Box ────────────────────────────────────── */
-  .score-box {
-    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.9), rgba(20, 30, 50, 0.95));
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05);
-  }
-
-  /* ─── Probability Bar ──────────────────────────────── */
+  /* ─── PROBABILITY BARS ────────────────────────────── */
   .prob-bar {
     height: 6px;
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255,255,255, 0.05);
     overflow: hidden;
   }
-
   .prob-bar-fill {
     height: 100%;
     border-radius: 3px;
-    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* ─── Scoreline Matrix Cell ────────────────────────── */
+  /* ─── RISK BADGES ──────────────────────────────────── */
+  .risk-low {
+    background: var(--success-muted);
+    color: var(--success);
+    border: 1px solid rgba(34,197,94, 0.20);
+  }
+  .risk-medium {
+    background: var(--warning-muted);
+    color: var(--warning);
+    border: 1px solid rgba(234,179,8, 0.20);
+  }
+  .risk-high {
+    background: var(--danger-muted);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68, 0.20);
+  }
+
+  /* ─── SCORE BOX ───────────────────────────────────── */
+  .score-box {
+    background: var(--bg-raised);
+    border: 1px solid var(--border-default);
+  }
+
+  /* ─── MATCH CARD (sidebar) ────────────────────────── */
+  .match-card {
+    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+    cursor: pointer;
+  }
+  .match-card:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-default);
+    transform: translateY(-1px);
+  }
+  .match-card.active {
+    background: var(--accent-muted);
+    border-color: rgba(59,130,246, 0.30);
+  }
+
+  /* ─── SKELETON LOADING ────────────────────────────── */
+  .skeleton {
+    background: linear-gradient(90deg,
+      rgba(255,255,255,0.03) 25%,
+      rgba(255,255,255,0.06) 50%,
+      rgba(255,255,255,0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ─── MATRIX CELL ─────────────────────────────────── */
   .matrix-cell {
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
     font-weight: 600;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
+    transition: transform 150ms ease;
   }
-
   .matrix-cell:hover {
-    transform: scale(1.15);
+    transform: scale(1.08);
     z-index: 10;
   }
 
-  /* ─── Card Hover Effect ────────────────────────────── */
-  .match-card {
-    transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-    cursor: pointer;
-  }
-
-  .match-card:hover {
-    background: rgba(0, 229, 255, 0.04);
-    border-color: rgba(0, 229, 255, 0.15);
-    transform: translateY(-1px);
-  }
-
-  .match-card.active {
-    background: rgba(0, 229, 255, 0.06);
-    border-color: rgba(0, 229, 255, 0.3);
-    box-shadow: 0 0 24px rgba(0, 229, 255, 0.08);
-  }
-
-  /* ─── Insight Cards ────────────────────────────────── */
+  /* ─── INSIGHT CARD ────────────────────────────────── */
   .insight-card {
-    background: rgba(0, 229, 255, 0.04);
-    border: 1px solid rgba(0, 229, 255, 0.08);
-    border-radius: 10px;
-    padding: 12px 16px;
-    transition: all 0.2s ease;
+    background: var(--bg-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--sp-3) var(--sp-4);
+    transition: border-color 180ms ease;
   }
-
   .insight-card:hover {
-    background: rgba(0, 229, 255, 0.07);
-    border-color: rgba(0, 229, 255, 0.15);
+    border-color: var(--border-default);
   }
 }
 
-/* ─── Custom Scrollbar ───────────────────────────────── */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(100, 110, 130, 0.3);
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 110, 130, 0.5);
-}
+/* ─── SCROLLBAR ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(100,110,130,0.25); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(100,110,130,0.45); }
+* { scrollbar-width: thin; scrollbar-color: rgba(100,110,130,0.25) transparent; }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(100, 110, 130, 0.3) transparent;
-}
-
-/* ─── Animations ─────────────────────────────────────── */
-@keyframes slideDown {
-  from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-  to { transform: translateX(-50%) translateY(0); opacity: 1; }
-}
-
+/* ─── ANIMATIONS (minimal) ───────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes fadeOut {
-  to { opacity: 0; }
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
+  0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
-
-@keyframes spin {
-  100% { transform: rotate(360deg); }
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out;
-}
-
-.skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 6px;
-}
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }

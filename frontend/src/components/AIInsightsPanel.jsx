@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useAIChat } from '../hooks/useQueries.js';
 
 /**
- * AIInsightsPanel — Right sidebar showing AI analysis, risk indicator,
- * key insights, and interactive chat.
+ * AIInsightsPanel — Right panel showing AI analysis.
+ * Clean hierarchy: risk → verdict → pick → insights → chat.
+ * Shows a proper empty state when no fixture is selected.
  */
 export function AIInsightsPanel({ fixture, analysis, isLoading }) {
   const [chatInput, setChatInput] = useState('');
@@ -20,74 +21,76 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
     const userMsg = chatInput.trim();
     setChatInput('');
     setChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
-
     const reply = await aiChat.mutateAsync({
       message: userMsg,
       context: { fixture, markets: prob },
       history: chatHistory.slice(-6),
     }).catch(() => 'Unable to process right now.');
-
     setChatHistory(prev => [...prev, { role: 'assistant', content: reply }]);
   };
 
-  // ─── No fixture selected ─────────────────────────────────────────
+  // ─── Empty state ────────────────────────────────────────────────
   if (!fixture) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-cyan-500/[0.06] border border-cyan-500/10 flex items-center justify-center mb-4">
-          <span className="text-2xl">🧠</span>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center' }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 'var(--radius-lg)',
+          background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+        }}>
+          <span style={{ fontSize: 20 }}>📊</span>
         </div>
-        <h3 className="text-sm font-bold text-white/60 mb-2">AI Analysis</h3>
-        <p className="text-[11px] text-white/30 leading-relaxed max-w-[220px]">
-          Select a fixture from the left panel to view AI-powered match insights and probability analysis.
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>AI Analysis</h3>
+        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.6, maxWidth: 200 }}>
+          Select a fixture to view AI-powered match insights and probability analysis.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div className="p-4 border-b border-white/[0.04]">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-            <span className="text-sm">🧠</span>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 'var(--radius-sm)',
+            background: 'var(--accent-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontSize: 13 }}>📊</span>
           </div>
           <div>
-            <h3 className="text-xs font-bold text-white/80">AI Analysis</h3>
-            <p className="text-[9px] text-white/25">{home} vs {away}</p>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>AI Analysis</h3>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{home} vs {away}</p>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
         {/* Loading */}
         {isLoading && (
-          <div className="space-y-3">
-            <div className="skeleton h-20 w-full" />
-            <div className="skeleton h-14 w-full" />
-            <div className="skeleton h-14 w-3/4" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="skeleton" style={{ height: 64 }} />
+            <div className="skeleton" style={{ height: 48 }} />
+            <div className="skeleton" style={{ height: 48, width: '75%' }} />
           </div>
         )}
 
         {!isLoading && ai && (
-          <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Risk Badge */}
             {prob?.riskLevel && (
-              <div className={`rounded-xl p-3 ${
-                prob.riskLevel === 'LOW' ? 'risk-low' :
-                prob.riskLevel === 'MEDIUM' ? 'risk-medium' :
-                'risk-high'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">
+              <div className={prob.riskLevel === 'LOW' ? 'risk-low' : prob.riskLevel === 'MEDIUM' ? 'risk-medium' : 'risk-high'}
+                style={{ borderRadius: 'var(--radius-md)', padding: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>
                     {prob.riskLevel === 'LOW' ? '🟢' : prob.riskLevel === 'MEDIUM' ? '🟡' : '🔴'}
                   </span>
                   <div>
-                    <div className="text-[10px] font-black tracking-wider">{prob.riskLevel} RISK</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>{prob.riskLevel} RISK</div>
                     {ai.confidence && (
-                      <div className="text-[9px] opacity-60">{ai.confidence}% confidence</div>
+                      <div style={{ fontSize: 10, opacity: 0.6 }}>{ai.confidence}% confidence</div>
                     )}
                   </div>
                 </div>
@@ -96,27 +99,34 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
 
             {/* Verdict */}
             {ai.verdict && (
-              <div className="glass-panel rounded-xl p-3">
-                <div className="text-[10px] uppercase tracking-widest text-cyan-400/40 font-bold mb-2">Verdict</div>
-                <p className="text-xs text-white/70 leading-relaxed">{ai.verdict}</p>
+              <div className="card-raised" style={{ padding: 12 }}>
+                <div className="section-title" style={{ marginBottom: 8 }}>Verdict</div>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{ai.verdict}</p>
               </div>
             )}
 
             {/* Match Pattern */}
             {ai.matchPattern && (
-              <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-white/[0.03] border border-white/[0.04]">
-                <span className="text-sm">⚡</span>
-                <span className="text-[11px] text-white/50 font-medium">{ai.matchPattern}</span>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 12px', borderRadius: 'var(--radius-md)',
+                background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
+              }}>
+                <span style={{ fontSize: 13 }}>⚡</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>{ai.matchPattern}</span>
               </div>
             )}
 
             {/* Recommended Pick */}
             {ai.recommendedPick && ai.recommendedPick !== 'N/A' && (
-              <div className="rounded-xl p-3 bg-cyan-500/[0.06] border border-cyan-500/10">
-                <div className="text-[10px] uppercase tracking-widest text-cyan-400/40 font-bold mb-1">Best Pick</div>
-                <div className="text-sm font-bold text-cyan-400">{ai.recommendedPick}</div>
+              <div style={{
+                padding: 12, borderRadius: 'var(--radius-md)',
+                background: 'var(--accent-muted)', border: '1px solid rgba(59,130,246,0.15)',
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em', marginBottom: 4 }}>BEST PICK</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{ai.recommendedPick}</div>
                 {prob?.bestPick && (
-                  <div className="text-[10px] text-white/30 mt-0.5">{prob.bestPick.probability}% probability</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>{prob.bestPick.probability}% probability</div>
                 )}
               </div>
             )}
@@ -124,76 +134,83 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
             {/* Key Insights */}
             {ai.keyInsights && ai.keyInsights.length > 0 && (
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-cyan-400/40 font-bold mb-2">Key Insights</div>
-                <div className="space-y-2">
+                <div className="section-title" style={{ marginBottom: 8 }}>Key Insights</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {ai.keyInsights.map((insight, i) => (
-                    <div key={i} className="insight-card flex items-start gap-2">
-                      <span className="text-cyan-400/50 text-[10px] font-bold mt-0.5">{i + 1}</span>
-                      <span className="text-[11px] text-white/60 leading-relaxed">{insight}</span>
+                    <div key={i} className="insight-card" style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', marginTop: 2, flexShrink: 0, width: 14 }}>{i + 1}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{insight}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Tactical Expectation */}
+            {/* Tactical Outlook */}
             {ai.tacticalExpectation && (
-              <div className="glass-panel rounded-xl p-3">
-                <div className="text-[10px] uppercase tracking-widest text-cyan-400/40 font-bold mb-2">Tactical Outlook</div>
-                <p className="text-[11px] text-white/50 leading-relaxed">{ai.tacticalExpectation}</p>
+              <div className="card-raised" style={{ padding: 12 }}>
+                <div className="section-title" style={{ marginBottom: 8 }}>Tactical Outlook</div>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>{ai.tacticalExpectation}</p>
               </div>
             )}
 
             {/* Risk Reasoning */}
             {ai.riskReasoning && (
-              <div className="glass-panel rounded-xl p-3">
-                <div className="text-[10px] uppercase tracking-widest text-amber-400/40 font-bold mb-2">Risk Note</div>
-                <p className="text-[11px] text-white/40 leading-relaxed">{ai.riskReasoning}</p>
+              <div className="card-raised" style={{ padding: 12 }}>
+                <div className="section-title" style={{ marginBottom: 8, color: 'var(--warning)' }}>Risk Note</div>
+                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>{ai.riskReasoning}</p>
               </div>
             )}
 
             {/* Low Risk Markets */}
             {prob?.lowRiskMarkets && prob.lowRiskMarkets.length > 0 && (
               <div>
-                <div className="text-[10px] uppercase tracking-widest text-emerald-400/40 font-bold mb-2">Low Risk Opportunities</div>
-                <div className="space-y-1.5">
+                <div className="section-title" style={{ marginBottom: 8, color: 'var(--success)' }}>Low Risk Opportunities</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {prob.lowRiskMarkets.slice(0, 4).map((m, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-emerald-500/[0.05] border border-emerald-500/10">
-                      <span className="text-[11px] text-white/60">{m.name}</span>
-                      <span className="text-[11px] font-bold text-emerald-400">{m.probability}%</span>
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '6px 12px', borderRadius: 'var(--radius-sm)',
+                      background: 'var(--success-muted)', border: '1px solid rgba(34,197,94,0.10)',
+                    }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{m.name}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)' }}>{m.probability}%</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </>
-        )}
-
-        {/* Fallback when no analysis */}
-        {!isLoading && !ai && fixture && (
-          <div className="text-center py-8 text-white/30">
-            <div className="text-2xl mb-2">📊</div>
-            <div className="text-xs">Analysis loading...</div>
-            <div className="text-[10px] text-white/20 mt-1">Data will appear shortly</div>
           </div>
         )}
 
-        {/* Chat Messages */}
+        {/* Fallback */}
+        {!isLoading && !ai && fixture && (
+          <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-tertiary)' }}>
+            <div className="skeleton" style={{ height: 64, marginBottom: 12 }} />
+            <div className="skeleton" style={{ height: 48, marginBottom: 12 }} />
+            <div className="skeleton" style={{ height: 48, width: '75%', margin: '0 auto' }} />
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 16 }}>Loading analysis…</div>
+          </div>
+        )}
+
+        {/* Chat History */}
         {chatHistory.length > 0 && (
-          <div className="border-t border-white/[0.04] pt-3 mt-3 space-y-2">
+          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 12, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {chatHistory.map((msg, i) => (
-              <div key={i} className={`text-[11px] leading-relaxed p-2.5 rounded-lg ${
-                msg.role === 'user'
-                  ? 'bg-cyan-500/10 text-cyan-300/80 ml-6'
-                  : 'bg-white/[0.03] text-white/50 mr-6'
-              }`}>
+              <div key={i} style={{
+                fontSize: 12, lineHeight: 1.5, padding: '8px 12px', borderRadius: 'var(--radius-md)',
+                ...(msg.role === 'user'
+                  ? { background: 'var(--accent-muted)', color: 'var(--accent)', marginLeft: 24 }
+                  : { background: 'var(--bg-raised)', color: 'var(--text-tertiary)', marginRight: 24 }
+                ),
+              }}>
                 {msg.content}
               </div>
             ))}
             {aiChat.isPending && (
-              <div className="flex items-center gap-2 p-2 text-white/30">
-                <div className="w-3 h-3 border border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-                <span className="text-[10px]">Thinking...</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, color: 'var(--text-muted)' }}>
+                <div className="w-3 h-3 border rounded-full animate-spin" style={{ borderColor: 'var(--border-default)', borderTopColor: 'var(--accent)' }} />
+                <span style={{ fontSize: 11 }}>Thinking…</span>
               </div>
             )}
           </div>
@@ -202,19 +219,27 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
 
       {/* Chat Input */}
       {fixture && (
-        <div className="p-3 border-t border-white/[0.04]">
-          <div className="flex gap-2">
+        <div style={{ padding: 12, borderTop: '1px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <input
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendChat()}
-              placeholder="Ask about this match..."
-              className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white/70 placeholder-white/20 outline-none focus:border-cyan-500/30 transition-colors"
+              placeholder="Ask about this match…"
+              style={{
+                flex: 1, background: 'var(--bg-raised)', border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)', padding: '8px 12px', fontSize: 12,
+                color: 'var(--text-primary)', outline: 'none',
+              }}
             />
             <button
               onClick={handleSendChat}
               disabled={!chatInput.trim() || aiChat.isPending}
-              className="px-3 py-2 bg-cyan-500/15 text-cyan-400 rounded-lg text-xs font-semibold hover:bg-cyan-500/25 transition-colors disabled:opacity-30"
+              style={{
+                padding: '8px 12px', background: 'var(--accent-muted)', color: 'var(--accent)',
+                borderRadius: 'var(--radius-md)', fontSize: 12, fontWeight: 600, border: 'none',
+                cursor: 'pointer', opacity: !chatInput.trim() ? 0.3 : 1,
+              }}
             >
               Send
             </button>

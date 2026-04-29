@@ -1,8 +1,8 @@
 import React from 'react';
 
 /**
- * FixtureCard — Compact match card for the left sidebar fixture list.
- * FotMob-inspired with team crests, score, and subtle risk indicator.
+ * FixtureCard — Compact sidebar match card.
+ * Clean hierarchy: league → teams/score → probability strip.
  */
 export function FixtureCard({ fixture, isSelected, onClick }) {
   if (!fixture) return null;
@@ -17,6 +17,7 @@ export function FixtureCard({ fixture, isSelected, onClick }) {
   const scoreHome = fixture.score?.home;
   const scoreAway = fixture.score?.away;
   const minute = fixture.minute;
+  const prob = fixture.probability;
 
   const time = fixture.date
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -25,121 +26,116 @@ export function FixtureCard({ fixture, isSelected, onClick }) {
   return (
     <div
       onClick={onClick}
-      className={`match-card rounded-lg border mb-1 px-3 py-2.5 ${
-        isSelected
-          ? 'active border-cyan-500/25 bg-cyan-500/[0.06]'
-          : 'border-white/[0.03] bg-white/[0.01] hover:border-white/[0.08]'
-      }`}
+      className={`match-card ${isSelected ? 'active' : ''}`}
+      style={{
+        borderRadius: 'var(--radius-md)',
+        border: `1px solid ${isSelected ? 'rgba(59,130,246,0.25)' : 'var(--border-subtle)'}`,
+        padding: '10px 12px',
+        marginBottom: 4,
+        background: isSelected ? 'var(--accent-muted)' : 'transparent',
+      }}
     >
-      {/* League + Time row */}
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[9px] text-white/25 truncate max-w-[60%]">
+      {/* League + Status */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {fixture.league?.name || ''}
         </span>
-        <div className="flex items-center gap-1.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {isLive && (
-            <span className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--success)', fontWeight: 700 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
               {minute ? `${minute}'` : 'LIVE'}
             </span>
           )}
-          {isFinished && (
-            <span className="text-[9px] text-white/20 font-semibold">FT</span>
-          )}
-          {!isLive && !isFinished && (
-            <span className="text-[9px] text-white/20">{time}</span>
-          )}
+          {isFinished && <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>FT</span>}
+          {!isLive && !isFinished && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{time}</span>}
         </div>
       </div>
 
       {/* Teams */}
-      <div className="space-y-1.5">
-        {/* Home */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {homeCrest && (
-              <img src={homeCrest} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => e.target.style.display='none'} />
-            )}
-            <span className={`text-xs truncate ${isFinished && scoreHome > scoreAway ? 'font-bold text-white/90' : 'text-white/60'}`}>
-              {home}
-            </span>
-          </div>
-          <span className={`text-xs font-bold tabular-nums w-5 text-right ${
-            isLive ? 'text-emerald-400' :
-            isFinished && scoreHome > scoreAway ? 'text-white/90' :
-            'text-white/50'
-          }`}>
-            {scoreHome ?? ''}
-          </span>
-        </div>
-
-        {/* Away */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {awayCrest && (
-              <img src={awayCrest} alt="" className="w-4 h-4 object-contain flex-shrink-0" onError={e => e.target.style.display='none'} />
-            )}
-            <span className={`text-xs truncate ${isFinished && scoreAway > scoreHome ? 'font-bold text-white/90' : 'text-white/60'}`}>
-              {away}
-            </span>
-          </div>
-          <span className={`text-xs font-bold tabular-nums w-5 text-right ${
-            isLive ? 'text-emerald-400' :
-            isFinished && scoreAway > scoreHome ? 'text-white/90' :
-            'text-white/50'
-          }`}>
-            {scoreAway ?? ''}
-          </span>
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <TeamRow name={home} crest={homeCrest} score={scoreHome} isWinner={isFinished && scoreHome > scoreAway} isLive={isLive} />
+        <TeamRow name={away} crest={awayCrest} score={scoreAway} isWinner={isFinished && scoreAway > scoreHome} isLive={isLive} />
       </div>
 
-      {/* Probability Engine Output */}
-      {fixture.probability ? (
-        <div className="mt-2.5 pt-2.5 border-t border-white/[0.04]">
-          {/* Win Probabilities */}
-          <div className="flex items-center justify-between text-[10px] mb-2 font-medium">
-            <span className="text-white/50">H: <span className="text-white/90">{fixture.probability.probabilities?.home ?? '-'}%</span></span>
-            <span className="text-white/50">D: <span className="text-white/90">{fixture.probability.probabilities?.draw ?? '-'}%</span></span>
-            <span className="text-white/50">A: <span className="text-white/90">{fixture.probability.probabilities?.away ?? '-'}%</span></span>
+      {/* Probability Strip */}
+      {prob?.probabilities ? (
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+          {/* Probability values */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <ProbValue label="H" value={prob.probabilities.home} />
+            <ProbValue label="D" value={prob.probabilities.draw} />
+            <ProbValue label="A" value={prob.probabilities.away} />
           </div>
-          
-          <div className="flex items-center justify-between text-[9px]">
-            {/* Risk Level */}
-            <div className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)] ${
-                fixture.probability.riskLevel === 'LOW' ? 'bg-emerald-400 shadow-emerald-400/50' :
-                fixture.probability.riskLevel === 'MEDIUM' ? 'bg-amber-400 shadow-amber-400/50' :
-                'bg-red-400 shadow-red-400/50'
-              }`} />
-              <span className={`font-bold tracking-wider ${
-                fixture.probability.riskLevel === 'LOW' ? 'text-emerald-400' :
-                fixture.probability.riskLevel === 'MEDIUM' ? 'text-amber-400' :
-                'text-red-400'
-              }`}>
-                {fixture.probability.riskLevel ?? 'UNKNOWN'}
-              </span>
-            </div>
-            
-            {/* Top Scorelines */}
-            <div className="flex items-center gap-1.5">
-              {fixture.probability.topScorelines?.slice(0, 2).map((sl, i) => (
-                <span key={i} className="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.04] text-white/70 font-semibold tabular-nums">
-                  {sl.score}
-                </span>
+
+          {/* Risk + Scorelines */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <RiskBadge level={prob.riskLevel} />
+            <div style={{ display: 'flex', gap: 4 }}>
+              {prob.topScorelines?.slice(0, 2).map((sl, i) => (
+                <span key={i} style={{
+                  fontSize: 10, fontWeight: 600, padding: '2px 6px',
+                  borderRadius: 'var(--radius-sm)', background: 'var(--bg-raised)',
+                  border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>{sl.score}</span>
               ))}
             </div>
           </div>
         </div>
       ) : (
-        /* Loading/Fallback UI */
-        <div className="mt-2.5 pt-2.5 border-t border-white/[0.04]">
-          <div className="h-2.5 w-full bg-white/[0.03] rounded animate-pulse mb-2.5"></div>
-          <div className="flex justify-between items-center">
-            <div className="h-2.5 w-12 bg-white/[0.03] rounded animate-pulse"></div>
-            <div className="h-4 w-16 bg-white/[0.03] rounded-md animate-pulse"></div>
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
+          <div className="skeleton" style={{ height: 10, marginBottom: 8 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="skeleton" style={{ height: 10, width: 48 }} />
+            <div className="skeleton" style={{ height: 16, width: 60, borderRadius: 'var(--radius-sm)' }} />
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function TeamRow({ name, crest, score, isWinner, isLive }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+        {crest && <img src={crest} alt="" style={{ width: 16, height: 16, objectFit: 'contain', flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
+        <span style={{
+          fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          fontWeight: isWinner ? 600 : 400,
+          color: isWinner ? 'var(--text-primary)' : 'var(--text-secondary)',
+        }}>{name}</span>
+      </div>
+      <span style={{
+        fontSize: 13, fontWeight: 700, width: 20, textAlign: 'right',
+        fontVariantNumeric: 'tabular-nums',
+        color: isLive ? 'var(--success)' : isWinner ? 'var(--text-primary)' : 'var(--text-secondary)',
+      }}>{score ?? ''}</span>
+    </div>
+  );
+}
+
+function ProbValue({ label, value }) {
+  return (
+    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+      {label} <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value ?? '–'}%</span>
+    </span>
+  );
+}
+
+function RiskBadge({ level }) {
+  const color = level === 'LOW' ? 'var(--success)' : level === 'MEDIUM' ? 'var(--warning)' : 'var(--danger)';
+  const bg = level === 'LOW' ? 'var(--success-muted)' : level === 'MEDIUM' ? 'var(--warning-muted)' : 'var(--danger-muted)';
+  return (
+    <span style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      fontSize: 10, fontWeight: 700, color,
+      padding: '2px 8px', borderRadius: 10,
+      background: bg,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: color }} />
+      {level ?? 'UNKNOWN'}
+    </span>
   );
 }
