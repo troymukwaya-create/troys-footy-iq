@@ -6,6 +6,7 @@ export const FD_LEAGUES = {         // football-data.org codes
   FL1: { name: 'Ligue 1',             country: 'France'  },
   BSA: { name: 'Brasileirao Serie A', country: 'Brazil'  },
   CL:  { name: 'Champions League',    country: 'UEFA'    },
+  EL:  { name: 'Europa League',       country: 'UEFA'    },  // ← ADDED
 };
 
 export const APF_LEAGUES = {        // API-Football IDs (gap-fill only)

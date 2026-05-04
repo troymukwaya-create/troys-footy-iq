@@ -1,175 +1,290 @@
 import React, { useMemo } from 'react';
-import { useBriefing } from '../hooks/useQueries.js';
 
-/**
- * AnalystDashboard — Center panel when no fixture is selected.
- * Structured sections: Briefing → Live → Upcoming → Results.
- */
-export function AnalystDashboard({ fixtures = [], onSelect }) {
-  const { data: briefing } = useBriefing(fixtures);
+// ─── CONFIDENCE CONFIG ───────────────────────────────────────────────────────
+const CONFIDENCE = {
+  HIGH:   { label: 'High',   color: '#22c55e', bg: 'rgba(34,197,94,0.10)',   border: 'rgba(34,197,94,0.20)'   },
+  MEDIUM: { label: 'Medium', color: '#eab308', bg: 'rgba(234,179,8,0.10)',   border: 'rgba(234,179,8,0.20)'   },
+  LOW:    { label: 'Low',    color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.15)' },
+};
 
-  const liveMatches = useMemo(() =>
-    (fixtures || []).filter(f => f.status === 'IN_PLAY' || f.status === 'PAUSED'),
-    [fixtures]
-  );
-
-  const upcomingToday = useMemo(() => {
-    const today = new Date().toDateString();
-    return (fixtures || []).filter(f =>
-      f.status === 'SCHEDULED' && new Date(f.date).toDateString() === today
-    );
-  }, [fixtures]);
-
-  const recentResults = useMemo(() =>
-    (fixtures || []).filter(f => f.status === 'FINISHED').slice(0, 6),
-    [fixtures]
-  );
-
-  return (
-    <div style={{ padding: '24px', maxWidth: 960, margin: '0 auto' }}>
-      {/* Page Header */}
-      <div className="animate-fade-in" style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 4 }}>
-          Dashboard
-        </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-      </div>
-
-      {/* Daily Briefing */}
-      {briefing && (
-        <div className="card animate-fade-in" style={{ padding: 20, marginBottom: 24 }}>
-          <h2 className="section-title" style={{ marginBottom: 12 }}>Today's Insights</h2>
-
-          {briefing.headline && (
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 16 }}>{briefing.headline}</p>
-          )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
-            {briefing.topPick && (
-              <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--success-muted)', border: '1px solid rgba(34,197,94,0.15)' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--success)', letterSpacing: '0.06em', marginBottom: 4 }}>TOP PICK</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{briefing.topPick.fixture}</div>
-                {briefing.topPick.market && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{briefing.topPick.market}</div>}
-                {briefing.topPick.confidence && (
-                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--success)', marginTop: 4 }}>{briefing.topPick.confidence}%</div>
-                )}
-              </div>
-            )}
-            {briefing.gameOfTheDay && (
-              <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--accent-muted)', border: '1px solid rgba(59,130,246,0.15)' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em', marginBottom: 4 }}>GAME OF THE DAY</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{briefing.gameOfTheDay.fixture}</div>
-                {briefing.gameOfTheDay.why && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{briefing.gameOfTheDay.why}</div>}
-              </div>
-            )}
-            {briefing.avoid && (
-              <div style={{ padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--danger-muted)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--danger)', letterSpacing: '0.06em', marginBottom: 4 }}>AVOID</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{briefing.avoid.fixture}</div>
-                {briefing.avoid.why && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{briefing.avoid.why}</div>}
-              </div>
-            )}
-          </div>
-
-          {briefing.summary && (
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>{briefing.summary}</p>
-          )}
-        </div>
-      )}
-
-      {/* Live Matches */}
-      {liveMatches.length > 0 && (
-        <div className="animate-fade-in" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
-            <h2 className="section-title" style={{ color: 'var(--success)' }}>Live Now</h2>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{liveMatches.length}</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 8 }}>
-            {liveMatches.map(f => <DashboardMatchCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} variant="live" />)}
-          </div>
-        </div>
-      )}
-
-      {/* Upcoming Today */}
-      {upcomingToday.length > 0 && (
-        <div className="animate-fade-in" style={{ marginBottom: 24 }}>
-          <h2 className="section-title" style={{ marginBottom: 12 }}>Coming Up</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 8 }}>
-            {upcomingToday.slice(0, 8).map(f => <DashboardMatchCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} variant="upcoming" />)}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Results */}
-      {recentResults.length > 0 && (
-        <div className="animate-fade-in" style={{ marginBottom: 24 }}>
-          <h2 className="section-title" style={{ marginBottom: 12 }}>Recent Results</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 8 }}>
-            {recentResults.map(f => <DashboardMatchCard key={f.id} fixture={f} onClick={() => onSelect?.(f)} variant="result" />)}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {fixtures.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-tertiary)' }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>⚽</div>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No fixtures available</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Check that the backend is running</div>
-        </div>
-      )}
-    </div>
-  );
+function getConfidence(prob) {
+  if (!prob) return 'LOW';
+  const max = Math.max(prob.home ?? 0, prob.draw ?? 0, prob.away ?? 0);
+  if (max >= 55) return 'HIGH';
+  if (max >= 42) return 'MEDIUM';
+  return 'LOW';
 }
 
-function DashboardMatchCard({ fixture, onClick, variant }) {
-  const isLive = variant === 'live';
-  const isResult = variant === 'result';
-  const homeWon = isResult && (fixture.score?.home ?? 0) > (fixture.score?.away ?? 0);
-  const awayWon = isResult && (fixture.score?.away ?? 0) > (fixture.score?.home ?? 0);
+function getInsight(fixture) {
+  const prob = fixture.probability?.probabilities;
+  if (!prob) return null;
+  const { home, draw, away } = prob;
+  const homeName = fixture.homeTeam?.name || 'Home';
+  const awayName = fixture.awayTeam?.name || 'Away';
 
-  const time = fixture.date
+  const insights = [];
+
+  if (home >= 55)  insights.push(`${homeName} are strong favourites at ${home}%`);
+  else if (away >= 55) insights.push(`${awayName} are strong favourites at ${away}%`);
+  else if (draw >= 30) insights.push(`A draw is likely — ${draw}% probability`);
+  else insights.push(`Closely contested — ${homeName} ${home}% vs ${awayName} ${away}%`);
+
+  const xG = fixture.probability?.expectedGoals;
+  if (xG?.total >= 2.5) insights.push(`High-scoring expected: ${xG.total.toFixed(1)} total goals`);
+  else if (xG?.total < 2.0 && xG?.total > 0) insights.push(`Low-scoring game expected: ${xG.total.toFixed(1)} goals`);
+
+  return insights.slice(0, 2);
+}
+
+// ─── INSIGHT CARD ────────────────────────────────────────────────────────────
+function InsightCard({ fixture, onSelect, featured }) {
+  const prob = fixture.probability?.probabilities;
+  const confidence = getConfidence(prob);
+  const cfg = CONFIDENCE[confidence];
+  const insights = getInsight(fixture);
+  const isLive = fixture.status === 'IN_PLAY' || fixture.status === 'PAUSED';
+
+  const kickoff = fixture.date
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '';
 
   return (
-    <div onClick={onClick} className="match-card card" style={{ padding: '12px 16px', cursor: 'pointer', opacity: isResult ? 0.75 : 1 }}>
-      {/* League + Time */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{fixture.league?.name || ''}</span>
+    <div
+      onClick={() => onSelect?.(fixture)}
+      style={{
+        background: featured ? 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(13,18,33,1) 60%)' : 'var(--bg-surface)',
+        border: `1px solid ${featured ? 'rgba(59,130,246,0.25)' : 'var(--border-subtle)'}`,
+        borderRadius: 16,
+        padding: '20px 24px',
+        cursor: 'pointer',
+        transition: 'border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = featured ? 'rgba(59,130,246,0.45)' : 'var(--border-default)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = featured ? 'rgba(59,130,246,0.25)' : 'var(--border-subtle)';
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    >
+      {/* Top Row: Competition + Status */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          {fixture.league?.name || 'Match'}
+          {fixture.round ? ` · ${fixture.round}` : ''}
+        </span>
         {isLive ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--success)', fontWeight: 700 }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#22c55e' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />
             {fixture.minute ? `${fixture.minute}'` : 'LIVE'}
           </span>
-        ) : isResult ? (
-          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>FT</span>
         ) : (
-          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{time}</span>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{kickoff}</span>
         )}
       </div>
 
       {/* Teams */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-          {fixture.homeTeam?.crest && <img src={fixture.homeTeam.crest} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
-          <span style={{ fontSize: 13, fontWeight: homeWon ? 600 : 400, color: homeWon ? 'var(--text-primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {fixture.homeTeam?.name || 'Home'}
-          </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+        <TeamBlock team={fixture.homeTeam} align="left" />
+        <div style={{
+          fontSize: 13, fontWeight: 700, color: 'var(--text-tertiary)',
+          padding: '6px 12px', background: 'var(--bg-raised)',
+          border: '1px solid var(--border-default)', borderRadius: 8,
+          letterSpacing: '0.05em', flexShrink: 0,
+        }}>
+          {isLive
+            ? `${fixture.score?.home ?? 0} – ${fixture.score?.away ?? 0}`
+            : 'VS'}
         </div>
-        <span style={{ fontSize: 15, fontWeight: 800, color: isLive ? 'var(--success)' : 'var(--text-secondary)', padding: '0 8px', fontVariantNumeric: 'tabular-nums' }}>
-          {fixture.score?.home ?? (isResult ? '?' : '–')} - {fixture.score?.away ?? (isResult ? '?' : '–')}
+        <TeamBlock team={fixture.awayTeam} align="right" />
+      </div>
+
+      {/* Probability Bar */}
+      {prob && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
+            <span>H <strong style={{ color: 'var(--text-secondary)' }}>{prob.home}%</strong></span>
+            <span>D <strong style={{ color: 'var(--text-secondary)' }}>{prob.draw}%</strong></span>
+            <span>A <strong style={{ color: 'var(--text-secondary)' }}>{prob.away}%</strong></span>
+          </div>
+          <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.05)', display: 'flex', overflow: 'hidden' }}>
+            <div style={{ width: `${prob.home}%`, background: '#3b82f6', transition: 'width 600ms ease' }} />
+            <div style={{ width: `${prob.draw}%`, background: 'rgba(255,255,255,0.12)', transition: 'width 600ms ease' }} />
+            <div style={{ width: `${prob.away}%`, background: '#6366f1', transition: 'width 600ms ease' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Insights */}
+      {insights?.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {insights.map((text, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <span style={{ color: '#3b82f6', fontSize: 13, lineHeight: 1.5, flexShrink: 0 }}>›</span>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer: Confidence + CTA */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-subtle)' }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
+          padding: '3px 10px', borderRadius: 99,
+          background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+        }}>
+          {cfg.label} Confidence
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, justifyContent: 'flex-end' }}>
-          <span style={{ fontSize: 13, fontWeight: awayWon ? 600 : 400, color: awayWon ? 'var(--text-primary)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-            {fixture.awayTeam?.name || 'Away'}
-          </span>
-          {fixture.awayTeam?.crest && <img src={fixture.awayTeam.crest} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
+        <button
+          onClick={e => { e.stopPropagation(); onSelect?.(fixture); }}
+          style={{
+            fontSize: 12, fontWeight: 600, padding: '6px 14px',
+            borderRadius: 8, cursor: 'pointer', border: 'none',
+            background: featured ? '#3b82f6' : 'rgba(59,130,246,0.15)',
+            color: featured ? '#fff' : '#3b82f6',
+            transition: 'background 180ms ease',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#3b82f6'}
+          onMouseLeave={e => e.currentTarget.style.background = featured ? '#3b82f6' : 'rgba(59,130,246,0.15)'}
+        >
+          View Match →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TeamBlock({ team, align }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      alignItems: align === 'right' ? 'flex-end' : 'flex-start',
+      gap: 6, flex: 1, minWidth: 0,
+    }}>
+      {team?.crest && (
+        <img
+          src={team.crest} alt=""
+          style={{ width: 32, height: 32, objectFit: 'contain' }}
+          onError={e => e.target.style.display = 'none'}
+        />
+      )}
+      <span style={{
+        fontSize: 14, fontWeight: 600, color: 'var(--text-primary)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        maxWidth: '100%', textAlign: align,
+      }}>
+        {team?.name || '—'}
+      </span>
+    </div>
+  );
+}
+
+// ─── HOMEPAGE ────────────────────────────────────────────────────────────────
+export function AnalystDashboard({ fixtures = [], onSelect }) {
+  // Prioritize: live → CL/EL → upcoming today → any scheduled
+  const topMatches = useMemo(() => {
+    const scored = (fixtures || [])
+      .filter(f => f.homeTeam?.name && f.awayTeam?.name && f.date)
+      .map(f => {
+        let score = 0;
+        if (f.status === 'IN_PLAY' || f.status === 'PAUSED') score += 100;
+        if (f.league?.code === 'CL' || f.league?.code === 'EL') score += 50;
+        if (f.status === 'SCHEDULED') score += 20;
+        const prob = f.probability?.probabilities;
+        if (prob) {
+          const max = Math.max(prob.home ?? 0, prob.draw ?? 0, prob.away ?? 0);
+          score += max; // higher confidence = higher up
+        }
+        return { fixture: f, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    return scored.slice(0, 6).map(s => s.fixture);
+  }, [fixtures]);
+
+  const liveCount = useMemo(() =>
+    (fixtures || []).filter(f => f.status === 'IN_PLAY' || f.status === 'PAUSED').length,
+    [fixtures]
+  );
+
+  const today = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  });
+
+  return (
+    <div style={{ padding: '32px 24px', maxWidth: 960, margin: '0 auto' }}>
+
+      {/* ── HERO ─────────────────────────────────────────────────────── */}
+      <div className="animate-fade-in" style={{ marginBottom: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 4, lineHeight: 1.2 }}>
+              Top Match Insights
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>
+              {today} · AI-powered predictions for today's key fixtures
+            </p>
+          </div>
+          {liveCount > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 16px', borderRadius: 99,
+              background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.25)',
+            }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', animation: 'pulse 1.5s infinite' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#22c55e' }}>{liveCount} Live Now</span>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ── INSIGHT CARDS ────────────────────────────────────────────── */}
+      {topMatches.length > 0 ? (
+        <div className="animate-fade-in" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+          gap: 16,
+        }}>
+          {topMatches.map((fixture, i) => (
+            <InsightCard
+              key={fixture.id}
+              fixture={fixture}
+              onSelect={onSelect}
+              featured={i === 0}
+            />
+          ))}
+        </div>
+      ) : (
+        /* ── EMPTY STATE ─────────────────────────────────────────── */
+        <div className="animate-fade-in" style={{
+          textAlign: 'center', padding: '80px 24px',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 16, background: 'var(--bg-surface)',
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>⚽</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>No fixtures available</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            Make sure the backend is running and the API keys are configured.
+          </div>
+        </div>
+      )}
+
+      {/* ── MORE FIXTURES HINT ────────────────────────────────────── */}
+      {fixtures.length > 6 && (
+        <p style={{
+          textAlign: 'center', marginTop: 24,
+          fontSize: 12, color: 'var(--text-muted)',
+        }}>
+          {fixtures.length - 6} more fixtures available — browse via the sidebar
+        </p>
+      )}
     </div>
   );
 }

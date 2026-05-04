@@ -4,7 +4,7 @@ import React from 'react';
  * TopNav — Clean, minimal top navigation.
  * Logo + breadcrumb + status indicator.
  */
-export function TopNav({ onGoDashboard, fixtureSelected }) {
+export function TopNav({ onGoDashboard, fixtureSelected, onInvestorMode }) {
   return (
     <nav style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -45,6 +45,12 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
         <span className="hidden sm:block" style={{ fontSize: 11, color: 'var(--text-muted)' }}>Connected</span>
+        <button 
+          onClick={onInvestorMode}
+          className="ml-4 px-3 py-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-cyan-500/30 rounded text-xs font-bold text-cyan-400 transition-colors tracking-wide hidden sm:block"
+        >
+          INVESTOR PITCH
+        </button>
       </div>
     </nav>
   );

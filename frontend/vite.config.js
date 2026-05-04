@@ -10,5 +10,15 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query', 'zustand'],
+          charts: ['recharts', 'd3'],
+        }
+      }
+    }
   }
 })

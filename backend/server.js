@@ -44,7 +44,7 @@ import cors from 'cors';
 process.on('uncaughtException',  err => console.error('[CRASH PREVENTED]', err.message));
 process.on('unhandledRejection', err => console.error('[PROMISE REJECTION]', err?.message || err));
 
-import { initDb, query } from './db/index.js';
+import { initDb, query, isDbAvailable } from './db/index.js';
 import initJobs from './jobs/scheduler.js';
 import { FD_LEAGUES, APF_LEAGUES } from './constants/leagues.js';
 import dataRouter from './services/dataRouter.js';
@@ -60,6 +60,12 @@ import matchDataRouter from './routes/matchData.js';
 import analysisRouter from './routes/analysis.js';
 import engineRouter from './routes/engine.js';
 import oddsRouter from './routes/odds.js';
+import resultsRouter from './routes/results.js';
+import backtestRouter from './routes/backtest.js';
+import performanceRouter from './routes/performance.js';
+import feedbackRouter from './routes/feedback.js';
+import verifyRouter from './routes/verify.js';
+import demoRouter from './routes/demo.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -103,9 +109,22 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// ─── RESPONSE TIME LOGGING ──────────────────────────────────────────
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const elapsed = Date.now() - start;
+    if (elapsed > 300 && !req.url.includes('/health')) {
+      console.warn(`[PERF] Slow response: ${req.method} ${req.url} — ${elapsed}ms`);
+    }
+  });
+  next();
+});
+
 // ─── HEALTH CHECK ───────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   const hasDb      = !!DB_URL;
+  const dbConnected = isDbAvailable();
   const hasApi     = isValidKey(APISPORTS_KEY);
   const hasFd      = isValidKey(FD_TOKEN);
   const hasClaude  = isValidKey(CLAUDE_KEY, 20);
@@ -120,6 +139,7 @@ app.get('/health', (_req, res) => {
     time: new Date().toISOString(),
     env: {
       hasDBUrl:       hasDb,
+      dbConnected:    dbConnected,
       hasApisports:   !!hasApi,
       hasFootballdata: !!hasFd,
       hasClaude:      !!hasClaude,
@@ -162,6 +182,18 @@ safeMount('/api/match-data', matchDataRouter, 'match-data');
 safeMount('/api/analysis', analysisRouter, 'analysis');
 safeMount('/api/engine', engineRouter, 'engine');
 safeMount('/api/odds', oddsRouter, 'odds');
+safeMount('/api/results', resultsRouter, 'results');
+safeMount('/api/backtest', backtestRouter, 'backtest');
+safeMount('/api/performance', performanceRouter, 'performance');
+safeMount('/api/feedback', feedbackRouter, 'feedback');
+safeMount('/api/model', feedbackRouter, 'model');  // Mount feedback routes under /api/model too
+safeMount('/api/verify', verifyRouter, 'verify');
+safeMount('/api/monitor', verifyRouter, 'monitor');
+safeMount('/api/demo', demoRouter, 'demo');
+
+// Debug / integrity routes — served from the fixtures router
+// GET /api/debug/fixtures-integrity
+app.use('/api/debug', fixturesRouter);
 
 // ─── MODEL PERFORMANCE ENDPOINT ─────────────────────────────────────
 app.get('/api/model/performance', async (_req, res) => {
@@ -239,6 +271,18 @@ async function seedInitialData() {
 async function startServer() {
   try {
     await initDb();
+    // Initialize model versioning (seeds v1.0 if needed)
+    const { getActiveVersion } = await import('./engine/modelVersioning.js');
+    const activeModel = await getActiveVersion();
+    console.log(`  Active model: ${activeModel.version} (weights: ${JSON.stringify(activeModel.weights)})`);
+    // Initialize calibration curves
+    const { initCalibration } = await import('./engine/calibrationLayer.js');
+    await initCalibration();
+    
+    // Precompute demo predictions and prime the cache for <1s load times
+    const { precomputeDemoPredictions } = await import('./services/demoEngine.js');
+    await precomputeDemoPredictions();
+    
     await seedInitialData();
   } catch (dbErr) {
     console.error('⚠️  Database init failed — running without DB:', dbErr.message);
@@ -262,3 +306,27 @@ startServer().catch(err => {
   console.error('Failed to start server:', err);
   process.exit(1);
 });
+
+// ─── GRACEFUL SHUTDOWN ──────────────────────────────────────────────
+async function gracefulShutdown(signal) {
+  console.log(`\n[SHUTDOWN] Received ${signal} — shutting down gracefully...`);
+  try {
+    const { closeDb } = await import('./db/index.js');
+    await closeDb();
+    console.log('[SHUTDOWN] Database connections closed.');
+  } catch (err) {
+    console.error('[SHUTDOWN] Error during cleanup:', err.message);
+  }
+  server.close(() => {
+    console.log('[SHUTDOWN] HTTP server closed.');
+    process.exit(0);
+  });
+  // Force exit after 10 seconds if graceful shutdown hangs
+  setTimeout(() => {
+    console.error('[SHUTDOWN] Forced exit after timeout.');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

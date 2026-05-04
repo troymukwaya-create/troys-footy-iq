@@ -7,8 +7,33 @@ import React from 'react';
 export function FixtureCard({ fixture, isSelected, onClick }) {
   if (!fixture) return null;
 
-  const home = fixture.homeTeam?.name || 'TBD';
-  const away = fixture.awayTeam?.name || 'TBD';
+  // ─── FRONTEND SAFETY CHECK ──────────────────────────────────────────
+  // NEVER render a fixture with missing or invalid critical fields.
+  // This prevents incorrect data from ever appearing in the UI.
+  const homeName = fixture.homeTeam?.name;
+  const awayName = fixture.awayTeam?.name;
+  const hasValidDate = fixture.date && !isNaN(new Date(fixture.date).getTime());
+  const INVALID_NAMES = new Set(['undefined', 'null', 'tbd', '', undefined, null]);
+
+  if (INVALID_NAMES.has(homeName?.toLowerCase?.()) || 
+      INVALID_NAMES.has(awayName?.toLowerCase?.()) || 
+      !hasValidDate) {
+    console.warn('[FixtureCard] ⚠️ Blocked render of invalid fixture:', fixture.id, { homeName, awayName, date: fixture.date });
+    return (
+      <div style={{
+        padding: '10px 12px', marginBottom: 4,
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border-subtle)',
+        background: 'transparent',
+      }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Data unavailable</span>
+      </div>
+    );
+  }
+  // ────────────────────────────────────────────────────────────────────
+
+  const home = homeName;
+  const away = awayName;
   const homeCrest = fixture.homeTeam?.crest || null;
   const awayCrest = fixture.awayTeam?.crest || null;
   const status = fixture.status || 'SCHEDULED';

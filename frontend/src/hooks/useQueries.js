@@ -207,4 +207,29 @@ export function useValueEdges(fixtureId) {
   });
 }
 
+// ─── DEMO APP BOOT (PARALLEL FETCH) ─────────────────────────────────
+// Fetches all critical demo data in parallel for <1s perceived load
+
+export function useAppBootData() {
+  return useQuery({
+    queryKey: ['app-boot'],
+    queryFn: async () => {
+      // Parallelize requests! No sequential chaining.
+      const [demoStatus, demoDash, demoPreds] = await Promise.all([
+        api.get('/demo/status').catch(() => ({ data: { system: { demoMode: true } } })),
+        api.get('/demo/dashboard').catch(() => ({ data: { dashboard: null } })),
+        api.get('/demo/predictions').catch(() => ({ data: { data: { matches: [] } } }))
+      ]);
+
+      return {
+        status: demoStatus.data,
+        dashboard: demoDash.data.dashboard,
+        predictions: demoPreds.data.data?.matches || [],
+      };
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+}
+
 export { api };

@@ -9,9 +9,12 @@ import { LeagueSidebar } from './components/LeagueSidebar.jsx';
 import { GoalFlash } from './components/GoalFlash.jsx';
 import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
-import { MatchAnalysisPanel } from './components/MatchAnalysisPanel.jsx';
-import { AIInsightsPanel } from './components/AIInsightsPanel.jsx';
-import { ParlayBuilderPanel } from './components/ParlayBuilderPanel.jsx';
+import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
+
+const MatchAnalysisPanel = React.lazy(() => import('./components/MatchAnalysisPanel.jsx').then(m => ({ default: m.MatchAnalysisPanel })));
+const AIInsightsPanel = React.lazy(() => import('./components/AIInsightsPanel.jsx').then(m => ({ default: m.AIInsightsPanel })));
+const ParlayBuilderPanel = React.lazy(() => import('./components/ParlayBuilderPanel.jsx').then(m => ({ default: m.ParlayBuilderPanel })));
+import { InvestorDashboard } from './components/InvestorDashboard.jsx';
 
 export default function App() {
   useRealTime();
@@ -22,6 +25,18 @@ export default function App() {
     goalFlashes,
   } = useStore();
 
+  useEffect(() => {
+    performance.mark('ttfr-start');
+    return () => {
+      performance.mark('ttfr-end');
+      performance.measure('Time to First Render', 'ttfr-start', 'ttfr-end');
+      const measure = performance.getEntriesByName('Time to First Render')[0];
+      if (measure) {
+        console.log(`[PERF] Time to First Render: ${measure.duration.toFixed(2)}ms`);
+      }
+    };
+  }, []);
+
   const { data: fixturesData, isLoading: fixturesLoading, error: fixturesError } = useFixtures();
   const { data: liveMatches = [] } = useLiveMatches();
   const fixtures = useMemo(() => fixturesData?.fixtures || [], [fixturesData]);
@@ -29,6 +44,7 @@ export default function App() {
   const { data: analysis, isLoading: analysisLoading } = useAnalysis(selectedFixture?.id);
 
   const [mobileTab, setMobileTab] = useState('leagues');
+  const [isInvestorMode, setIsInvestorMode] = useState(false);
 
   // ─── Fixture filtering ─────────────────────────────────────────
   const allFixtures = useMemo(() => {
@@ -93,8 +109,9 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: "'Inter', system-ui, sans-serif", fontSize: '14px' }}>
+      {isInvestorMode && <InvestorDashboard onClose={() => setIsInvestorMode(false)} />}
       <GoalFlash flashes={goalFlashes} />
-      <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
+      <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} onInvestorMode={() => setIsInvestorMode(true)} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* ═══ LEFT SIDEBAR ═══ */}
@@ -110,9 +127,11 @@ export default function App() {
           {/* Fixture List */}
           <div className="flex-1 overflow-y-auto" style={{ padding: '8px' }}>
             {fixturesLoading && (
-              <div style={{ padding: '40px 0', textAlign: 'center' }}>
-                <div className="w-5 h-5 border-2 rounded-full animate-spin mx-auto mb-3" style={{ borderColor: 'var(--border-default)', borderTopColor: 'var(--accent)' }} />
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Loading fixtures…</div>
+              <div className="flex flex-col gap-2 p-2">
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
               </div>
             )}
 
@@ -166,8 +185,12 @@ export default function App() {
         {/* ═══ CENTER PANEL ═══ */}
         <main className="center-panel flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
           <div style={{ maxWidth: 960, margin: '0 auto' }}>
-            {selectedFixture ? (
-              <MatchAnalysisPanel fixture={selectedFixture} analysis={analysis} isLoading={analysisLoading} />
+            {fixturesLoading ? (
+              <SkeletonDashboard />
+            ) : selectedFixture ? (
+              <React.Suspense fallback={<SkeletonDashboard />}>
+                <MatchAnalysisPanel fixture={selectedFixture} analysis={analysis} isLoading={analysisLoading} />
+              </React.Suspense>
             ) : (
               <AnalystDashboard fixtures={filteredFixtures} onSelect={handleSelectFixture} />
             )}
@@ -176,9 +199,13 @@ export default function App() {
 
         {/* ═══ RIGHT PANEL ═══ */}
         <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto' }}>
-          <AIInsightsPanel fixture={selectedFixture} analysis={analysis} isLoading={analysisLoading} />
+          <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
+            <AIInsightsPanel fixture={selectedFixture} analysis={analysis} isLoading={analysisLoading} />
+          </React.Suspense>
           <div style={{ padding: '0 12px 12px' }}>
-            <ParlayBuilderPanel />
+            <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
+              <ParlayBuilderPanel />
+            </React.Suspense>
           </div>
         </aside>
       </div>

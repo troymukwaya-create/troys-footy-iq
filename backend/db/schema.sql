@@ -227,3 +227,154 @@ CREATE INDEX IF NOT EXISTS idx_model_runs_version ON model_runs(model_version, c
 CREATE INDEX IF NOT EXISTS idx_odds_history_fixture ON odds_history(fixture_id, market);
 CREATE INDEX IF NOT EXISTS idx_model_params_active ON model_params(is_active) WHERE is_active = true;
 
+-- ═══════════════════════════════════════════════════════════════════
+-- FEEDBACK LOOP TABLES (v4)
+-- ═══════════════════════════════════════════════════════════════════
+
+-- ─── PER-MATCH MODEL PERFORMANCE ────────────────────────────────────
+-- Stores computed metrics for every evaluated prediction.
+-- This is the core feedback loop output — one row per prediction per match.
+CREATE TABLE IF NOT EXISTS model_performance (
+  id SERIAL PRIMARY KEY,
+  prediction_id INT REFERENCES predictions(id),
+  match_external_id VARCHAR(30) NOT NULL,
+  fixture_id INT REFERENCES fixtures(id),
+  log_loss FLOAT,
+  brier_score FLOAT,
+  prediction_correct BOOLEAN,
+  predicted_outcome VARCHAR(10),
+  actual_outcome VARCHAR(10),
+  prob_home FLOAT,
+  prob_draw FLOAT,
+  prob_away FLOAT,
+  odds_home FLOAT,
+  odds_draw FLOAT,
+  odds_away FLOAT,
+  value_edge_home FLOAT,
+  value_edge_draw FLOAT,
+  value_edge_away FLOAT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_model_perf_match ON model_performance(match_external_id);
+CREATE INDEX IF NOT EXISTS idx_model_perf_fixture ON model_performance(fixture_id);
+CREATE INDEX IF NOT EXISTS idx_model_perf_date ON model_performance(created_at);
+CREATE INDEX IF NOT EXISTS idx_model_perf_correct ON model_performance(prediction_correct);
+
+-- ─── EXTEND PREDICTIONS TABLE ───────────────────────────────────────
+-- Add columns for odds, value edges, and team names (idempotent ALTER)
+DO $$ BEGIN
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS odds_home FLOAT;
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS odds_draw FLOAT;
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS odds_away FLOAT;
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS value_edge_home FLOAT;
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS value_edge_draw FLOAT;
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS value_edge_away FLOAT;
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS match_external_id VARCHAR(30);
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS home_team VARCHAR(100);
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS away_team VARCHAR(100);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_predictions_external ON predictions(match_external_id);
+CREATE INDEX IF NOT EXISTS idx_predictions_date ON predictions(created_at);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- SELF-IMPROVING ENGINE TABLES (v5)
+-- ═══════════════════════════════════════════════════════════════════
+
+-- ─── MARKET-LEVEL PREDICTIONS ──────────────────────────────────────
+-- Stores per-market predictions (BTTS, O/U, etc.) alongside the main 1X2.
+-- Enables market-level feedback and bias detection.
+CREATE TABLE IF NOT EXISTS market_predictions (
+  id SERIAL PRIMARY KEY,
+  prediction_id INT REFERENCES predictions(id) ON DELETE CASCADE,
+  market_type VARCHAR(30) NOT NULL,      -- 'BTTS_YES','OVER_25','HOME_WIN', etc.
+  predicted_prob FLOAT NOT NULL,
+  implied_odds_prob FLOAT,               -- From bookmaker odds if available
+  actual_hit BOOLEAN,                    -- Filled after match ends
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_market_pred_prediction ON market_predictions(prediction_id);
+CREATE INDEX IF NOT EXISTS idx_market_pred_type ON market_predictions(market_type);
+CREATE INDEX IF NOT EXISTS idx_market_pred_unevaluated ON market_predictions(actual_hit) WHERE actual_hit IS NULL;
+
+-- ─── FEEDBACK AGGREGATES ───────────────────────────────────────────
+-- Stores aggregated bias metrics by league, market type, and odds range.
+-- This is the core data structure for the feedback loop.
+CREATE TABLE IF NOT EXISTS feedback_aggregates (
+  id SERIAL PRIMARY KEY,
+  model_version VARCHAR(30) NOT NULL,
+  dimension VARCHAR(30) NOT NULL,         -- 'league', 'market', 'odds_range', 'outcome'
+  dimension_value VARCHAR(50) NOT NULL,   -- 'PL', 'BTTS_YES', '1.50-2.00', 'DRAW'
+  sample_size INT NOT NULL DEFAULT 0,
+  avg_predicted_prob FLOAT,
+  actual_hit_rate FLOAT,
+  bias FLOAT,                             -- predicted - actual (positive = overconfident)
+  brier_score FLOAT,
+  log_loss FLOAT,
+  computed_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(model_version, dimension, dimension_value)
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_agg_version ON feedback_aggregates(model_version);
+CREATE INDEX IF NOT EXISTS idx_feedback_agg_dimension ON feedback_aggregates(dimension, dimension_value);
+
+-- ─── MODEL VERSIONS ────────────────────────────────────────────────
+-- Full version tracking with weights, calibration, and comparison metrics.
+-- Each version is a snapshot of model configuration at a point in time.
+CREATE TABLE IF NOT EXISTS model_versions (
+  id SERIAL PRIMARY KEY,
+  version VARCHAR(30) UNIQUE NOT NULL,
+  parent_version VARCHAR(30),
+  weights JSONB NOT NULL,                 -- { poisson: 0.50, form: 0.25, ... }
+  calibration_curves JSONB,               -- Data-driven calibration maps
+  league_corrections JSONB,               -- Per-league goal variance corrections
+  bias_corrections JSONB,                 -- Correction factors from feedback loop
+  config JSONB,                           -- Additional model config
+  metrics JSONB,                          -- Performance at time of creation
+  is_active BOOLEAN DEFAULT false,
+  promoted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_model_versions_active ON model_versions(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_model_versions_date ON model_versions(created_at);
+
+-- ─── EXTEND PREDICTIONS TABLE (v5) ─────────────────────────────────
+DO $$ BEGIN
+  ALTER TABLE predictions ADD COLUMN IF NOT EXISTS league_code VARCHAR(10);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_predictions_league ON predictions(league_code);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- PRODUCTION HARDENING TABLES (v6)
+-- ═══════════════════════════════════════════════════════════════════
+
+-- ─── SYSTEM ALERTS ─────────────────────────────────────────────────
+-- Persistent monitoring alerts. Replaces in-memory-only tracking.
+CREATE TABLE IF NOT EXISTS system_alerts (
+  id SERIAL PRIMARY KEY,
+  alert_type VARCHAR(50) NOT NULL,        -- 'ACCURACY_DROP', 'API_FAILURE', 'MODEL_DRIFT', etc.
+  severity VARCHAR(20) NOT NULL,          -- 'INFO', 'WARNING', 'CRITICAL'
+  message TEXT NOT NULL,
+  context JSONB,                          -- Additional alert data
+  source VARCHAR(50) DEFAULT 'system',    -- 'monitor', 'optimizer', 'scheduler', etc.
+  acknowledged BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_alerts_severity ON system_alerts(severity) WHERE acknowledged = false;
+CREATE INDEX IF NOT EXISTS idx_alerts_type ON system_alerts(alert_type);
+CREATE INDEX IF NOT EXISTS idx_alerts_recent ON system_alerts(created_at DESC);
+
+-- ─── PERFORMANCE INDEXES (v6) ──────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_mp_eval_join ON model_performance(prediction_id, actual_outcome);
+CREATE INDEX IF NOT EXISTS idx_pred_pending ON predictions(match_external_id) WHERE actual_result IS NULL;
+CREATE INDEX IF NOT EXISTS idx_market_pred_eval ON market_predictions(prediction_id, actual_hit);
+CREATE INDEX IF NOT EXISTS idx_pred_model_version ON predictions(model_version);
+CREATE INDEX IF NOT EXISTS idx_pred_actual ON predictions(actual_result) WHERE actual_result IS NOT NULL;
+

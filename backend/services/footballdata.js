@@ -14,7 +14,7 @@ client.interceptors.request.use(config => {
 // Delay helper to avoid hitting 10 req/min rate limit
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-export const LEAGUE_CODES = ['PL', 'PD', 'BL1', 'SA', 'FL1', 'BSA', 'CL', 'ELC'];
+export const LEAGUE_CODES = ['PL', 'PD', 'BL1', 'SA', 'FL1', 'BSA', 'CL', 'EL', 'ELC']; // EL = Europa League
 
 // Get today's date in YYYY-MM-DD format
 function today() { return new Date().toISOString().split('T')[0]; }

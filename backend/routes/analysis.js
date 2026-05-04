@@ -27,7 +27,7 @@ import {
 } from '../services/normalizer.js';
 import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../services/probabilityEngine.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
-import { logPrediction } from '../pipeline/evaluate.js';
+import { storePrediction } from '../services/predictionService.js';
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
 
@@ -267,7 +267,15 @@ router.get('/:matchId', async (req, res) => {
           h2h: h2hData || emptyH2H(),
         });
         // Fire-and-forget — don't block the response
-        logPrediction(matchId, probabilityResult, features).catch(() => {});
+        storePrediction({
+          matchExternalId: matchId,
+          homeTeam: match.homeTeam?.name,
+          awayTeam: match.awayTeam?.name,
+          prediction: probabilityResult,
+          odds: null,
+          valueEdges: null,
+          features,
+        }).catch(() => {});
       } catch (logErr) {
         // Non-critical: prediction logging should never break analysis
       }

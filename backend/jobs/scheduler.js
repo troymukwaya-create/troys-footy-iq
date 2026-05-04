@@ -5,6 +5,16 @@ import { broadcast } from '../server.js';
 import { FD_LEAGUES } from '../constants/leagues.js';
 import { processEvent, predictInPlay, registerMatch, getMatchState, predictPreMatch } from '../engine/inferenceEngine.js';
 import { evaluateStoredPredictions } from '../pipeline/evaluate.js';
+import { ingestResults } from '../services/resultService.js';
+import { ingestDailyFixtures, generateDailyPredictions } from '../services/dataIngestionService.js';
+import { computeFeedbackAggregates } from '../engine/feedbackEngine.js';
+import { optimizeWeights } from '../engine/weightOptimizer.js';
+import { computeCalibrationCurve, invalidateCalibrationCache } from '../engine/calibrationLayer.js';
+import { getActiveVersion, createVersion, promoteVersion, updateVersionMetrics, rollbackVersion } from '../engine/modelVersioning.js';
+import { generateModelInsights } from '../services/modelAnalyst.js';
+import { invalidateWeightCache } from '../engine/ensemble.js';
+import { runHealthCheck, checkForModelDegradation, createAlert } from '../services/monitor.js';
+import { invalidateMaturityCache } from '../engine/trustSignals.js';
 
 let previousScores = {};
 
@@ -147,13 +157,48 @@ export default function initJobs() {
   livePollLoop();  
   setInterval(liveStatsPollLoop, 60000);
 
+  // Daily at 08:00 — Update standings for all leagues
   cron.schedule('0 8 * * *', async () => {
     for (const code of Object.keys(FD_LEAGUES)) {
       await updateAndBroadcastStandings(code);
       await new Promise(r => setTimeout(r, 7000));
     }
   });
-  // Weekly model evaluation — every Monday at 03:00
+
+  // Daily at 06:00 — Refresh upcoming fixtures from all sources
+  cron.schedule('0 6 * * *', async () => {
+    console.log('[SCHEDULER] Running daily fixture ingestion...');
+    try {
+      const result = await ingestDailyFixtures();
+      console.log('[SCHEDULER] Fixture ingestion complete:', result);
+    } catch (err) {
+      console.error('[SCHEDULER] Fixture ingestion failed:', err.message);
+    }
+  });
+
+  // Every 4 hours — Fetch results for finished matches + feedback loop
+  cron.schedule('0 */4 * * *', async () => {
+    console.log('[SCHEDULER] Running result ingestion + feedback loop...');
+    try {
+      const result = await ingestResults(3);
+      console.log('[SCHEDULER] Result ingestion complete:', result);
+    } catch (err) {
+      console.error('[SCHEDULER] Result ingestion failed:', err.message);
+    }
+  });
+
+  // Daily at 23:00 — Generate predictions for tomorrow's matches
+  cron.schedule('0 23 * * *', async () => {
+    console.log('[SCHEDULER] Generating daily predictions...');
+    try {
+      const result = await generateDailyPredictions();
+      console.log('[SCHEDULER] Daily predictions complete:', result);
+    } catch (err) {
+      console.error('[SCHEDULER] Daily predictions failed:', err.message);
+    }
+  });
+
+  // Weekly Monday 03:00 — Full model evaluation
   cron.schedule('0 3 * * 1', async () => {
     console.log('[SCHEDULER] Running weekly model evaluation...');
     try {
@@ -163,4 +208,132 @@ export default function initJobs() {
       console.error('[SCHEDULER] Evaluation failed:', err.message);
     }
   });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // SELF-IMPROVING ENGINE JOBS
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Daily at 04:00 — Compute feedback aggregates (bias detection)
+  cron.schedule('0 4 * * *', async () => {
+    console.log('[SCHEDULER] Computing feedback aggregates...');
+    try {
+      const result = await computeFeedbackAggregates();
+      console.log(`[SCHEDULER] Feedback: ${result.aggregates.length} aggregates, ${result.biases.length} biases detected`);
+    } catch (err) {
+      console.error('[SCHEDULER] Feedback computation failed:', err.message);
+    }
+  });
+
+  // Weekly Monday 04:00 — Run weight optimization
+  cron.schedule('0 4 * * 1', async () => {
+    console.log('[SCHEDULER] Running weight optimization...');
+    try {
+      const result = await optimizeWeights();
+      if (result.optimized) {
+        console.log(`[SCHEDULER] ✅ Optimized! New version: ${result.newVersion}`);
+        console.log(`[SCHEDULER] Weights: ${JSON.stringify(result.newWeights)}`);
+        console.log(`[SCHEDULER] Log loss improvement: ${result.improvementPct}%`);
+        // Invalidate caches so new weights take effect
+        invalidateWeightCache();
+      } else {
+        console.log(`[SCHEDULER] No optimization: ${result.reason}`);
+      }
+    } catch (err) {
+      console.error('[SCHEDULER] Weight optimization failed:', err.message);
+    }
+  });
+
+  // Weekly Monday 04:30 — Update calibration curves from data
+  cron.schedule('30 4 * * 1', async () => {
+    console.log('[SCHEDULER] Updating calibration curves...');
+    try {
+      // Fetch evaluated predictions for calibration
+      const predResult = await query(`
+        SELECT
+          CASE WHEN actual_result = predicted_outcome THEN prob_home / 100.0 ELSE 0 END as predicted_prob,
+          CASE WHEN prediction_correct THEN true ELSE false END as actual_hit
+        FROM model_performance mp
+        JOIN predictions p ON mp.prediction_id = p.id
+        WHERE mp.actual_outcome IS NOT NULL
+        ORDER BY mp.created_at DESC
+        LIMIT 300
+      `);
+
+      const predictions = predResult?.rows || [];
+      if (predictions.length >= 50) {
+        const newCurve = computeCalibrationCurve(predictions);
+        if (newCurve) {
+          // Store in active version
+          const version = await getActiveVersion();
+          await updateVersionMetrics(version.version, {
+            ...(version.metrics || {}),
+            calibrationUpdatedAt: new Date().toISOString(),
+          });
+          invalidateCalibrationCache();
+          console.log('[SCHEDULER] ✅ Calibration curves updated');
+        }
+      } else {
+        console.log(`[SCHEDULER] Insufficient data for calibration (${predictions.length}/50)`);
+      }
+    } catch (err) {
+      console.error('[SCHEDULER] Calibration update failed:', err.message);
+    }
+  });
+
+  // Weekly Monday 05:00 — Generate AI insights
+  cron.schedule('0 5 * * 1', async () => {
+    console.log('[SCHEDULER] Generating AI model insights...');
+    try {
+      const insights = await generateModelInsights();
+      console.log(`[SCHEDULER] AI insights: ${insights.suggestions?.length || 0} suggestions generated`);
+    } catch (err) {
+      console.error('[SCHEDULER] AI insights failed:', err.message);
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PRODUCTION MONITORING & SAFETY
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Every 6 hours — System health check + monitoring heartbeat
+  cron.schedule('0 */6 * * *', async () => {
+    console.log('[SCHEDULER] Running system health check...');
+    try {
+      const health = await runHealthCheck();
+      console.log(`[SCHEDULER] Health: ${health.status}`);
+      if (health.status === 'CRITICAL') {
+        console.error('[SCHEDULER] ⚠️ SYSTEM CRITICAL — check /api/monitor/health');
+      }
+    } catch (err) {
+      console.error('[SCHEDULER] Health check failed:', err.message);
+    }
+  });
+
+  // Daily at 05:00 — Auto-rollback check
+  cron.schedule('0 5 * * *', async () => {
+    console.log('[SCHEDULER] Checking for model degradation...');
+    try {
+      const result = await checkForModelDegradation();
+      if (result.shouldRollback) {
+        console.error(`[SCHEDULER] ⚠️ MODEL DEGRADATION DETECTED: ${result.reason}`);
+        const rolledBack = await rollbackVersion();
+        if (rolledBack) {
+          console.log(`[SCHEDULER] ✅ Auto-rolled back to ${rolledBack}`);
+          invalidateWeightCache();
+          invalidateMaturityCache();
+          await createAlert('AUTO_ROLLBACK', 'CRITICAL',
+            `Auto-rolled back to ${rolledBack}: ${result.reason}`,
+            { rolledBackTo: rolledBack, reason: result.reason },
+            'scheduler'
+          );
+        }
+      } else {
+        console.log(`[SCHEDULER] Model health OK: ${result.reason}`);
+      }
+    } catch (err) {
+      console.error('[SCHEDULER] Degradation check failed:', err.message);
+    }
+  });
+
+  console.log('✅ Scheduler initialized: live poll, fixtures, results, predictions, evaluation, feedback, optimization, AI insights, monitoring, auto-rollback');
 }

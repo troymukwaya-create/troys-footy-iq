@@ -1,32 +1,67 @@
 // ─── ENSEMBLE PREDICTION SYSTEM ─────────────────────────────────────
 // Combines multiple prediction sources into a single calibrated output.
+// SELF-IMPROVING: Weights are dynamically loaded from the model versioning
+// system and updated weekly by the weight optimizer.
 //
 // Architecture:
 //   Layer 1: Dixon-Coles Poisson baseline → scoreline matrix → outcome probs
-//   Layer 2: ML residual correction (XGBoost when available, rules fallback)
-//   Layer 3: Market consensus (when odds available)
-//   Final:   Weighted blend → Isotonic calibration → output
+//   Layer 2: Form-weighted prediction (last 5 matches, exponential recency)
+//   Layer 3: League-specific goal variance correction
+//   Layer 4: Market consensus (when odds available)
+//   Final:   Weighted blend → Bias correction → Calibration → output
 //
-// Why ensemble?
-//   - Poisson: stable, interpretable, low variance, misses context
-//   - ML:      captures form/momentum, higher variance, needs data
-//   - Market:  "wisdom of crowds", strongest single signal but not always available
-//   - Blend reduces variance while capturing context → better OOS performance
+// Weight formula: final = w1*poisson + w2*form + w3*leagueCorr + w4*market
+// Weights are optimized via coordinate descent (see weightOptimizer.js)
 
 import { computePreMatchFeatures } from './preMatchFeatures.js';
 import { computeResidualCorrection, computeFeatures } from './featureEngine.js';
 import { calibrateOutcomes } from './calibrationLayer.js';
+import { getActiveVersion } from './modelVersioning.js';
 
 /**
- * Default ensemble weights.
- * In production, these are optimized via grid search on the validation set
- * to minimize log loss. Updated during weekly retraining.
+ * Fallback ensemble weights — used only when no active model version exists.
+ * In production, weights are loaded from model_versions table and
+ * updated weekly by the weight optimizer.
  */
-const DEFAULT_WEIGHTS = {
-  poisson: 0.50,  // Statistical baseline (always available)
-  ml:      0.30,  // ML residual correction
-  market:  0.20,  // Market consensus (when available, redistributed otherwise)
+const FALLBACK_WEIGHTS = {
+  poisson:          0.50,  // Statistical baseline (always available)
+  form:             0.20,  // Form-weighted recent performance
+  leagueCorrection: 0.10,  // League-specific adjustments
+  market:           0.20,  // Market consensus (when available)
 };
+
+// ─── Dynamic weight cache ───────────────────────────────────────────
+let _cachedWeights = null;
+let _cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Load active weights from the model versioning system.
+ * Cached for 5 minutes to avoid DB hits on every prediction.
+ */
+async function loadActiveWeights() {
+  const now = Date.now();
+  if (_cachedWeights && (now - _cacheTimestamp) < CACHE_TTL) {
+    return _cachedWeights;
+  }
+
+  try {
+    const version = await getActiveVersion();
+    _cachedWeights = version.weights || FALLBACK_WEIGHTS;
+    _cacheTimestamp = now;
+    return _cachedWeights;
+  } catch {
+    return FALLBACK_WEIGHTS;
+  }
+}
+
+/**
+ * Invalidate the cached weights (call after weight optimization).
+ */
+export function invalidateWeightCache() {
+  _cachedWeights = null;
+  _cacheTimestamp = 0;
+}
 
 /**
  * Combine prediction sources into a single probability output.
@@ -37,14 +72,26 @@ const DEFAULT_WEIGHTS = {
  * @param {Object} options       - { weights, applyCalibration }
  * @returns {Object} Final calibrated probabilities
  */
-export function ensemblePredict(poissonProbs, mlProbs = null, marketProbs = null, options = {}) {
-  const weights = { ...DEFAULT_WEIGHTS, ...(options.weights || {}) };
+export async function ensemblePredict(poissonProbs, mlProbs = null, marketProbs = null, options = {}) {
+  // Load weights dynamically from model versioning system
+  const activeWeights = await loadActiveWeights();
+  const weights = { ...activeWeights, ...(options.weights || {}) };
 
-  // Redistribute weights if a source is missing
+  // Build source list — now includes form and league correction sources
   const sources = [];
-  if (poissonProbs) sources.push({ probs: poissonProbs, weight: weights.poisson, name: 'poisson' });
-  if (mlProbs)      sources.push({ probs: mlProbs,      weight: weights.ml,      name: 'ml' });
-  if (marketProbs)  sources.push({ probs: marketProbs,   weight: weights.market,  name: 'market' });
+  if (poissonProbs) {
+    sources.push({ probs: poissonProbs, weight: weights.poisson || 0.50, name: 'poisson' });
+  }
+  if (mlProbs) {
+    // ML/form correction uses the 'form' weight
+    sources.push({ probs: mlProbs, weight: weights.form || 0.20, name: 'form' });
+  }
+  if (options.leagueCorrProbs) {
+    sources.push({ probs: options.leagueCorrProbs, weight: weights.leagueCorrection || 0.10, name: 'leagueCorrection' });
+  }
+  if (marketProbs) {
+    sources.push({ probs: marketProbs, weight: weights.market || 0.20, name: 'market' });
+  }
 
   if (sources.length === 0) {
     return { home: 33.3, draw: 33.3, away: 33.3, method: 'uniform_fallback' };
@@ -70,7 +117,15 @@ export function ensemblePredict(poissonProbs, mlProbs = null, marketProbs = null
   draw = (draw / total) * 100;
   away = (away / total) * 100;
 
-  // Apply calibration (Phase 3 of the pipeline)
+  // Apply bias corrections from feedback loop
+  if (options.biasCorrections) {
+    const corrected = applyBiasCorrections({ home, draw, away }, options.biasCorrections, options.context);
+    home = corrected.home;
+    draw = corrected.draw;
+    away = corrected.away;
+  }
+
+  // Apply calibration (final pipeline stage)
   let final = { home, draw, away };
   if (options.applyCalibration !== false) {
     final = calibrateOutcomes(final);
@@ -82,6 +137,7 @@ export function ensemblePredict(poissonProbs, mlProbs = null, marketProbs = null
     away: parseFloat(final.away.toFixed(1)),
     method: sources.map(s => s.name).join('+'),
     contributions,
+    weightsUsed: weights,
   };
 }
 
@@ -168,8 +224,94 @@ export function oddsToImpliedProbs(odds) {
   };
 }
 
+/**
+ * Compute form-based probabilities from recent match results.
+ * Uses exponential recency weighting on the last 5 matches.
+ *
+ * @param {Object} homeStats - { form: 'WDWWL', avgGoalsFor, avgGoalsAgainst, played }
+ * @param {Object} awayStats
+ * @returns {Object} { home, draw, away } as percentages
+ */
+export function computeFormProbabilities(homeStats, awayStats) {
+  const homeFormScore = parseFormScore(homeStats?.form);
+  const awayFormScore = parseFormScore(awayStats?.form);
+
+  // Base rates from recent form
+  const homeStrength = 0.35 + (homeFormScore - 0.5) * 0.30;  // Range: ~0.20-0.50
+  const awayStrength = 0.30 + (awayFormScore - 0.5) * 0.30;
+  const drawBase = 1 - homeStrength - awayStrength;
+
+  // Normalize
+  const total = homeStrength + drawBase + awayStrength;
+  return {
+    home: parseFloat(((homeStrength / total) * 100).toFixed(1)),
+    draw: parseFloat(((drawBase / total) * 100).toFixed(1)),
+    away: parseFloat(((awayStrength / total) * 100).toFixed(1)),
+  };
+}
+
+/**
+ * Parse form string into a score [0, 1].
+ * W=1, D=0.4, L=0, with exponential recency weighting.
+ */
+function parseFormScore(form) {
+  if (!form || form === 'N/A' || typeof form !== 'string') return 0.5;
+  const chars = form.toUpperCase().split('').filter(c => 'WDL'.includes(c)).slice(-5);
+  if (chars.length === 0) return 0.5;
+
+  let weightedSum = 0;
+  let totalWeight = 0;
+  for (let i = 0; i < chars.length; i++) {
+    const recency = Math.pow(0.65, chars.length - 1 - i);
+    const value = chars[i] === 'W' ? 1.0 : chars[i] === 'D' ? 0.4 : 0.0;
+    weightedSum += value * recency;
+    totalWeight += recency;
+  }
+  return totalWeight > 0 ? weightedSum / totalWeight : 0.5;
+}
+
+/**
+ * Apply bias corrections from the feedback loop.
+ * Corrections are multiplicative factors that adjust probabilities
+ * based on historically detected biases.
+ */
+function applyBiasCorrections(probs, corrections, context = {}) {
+  let { home, draw, away } = probs;
+
+  // Apply outcome-level corrections
+  const homeCorrKey = 'outcome:HOME';
+  const drawCorrKey = 'outcome:DRAW';
+  const awayCorrKey = 'outcome:AWAY';
+
+  if (corrections[homeCorrKey]) home *= corrections[homeCorrKey].factor;
+  if (corrections[drawCorrKey]) draw *= corrections[drawCorrKey].factor;
+  if (corrections[awayCorrKey]) away *= corrections[awayCorrKey].factor;
+
+  // Apply league-level correction if available
+  if (context?.leagueCode) {
+    const leagueKey = `league:${context.leagueCode}`;
+    if (corrections[leagueKey]) {
+      // League correction is applied proportionally
+      const factor = corrections[leagueKey].factor;
+      home *= factor;
+      draw *= (2 - factor); // Inverse effect on draw
+      away *= factor;
+    }
+  }
+
+  // Re-normalize
+  const total = home + draw + away;
+  return {
+    home: (home / total) * 100,
+    draw: (draw / total) * 100,
+    away: (away / total) * 100,
+  };
+}
+
 export default {
   ensemblePredict,
   applyMLCorrection,
   oddsToImpliedProbs,
+  computeFormProbabilities,
+  invalidateWeightCache,
 };

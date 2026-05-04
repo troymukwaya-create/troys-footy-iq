@@ -7,6 +7,11 @@
 // Example: node pipeline/ingest.js PL 2024
 
 import { query, getClient } from '../db/index.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const FD_BASE = 'https://api.football-data.org/v4';
 
@@ -247,7 +252,14 @@ async function main() {
 // Only run if called directly
 if (process.argv[1]?.includes('ingest')) {
   const dotenv = await import('dotenv');
-  dotenv.config({ path: new URL('../.env', import.meta.url).pathname });
+  const envPath = path.join(__dirname, '../.env');
+  dotenv.config({ path: envPath });
+  // Fallback: try backend/.env directly
+  if (!process.env.FOOTBALLDATA_TOKEN) {
+    dotenv.config({ path: path.join(__dirname, '.env') });
+  }
+  const { initDb } = await import('../db/index.js');
+  await initDb();
   main().catch(err => { console.error('Fatal:', err); process.exit(1); });
 }
 

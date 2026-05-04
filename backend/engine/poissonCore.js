@@ -20,9 +20,10 @@ function factorial(n) {
  * Standard Poisson PMF: P(X=k) = (λ^k * e^(-λ)) / k!
  */
 function poissonPMF(k, lambda) {
-  if (lambda <= 0 || k < 0) return 0;
+  if (!isFinite(lambda) || lambda <= 0 || k < 0) return 0;
   // Use log-space for numerical stability with large k
-  return Math.exp(k * Math.log(lambda) - lambda - Math.log(factorial(k)));
+  const result = Math.exp(k * Math.log(lambda) - lambda - Math.log(factorial(k)));
+  return isFinite(result) ? result : 0;
 }
 
 /**
@@ -124,12 +125,28 @@ function computeFormFactor(form) {
  * λ_away = attackAway * defenseHome * leagueAvg
  */
 export function computeExpectedGoals(homeStats, awayStats, leagueAvg = 1.35) {
+  // Guard: ensure leagueAvg is valid
+  if (!isFinite(leagueAvg) || leagueAvg <= 0) leagueAvg = 1.35;
+
   const home = computeStrengthParams(homeStats, leagueAvg, true);
   const away = computeStrengthParams(awayStats, leagueAvg, false);
 
+  let lambdaHome = home.attack * away.defense * leagueAvg;
+  let lambdaAway = away.attack * home.defense * leagueAvg;
+
+  // NaN/Infinity guard: if computation produced garbage, fall back to averages
+  if (!isFinite(lambdaHome)) {
+    console.warn(`[POISSON] lambdaHome is ${lambdaHome} — falling back to ${leagueAvg}`);
+    lambdaHome = leagueAvg;
+  }
+  if (!isFinite(lambdaAway)) {
+    console.warn(`[POISSON] lambdaAway is ${lambdaAway} — falling back to ${leagueAvg}`);
+    lambdaAway = leagueAvg;
+  }
+
   return {
-    lambdaHome: clamp(home.attack * away.defense * leagueAvg, 0.25, 4.5),
-    lambdaAway: clamp(away.attack * home.defense * leagueAvg, 0.25, 4.5),
+    lambdaHome: clamp(lambdaHome, 0.25, 4.5),
+    lambdaAway: clamp(lambdaAway, 0.25, 4.5),
     params: { home, away },
   };
 }
@@ -185,6 +202,11 @@ export function inPlayLambda(lambdaFull, minutesPlayed, goalDiff = 0, redCardDif
  * @returns {Object} Complete probability breakdown
  */
 export function generateProbabilities(lambdaHome, lambdaAway, rho = -0.08) {
+  // Guard: validate all inputs
+  if (!isFinite(lambdaHome) || lambdaHome <= 0) lambdaHome = 1.35;
+  if (!isFinite(lambdaAway) || lambdaAway <= 0) lambdaAway = 1.15;
+  if (!isFinite(rho)) rho = -0.08;
+
   let homeWin = 0, draw = 0, awayWin = 0;
   let over05 = 0, over15 = 0, over25 = 0, over35 = 0, over45 = 0;
   let bttsYes = 0;
@@ -194,7 +216,7 @@ export function generateProbabilities(lambdaHome, lambdaAway, rho = -0.08) {
     for (let a = 0; a < MAX_GOALS; a++) {
       let prob = poissonPMF(h, lambdaHome) * poissonPMF(a, lambdaAway);
       prob *= dixonColesTau(h, a, lambdaHome, lambdaAway, rho);
-      prob = Math.max(0, prob); // Ensure non-negative after correction
+      prob = isFinite(prob) ? Math.max(0, prob) : 0; // Guard against NaN/Infinity
 
       matrix.push({ home: h, away: a, probability: prob });
 
