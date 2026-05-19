@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const BASE = 'https://v3.football.api-sports.io/';
-const SEASON = 2024;
+const SEASON = 2025;
 
 const LEAGUES = {
   PL: 39, PD: 140, BL1: 78, SA: 135, FL1: 61,

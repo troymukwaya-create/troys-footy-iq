@@ -256,7 +256,7 @@ Return ONLY this JSON (no markdown, no explanation outside JSON):
 
   try {
     const res = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1200,
       messages: [{ role: 'user', content: prompt }],
     }, {
@@ -332,7 +332,7 @@ Return ONLY this JSON:
 
   try {
     const res = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     }, {
@@ -377,7 +377,7 @@ Be direct, specific, and data-driven. Keep answers concise but thorough.`;
 
   try {
     const res = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 600,
       system: systemPrompt,
       messages,

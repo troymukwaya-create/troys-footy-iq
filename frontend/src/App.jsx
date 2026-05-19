@@ -41,6 +41,7 @@ export default function App() {
   const { data: liveMatches = [] } = useLiveMatches();
   const fixtures = useMemo(() => fixturesData?.fixtures || [], [fixturesData]);
   const dataSource = fixturesData?.source || 'loading';
+  const dataMode = fixturesData?.mode || null;
   const { data: analysis, isLoading: analysisLoading } = useAnalysis(selectedFixture?.id);
 
   const [mobileTab, setMobileTab] = useState('leagues');
@@ -126,6 +127,12 @@ export default function App() {
 
           {/* Fixture List */}
           <div className="flex-1 overflow-y-auto" style={{ padding: '8px' }}>
+            {dataMode === 'demo' && (
+              <div id="demo-data-banner" style={{ margin: '0 4px 12px', padding: '10px 12px', borderRadius: 8, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: 11, color: '#F59E0B', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+                <span><strong>Demo data</strong> — displaying sample predictions. Live predictions load once real fixtures are available.</span>
+              </div>
+            )}
             {fixturesLoading && (
               <div className="flex flex-col gap-2 p-2">
                 <SkeletonCard />

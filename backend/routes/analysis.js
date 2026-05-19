@@ -266,7 +266,7 @@ router.get('/:matchId', async (req, res) => {
         const features = computePreMatchFeatures(homeStats, awayStats, {
           h2h: h2hData || emptyH2H(),
         });
-        // Fire-and-forget — don't block the response
+        // Fire-and-forget — don't block the response, but log errors
         storePrediction({
           matchExternalId: matchId,
           homeTeam: match.homeTeam?.name,
@@ -275,20 +275,56 @@ router.get('/:matchId', async (req, res) => {
           odds: null,
           valueEdges: null,
           features,
-        }).catch(() => {});
+        }).catch(err => {
+          console.error(`[analysis] Prediction storage failed for ${matchId}:`, err.message);
+        });
       } catch (logErr) {
         // Non-critical: prediction logging should never break analysis
       }
     }
 
-    // ─── STEP 5: AI analysis (only if we have data) ─────────────
+    // ─── STEP 5: AI analysis (with 6-hour DB cache) ──────────────
     let aiAnalysis = null;
     if (dataQuality !== 'INSUFFICIENT' && ANTHROPIC_KEY && ANTHROPIC_KEY.length > 20) {
-      aiAnalysis = await getAIInsights(match, homeStats, awayStats, h2hData || emptyH2H(), probabilityResult)
-        .catch(err => {
-          console.error('[analysis] AI error:', err.message);
-          return null;
-        });
+      // Check DB cache first (6-hour TTL)
+      try {
+        const { safeQuery } = await import('../db/index.js');
+        const cachedAI = await safeQuery(
+          `SELECT analysis FROM ai_analysis_cache
+           WHERE fixture_id = $1 AND created_at > NOW() - INTERVAL '6 hours'
+           ORDER BY created_at DESC LIMIT 1`,
+          [matchId]
+        );
+        if (cachedAI?.rows?.[0]?.analysis) {
+          console.log(`[analysis] AI cache HIT for ${matchId}`);
+          aiAnalysis = cachedAI.rows[0].analysis;
+        }
+      } catch (cacheErr) {
+        console.error('[analysis] AI cache check failed:', cacheErr.message);
+      }
+
+      // Cache miss — call Claude and store result
+      if (!aiAnalysis) {
+        aiAnalysis = await getAIInsights(match, homeStats, awayStats, h2hData || emptyH2H(), probabilityResult)
+          .catch(err => {
+            console.error('[analysis] AI error:', err.message);
+            return null;
+          });
+
+        // Store in DB cache if we got a result
+        if (aiAnalysis) {
+          try {
+            const { safeQuery } = await import('../db/index.js');
+            await safeQuery(
+              `INSERT INTO ai_analysis_cache (fixture_id, analysis) VALUES ($1, $2)`,
+              [matchId, JSON.stringify(aiAnalysis)]
+            );
+            console.log(`[analysis] AI cache STORED for ${matchId}`);
+          } catch (storeErr) {
+            console.error('[analysis] AI cache store failed:', storeErr.message);
+          }
+        }
+      }
     }
 
     // Build fallback AI if Claude unavailable and we have predictions
@@ -394,7 +430,7 @@ Explain concisely and be data-driven. Return ONLY this JSON (no markdown fences)
 }`;
 
   const response = await axios.post('https://api.anthropic.com/v1/messages', {
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 800,
     messages: [{ role: 'user', content: prompt }],
   }, {

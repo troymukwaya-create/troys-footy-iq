@@ -166,12 +166,13 @@ async function getAllFixturesData() {
 router.get('/all', async (req, res) => {
   try {
     const data = await getAllFixturesData();
-    res.json({ fixtures: data.fixtures, source: data.source, total: data.fixtures.length });
+    const isDemo = data.source.includes('demo');
+    res.json({ fixtures: data.fixtures, source: data.source, mode: isDemo ? 'demo' : 'live', total: data.fixtures.length });
   } catch (err) {
     console.error('[fixtures/all] Error:', err.message);
     // Even on crash, serve LOCKED demo fixtures — NEVER random domestic matches
     const { valid } = validateFixtureBatch(LOCKED_DEMO_FIXTURES, 'locked_demo_error_fallback');
-    res.json({ fixtures: valid, source: 'demo_locked_error', total: valid.length });
+    res.json({ fixtures: valid, source: 'demo_locked_error', mode: 'demo', total: valid.length });
   }
 });
 

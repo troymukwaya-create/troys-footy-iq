@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 // ─── ENV CONFIGURATION ─────────────────────────────────────────────
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.join(__dirname, '.env');
-dotenv.config({ path: envPath });
+dotenv.config({ path: envPath, override: true });
 
 // ─── STARTUP KEY VALIDATION ────────────────────────────────────────
 console.log('==========================================');
@@ -229,39 +229,42 @@ async function seedInitialData() {
         const r = await query(`INSERT INTO leagues (code, name, country, source) VALUES ($1, $2, $3, 'apifootball') ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name RETURNING id, code`, [code, l.name, l.country]);
         leagueMap[code] = r.rows[0].id;
       }
+
+      // Only fetch fixtures and standings on first-ever run (leagues table was empty).
+      // Skipped on restarts to preserve API quota (standings = ~12 API calls).
+      console.log('First run — fetching today fixtures...');
+      const todayMatches = await dataRouter.getTodayFixtures();
+      for (const match of todayMatches) {
+        if (match.league && match.league.code && leagueMap[match.league.code]) {
+          await upsertFixture(match, leagueMap[match.league.code]);
+        }
+      }
+
+      console.log('First run — seeding standings...');
+      for (const code of [...Object.keys(FD_LEAGUES), ...Object.keys(APF_LEAGUES)]) {
+        const standings = await dataRouter.getStandings(code).catch(() => []);
+        const leagueId = leagueMap[code];
+        if (!leagueId || !standings || standings.length === 0) continue;
+
+        for (const row of standings) {
+          const teamId = await upsertTeam(row.team, leagueId);
+          if (!teamId) continue;
+          await query(`
+            INSERT INTO league_standings (league_id, team_id, season, rank, points, played, won, drawn, lost, goals_for, goals_against, goal_diff, form)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            ON CONFLICT (league_id, team_id, season) DO UPDATE SET
+              rank = EXCLUDED.rank, points = EXCLUDED.points, played = EXCLUDED.played,
+              won = EXCLUDED.won, drawn = EXCLUDED.drawn, lost = EXCLUDED.lost,
+              goals_for = EXCLUDED.goals_for, goals_against = EXCLUDED.goals_against,
+              goal_diff = EXCLUDED.goal_diff, form = EXCLUDED.form
+          `, [leagueId, teamId, new Date().getFullYear(), row.position || row.rank, row.points, row.playedGames || row.all?.played, row.won || row.all?.win, row.draw || row.all?.draw, row.lost || row.all?.lose, row.goalsFor || row.all?.goals?.for, row.goalsAgainst || row.all?.goals?.against, row.goalDifference || row.goalsDiff, row.form || '']);
+        }
+      }
+      console.log('✅ First-run seeding complete.');
     } else {
       rows.forEach(r => leagueMap[r.code] = r.id);
+      console.log(`✅ DB already seeded (${rows.length} leagues). Skipping API seed calls.`);
     }
-
-    console.log('Fetching today fixtures for seeding...');
-    const todayMatches = await dataRouter.getTodayFixtures();
-    for (const match of todayMatches) {
-      if (match.league && match.league.code && leagueMap[match.league.code]) {
-        await upsertFixture(match, leagueMap[match.league.code]);
-      }
-    }
-    
-    console.log('Seeding standings...');
-    for (const code of [...Object.keys(FD_LEAGUES), ...Object.keys(APF_LEAGUES)]) {
-      const standings = await dataRouter.getStandings(code).catch(() => []);
-      const leagueId = leagueMap[code];
-      if (!leagueId || !standings || standings.length === 0) continue;
-       
-      for (const row of standings) {
-        const teamId = await upsertTeam(row.team, leagueId);
-        if (!teamId) continue;
-        await query(`
-          INSERT INTO league_standings (league_id, team_id, season, rank, points, played, won, drawn, lost, goals_for, goals_against, goal_diff, form)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-          ON CONFLICT (league_id, team_id, season) DO UPDATE SET
-            rank = EXCLUDED.rank, points = EXCLUDED.points, played = EXCLUDED.played,
-            won = EXCLUDED.won, drawn = EXCLUDED.drawn, lost = EXCLUDED.lost,
-            goals_for = EXCLUDED.goals_for, goals_against = EXCLUDED.goals_against,
-            goal_diff = EXCLUDED.goal_diff, form = EXCLUDED.form
-        `, [leagueId, teamId, new Date().getFullYear(), row.position || row.rank, row.points, row.playedGames || row.all?.played, row.won || row.all?.win, row.draw || row.all?.draw, row.lost || row.all?.lose, row.goalsFor || row.all?.goals?.for, row.goalsAgainst || row.all?.goals?.against, row.goalDifference || row.goalsDiff, row.form || '']);
-      }
-    }
-    console.log('✅ Seeding complete.');
   } catch (err) {
     console.error('Error seeding initial data:', err.message);
   }

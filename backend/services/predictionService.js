@@ -96,8 +96,8 @@ export async function storePrediction({
     }
     return predId;
   } catch (err) {
-    console.error('[PREDICTION] Store failed:', err.message);
-    return null;
+    console.error('[PREDICTION] Store failed:', err.message, err.stack);
+    throw err; // Re-throw so callers can see the actual error
   }
 }
 

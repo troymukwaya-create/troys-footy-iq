@@ -55,15 +55,13 @@ export async function getFixtureOdds(fixtureId) {
   }
 
   try {
-    const response = await api.default
-      ? null
-      : await import('axios').then(ax =>
-          ax.default.get('https://v3.football.api-sports.io/odds', {
-            headers: { 'x-apisports-key': process.env.APISPORTS_KEY || '' },
-            params: { fixture: numId },
-            timeout: 12000,
-          })
-        );
+    const response = await import('axios').then(ax =>
+      ax.default.get('https://v3.football.api-sports.io/odds', {
+        headers: { 'x-apisports-key': process.env.APISPORTS_KEY || '' },
+        params: { fixture: numId },
+        timeout: 12000,
+      })
+    );
 
     lastFetchTime.set(numId, Date.now());
 

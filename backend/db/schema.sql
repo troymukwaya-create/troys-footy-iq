@@ -377,4 +377,17 @@ CREATE INDEX IF NOT EXISTS idx_pred_pending ON predictions(match_external_id) WH
 CREATE INDEX IF NOT EXISTS idx_market_pred_eval ON market_predictions(prediction_id, actual_hit);
 CREATE INDEX IF NOT EXISTS idx_pred_model_version ON predictions(model_version);
 CREATE INDEX IF NOT EXISTS idx_pred_actual ON predictions(actual_result) WHERE actual_result IS NOT NULL;
+-- ═══════════════════════════════════════════════════════════════════
+-- AI ANALYSIS CACHE (v7)
+-- ═══════════════════════════════════════════════════════════════════
 
+-- ─── AI ANALYSIS CACHE ─────────────────────────────────────────────
+-- Caches Claude analysis results for 6 hours to avoid redundant API calls.
+CREATE TABLE IF NOT EXISTS ai_analysis_cache (
+  id SERIAL PRIMARY KEY,
+  fixture_id VARCHAR(50) NOT NULL,
+  analysis JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_cache_fixture ON ai_analysis_cache(fixture_id, created_at DESC);
