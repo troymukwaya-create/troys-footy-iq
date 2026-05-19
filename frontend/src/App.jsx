@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useFixtures, useLiveMatches, useAnalysis } from './hooks/useQueries.js';
+import { useQueryClient } from '@tanstack/react-query';
+import { useFixtures, useLiveMatches, useAnalysis, useAIAnalysisProgressive, api as queryApi } from './hooks/useQueries.js';
 import { useRealTime } from './hooks/useRealTime.js';
 import { useStore } from './store/useStore.js';
 
@@ -43,6 +44,41 @@ export default function App() {
   const dataSource = fixturesData?.source || 'loading';
   const dataMode = fixturesData?.mode || null;
   const { data: analysis, isLoading: analysisLoading } = useAnalysis(selectedFixture?.id);
+  // AI loads progressively in parallel — model predictions render immediately,
+  // AI section shows skeleton until this resolves (cache hit = instant)
+  const { data: aiData, isLoading: aiLoading } = useAIAnalysisProgressive(
+    selectedFixture?.id,
+    !!analysis && analysis.dataQuality !== 'INSUFFICIENT'
+  );
+
+  // Merge AI into analysis object so child components see a unified shape
+  const analysisWithAI = useMemo(() => {
+    if (!analysis) return analysis;
+    return { ...analysis, ai: aiData || analysis.ai };
+  }, [analysis, aiData]);
+
+  // Hover-prefetch: warm both caches before the user clicks
+  const queryClient = useQueryClient();
+  const prefetchAnalysis = useCallback((fixtureId) => {
+    if (!fixtureId) return;
+    queryClient.prefetchQuery({
+      queryKey: ['analysis', fixtureId],
+      queryFn: async () => {
+        const { data } = await queryApi.get(`/analysis/${fixtureId}`);
+        if (!data || data.error) throw new Error(data?.message || 'prefetch failed');
+        return data;
+      },
+      staleTime: 5 * 60 * 1000,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ['ai-analysis', fixtureId],
+      queryFn: async () => {
+        const { data } = await queryApi.get(`/analysis/${fixtureId}/ai`, { timeout: 60000 });
+        return data?.ai || null;
+      },
+      staleTime: 6 * 60 * 60 * 1000,
+    });
+  }, [queryClient]);
 
   const [mobileTab, setMobileTab] = useState('leagues');
   const [isInvestorMode, setIsInvestorMode] = useState(false);
@@ -175,7 +211,13 @@ export default function App() {
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>{dayFixtures.length}</span>
                   </div>
                   {dayFixtures.map(f => (
-                    <FixtureCard key={f.id} fixture={f} isSelected={selectedFixture?.id === f.id} onClick={() => handleSelectFixture(f)} />
+                    <FixtureCard
+                      key={f.id}
+                      fixture={f}
+                      isSelected={selectedFixture?.id === f.id}
+                      onClick={() => handleSelectFixture(f)}
+                      onMouseEnter={() => prefetchAnalysis(f.id)}
+                    />
                   ))}
                 </div>
               );
@@ -196,7 +238,7 @@ export default function App() {
               <SkeletonDashboard />
             ) : selectedFixture ? (
               <React.Suspense fallback={<SkeletonDashboard />}>
-                <MatchAnalysisPanel fixture={selectedFixture} analysis={analysis} isLoading={analysisLoading} />
+                <MatchAnalysisPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading} />
               </React.Suspense>
             ) : (
               <AnalystDashboard fixtures={filteredFixtures} onSelect={handleSelectFixture} />
@@ -207,7 +249,7 @@ export default function App() {
         {/* ═══ RIGHT PANEL ═══ */}
         <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto' }}>
           <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
-            <AIInsightsPanel fixture={selectedFixture} analysis={analysis} isLoading={analysisLoading} />
+            <AIInsightsPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading || aiLoading} />
           </React.Suspense>
           <div style={{ padding: '0 12px 12px' }}>
             <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>

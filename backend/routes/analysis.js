@@ -28,8 +28,11 @@ import {
 import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../services/probabilityEngine.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
+import { safeQuery } from '../db/index.js';
 
-const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
+// Read at request time (not module-load) so dotenv override in server.js
+// takes effect. ESM imports hoist before server.js's dotenv runs.
+const getAnthropicKey = () => process.env.ANTHROPIC_API_KEY || '';
 
 // ─── GET /api/analysis/:matchId ─────────────────────────────────────
 router.get('/:matchId', async (req, res) => {
@@ -248,11 +251,11 @@ router.get('/:matchId', async (req, res) => {
     if (validation.valid) {
       // Full data available — run predictions
       dataQuality = 'COMPLETE';
-      probabilityResult = analyzeMatch(homeStats, awayStats);
+      probabilityResult = await analyzeMatch(homeStats, awayStats);
     } else if (homeStats.isValid || awayStats.isValid) {
       // One team has data — run with caution flag
       dataQuality = 'PARTIAL';
-      probabilityResult = analyzeMatch(homeStats, awayStats);
+      probabilityResult = await analyzeMatch(homeStats, awayStats);
       console.warn(`[analysis] ${matchId} running with PARTIAL data: ${validation.issues.join(', ')}`);
     } else {
       // No usable data — do NOT predict
@@ -283,12 +286,14 @@ router.get('/:matchId', async (req, res) => {
       }
     }
 
-    // ─── STEP 5: AI analysis (with 6-hour DB cache) ──────────────
+    // ─── STEP 5: AI cache check ONLY (never block on Claude) ─────
+    // The main /analysis route returns model predictions FAST. If Claude
+    // analysis happens to be cached we attach it; otherwise the frontend
+    // calls /analysis/:id/ai separately and renders progressively.
     let aiAnalysis = null;
-    if (dataQuality !== 'INSUFFICIENT' && ANTHROPIC_KEY && ANTHROPIC_KEY.length > 20) {
-      // Check DB cache first (6-hour TTL)
+    const anthropicKey = getAnthropicKey();
+    if (dataQuality !== 'INSUFFICIENT' && anthropicKey && anthropicKey.length > 20) {
       try {
-        const { safeQuery } = await import('../db/index.js');
         const cachedAI = await safeQuery(
           `SELECT analysis FROM ai_analysis_cache
            WHERE fixture_id = $1 AND created_at > NOW() - INTERVAL '6 hours'
@@ -296,38 +301,15 @@ router.get('/:matchId', async (req, res) => {
           [matchId]
         );
         if (cachedAI?.rows?.[0]?.analysis) {
-          console.log(`[analysis] AI cache HIT for ${matchId}`);
+          console.log(`[analysis] AI cache HIT for ${matchId} (inline)`);
           aiAnalysis = cachedAI.rows[0].analysis;
         }
       } catch (cacheErr) {
         console.error('[analysis] AI cache check failed:', cacheErr.message);
       }
-
-      // Cache miss — call Claude and store result
-      if (!aiAnalysis) {
-        aiAnalysis = await getAIInsights(match, homeStats, awayStats, h2hData || emptyH2H(), probabilityResult)
-          .catch(err => {
-            console.error('[analysis] AI error:', err.message);
-            return null;
-          });
-
-        // Store in DB cache if we got a result
-        if (aiAnalysis) {
-          try {
-            const { safeQuery } = await import('../db/index.js');
-            await safeQuery(
-              `INSERT INTO ai_analysis_cache (fixture_id, analysis) VALUES ($1, $2)`,
-              [matchId, JSON.stringify(aiAnalysis)]
-            );
-            console.log(`[analysis] AI cache STORED for ${matchId}`);
-          } catch (storeErr) {
-            console.error('[analysis] AI cache store failed:', storeErr.message);
-          }
-        }
-      }
     }
 
-    // Build fallback AI if Claude unavailable and we have predictions
+    // Build fallback AI if Claude unavailable / not yet cached
     if (!aiAnalysis && probabilityResult) {
       aiAnalysis = buildFallbackAI(match, probabilityResult, homeStats, awayStats, h2hData || emptyH2H());
     }
@@ -368,6 +350,79 @@ router.get('/:matchId', async (req, res) => {
   } catch (err) {
     console.error(`[analysis] Error for ${matchId}:`, err.message);
     res.status(500).json(errorResponse('Analysis failed', err.message));
+  }
+});
+
+// ─── GET /api/analysis/:matchId/ai ─────────────────────────────────
+// Returns Claude analysis only. Cache-first (6h TTL). On miss, calls
+// Claude (5-30s). Frontend loads this in parallel with the main route
+// so model predictions render immediately while AI streams in after.
+router.get('/:matchId/ai', async (req, res) => {
+  const { matchId } = req.params;
+  if (!matchId) {
+    return res.status(400).json(errorResponse('Match ID is required'));
+  }
+
+  const anthropicKey = getAnthropicKey();
+  if (!anthropicKey || anthropicKey.length <= 20) {
+    return res.json({ ai: null, source: 'disabled' });
+  }
+
+  // 1. DB cache check (instant)
+  try {
+    const cached = await safeQuery(
+      `SELECT analysis FROM ai_analysis_cache
+       WHERE fixture_id = $1 AND created_at > NOW() - INTERVAL '6 hours'
+       ORDER BY created_at DESC LIMIT 1`,
+      [matchId]
+    );
+    if (cached?.rows?.[0]?.analysis) {
+      console.log(`[analysis/ai] cache HIT for ${matchId}`);
+      return res.json({ ai: cached.rows[0].analysis, source: 'cache' });
+    }
+  } catch (cacheErr) {
+    console.error('[analysis/ai] cache check failed:', cacheErr.message);
+  }
+
+  // 2. Cache miss — need the full analysis context to call Claude.
+  // Reuse the main cached analysis if available (avoids refetching FD data).
+  const baseAnalysis = cacheService.get(`full_analysis_v2_${matchId}`);
+  if (!baseAnalysis || !baseAnalysis.probability) {
+    return res.json({
+      ai: null,
+      source: 'no-base',
+      message: 'Call /api/analysis/:matchId first to compute base predictions.',
+    });
+  }
+
+  try {
+    const ai = await getAIInsights(
+      baseAnalysis.match,
+      baseAnalysis.homeStats || { isValid: false },
+      baseAnalysis.awayStats || { isValid: false },
+      baseAnalysis.h2h || emptyH2H(),
+      baseAnalysis.probability
+    );
+
+    if (ai) {
+      // Store result
+      safeQuery(
+        `INSERT INTO ai_analysis_cache (fixture_id, analysis) VALUES ($1, $2)`,
+        [matchId, JSON.stringify(ai)]
+      ).catch(err => console.error('[analysis/ai] cache store failed:', err.message));
+
+      // Refresh main cache so future /analysis hits get AI attached
+      baseAnalysis.ai = ai;
+      cacheService.set(`full_analysis_v2_${matchId}`, baseAnalysis, 86400);
+
+      console.log(`[analysis/ai] computed + cached for ${matchId}`);
+      return res.json({ ai, source: 'fresh' });
+    }
+
+    return res.json({ ai: null, source: 'claude-error' });
+  } catch (err) {
+    console.error(`[analysis/ai] error for ${matchId}:`, err.message);
+    return res.status(500).json(errorResponse('AI analysis failed', err.message));
   }
 });
 
@@ -435,7 +490,7 @@ Explain concisely and be data-driven. Return ONLY this JSON (no markdown fences)
     messages: [{ role: 'user', content: prompt }],
   }, {
     headers: {
-      'x-api-key': ANTHROPIC_KEY,
+      'x-api-key': getAnthropicKey(),
       'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json',
     },

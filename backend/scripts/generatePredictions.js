@@ -99,7 +99,7 @@ async function run() {
 
       if (!homeTeam || !awayTeam) continue;
 
-      const prob = analyzeMatch(homeTeam.stats, awayTeam.stats);
+      const prob = await analyzeMatch(homeTeam.stats, awayTeam.stats);
       predictions.push({
         date: new Date(match.fixture.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
         home: match.teams.home.name,

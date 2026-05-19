@@ -203,7 +203,7 @@ export function generateProbabilities(lambdaHome, lambdaAway) {
  * @param {Object} context   - Optional: { odds, h2h, homePosition, awayPosition }
  * @returns {Object} Full probability output
  */
-export function analyzeMatch(homeStats, awayStats, context = {}) {
+export async function analyzeMatch(homeStats, awayStats, context = {}) {
   const { lambdaHome, lambdaAway } = computeExpectedGoals(homeStats, awayStats);
   const result = generateProbabilities(lambdaHome, lambdaAway);
 
@@ -224,7 +224,8 @@ export function analyzeMatch(homeStats, awayStats, context = {}) {
       marketProbs = oddsToImpliedProbs(context.odds);
     }
 
-    const ensemble = ensemblePredict(result.probabilities, mlProbs, marketProbs, {
+    // ensemblePredict is async (loads weights from DB) — must await
+    const ensemble = await ensemblePredict(result.probabilities, mlProbs, marketProbs, {
       applyCalibration: true,
     });
 
@@ -232,6 +233,7 @@ export function analyzeMatch(homeStats, awayStats, context = {}) {
     ensembleMethod = ensemble.method || 'ensemble';
   } catch (e) {
     // Ensemble failed — use Poisson baseline (graceful degradation)
+    console.error('[probabilityEngine] Ensemble failed, falling back to Poisson:', e.message);
     ensembleMethod = 'poisson_only';
   }
 

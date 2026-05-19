@@ -4,7 +4,7 @@ import React from 'react';
  * FixtureCard — Compact sidebar match card.
  * Clean hierarchy: league → teams/score → probability strip.
  */
-export function FixtureCard({ fixture, isSelected, onClick }) {
+export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
   if (!fixture) return null;
 
   // ─── FRONTEND SAFETY CHECK ──────────────────────────────────────────
@@ -51,6 +51,7 @@ export function FixtureCard({ fixture, isSelected, onClick }) {
   return (
     <div
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
       className={`match-card ${isSelected ? 'active' : ''}`}
       style={{
         borderRadius: 'var(--radius-md)',

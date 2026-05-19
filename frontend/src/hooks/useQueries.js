@@ -89,11 +89,31 @@ export function useAnalysis(matchId) {
   });
 }
 
-// ─── AI ANALYSIS (POST-based, for legacy route) ─────────────────────
+// ─── AI ANALYSIS (progressive load — runs in parallel with useAnalysis) ───
+// Calls /api/analysis/:id/ai which: cache-checks (instant) or computes
+// fresh via Claude (5-30s). Uses a longer 60s timeout to survive Claude
+// cold calls. The frontend renders AI section as a skeleton until this
+// resolves, while model predictions from useAnalysis render immediately.
 
-export function useAIAnalysis(matchId, fixture) {
+export function useAIAnalysisProgressive(matchId, enabled = true) {
   return useQuery({
     queryKey: ['ai-analysis', matchId],
+    queryFn: async () => {
+      const { data } = await api.get(`/analysis/${matchId}/ai`, { timeout: 60000 });
+      return data?.ai || null;
+    },
+    enabled: !!matchId && enabled,
+    staleTime: 6 * 60 * 60 * 1000, // 6h matches DB cache TTL
+    gcTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+    retryDelay: 3000,
+  });
+}
+
+// Legacy hook — kept for backward compat with older components
+export function useAIAnalysis(matchId, fixture) {
+  return useQuery({
+    queryKey: ['ai-analysis-legacy', matchId],
     queryFn: async () => {
       const { data } = await api.post(`/ai/analyze/${matchId}`, { fixture }, { timeout: 30000 });
       return data;
