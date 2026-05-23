@@ -28,3 +28,6 @@ npm-debug.log*
 
 # Scratch/temp
 scratch/
+
+# StatsBomb research data dumps (research-only, re-fetched on demand)
+backend/data/

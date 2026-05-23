@@ -1,213 +1,339 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  X, Plus, Minus, TrendingUp, TrendingDown,
+  AlertTriangle, ListChecks, Sparkles, Info,
+} from 'lucide-react';
 import { useStore } from '../store/useStore.js';
+import { enterStagger, snap } from '../lib/motion.js';
 
-/**
- * ParlayBuilderPanel — Sticky right panel for parlay management.
- * Shows selected picks, combined odds, implied probability, and risk level.
- * Rules: max 3 picks, 1 per match, toggle to deselect.
- */
+// ─── EDGE THRESHOLDS ────────────────────────────────────────────────
+// 3% edge ≈ within calibration noise. 7%+ is a meaningful signal.
+const EDGE = {
+  STRONG_POSITIVE:  0.03,   // > +3% → green
+  WEAK:             -0.03,  // -3% to +3% → amber
+  // anything below WEAK → red
+};
+
+function classifyEdge(edge) {
+  if (edge == null || isNaN(edge)) return 'unknown';
+  if (edge >= EDGE.STRONG_POSITIVE) return 'positive';
+  if (edge >= EDGE.WEAK)            return 'neutral';
+  return 'negative';
+}
+
+// ─── PROBABILITY DERIVATION (graceful) ──────────────────────────────
+// Selection schema: { matchId, marketType, outcome, odds, ... }
+// If selection has `modelProbability` set, use it. Otherwise, try the
+// analyses cache for 1X2 markets. Returns probability in [0, 1] or null.
+function deriveModelProbability(selection, analyses) {
+  if (selection.modelProbability != null) return Number(selection.modelProbability);
+  const analysis = analyses?.[selection.matchId];
+  if (!analysis) return null;
+  const probs = analysis?.probability?.probabilities;
+  if (!probs) return null;
+  const outcome = (selection.outcome || '').toLowerCase();
+  const isMatchWinner = (selection.marketType || '').toLowerCase().includes('match')
+    || (selection.marketType || '').toLowerCase().includes('1x2');
+  if (!isMatchWinner) return null;
+  if (outcome.includes('draw'))    return (probs.draw ?? 0) / 100;
+  if (outcome.includes('away'))    return (probs.away ?? 0) / 100;
+  if (outcome.includes('home'))    return (probs.home ?? 0) / 100;
+  return null;
+}
+
+// ─── COMPONENT ──────────────────────────────────────────────────────
 export function ParlayBuilderPanel() {
   const {
     parlaySelections,
     removeParlaySelection,
     clearParlay,
-    getParlayOdds,
+    analyses,
   } = useStore();
 
-  const parlay = getParlayOdds();
-  const isEmpty = parlaySelections.length === 0;
+  const [stake, setStake] = useState(10);
 
-  const riskStyles = {
-    'LOW':       { color: 'var(--success)', bg: 'var(--success-muted)', border: 'rgba(34,197,94,0.2)' },
-    'MEDIUM':    { color: 'var(--warning)', bg: 'var(--warning-muted)', border: 'rgba(234,179,8,0.2)' },
-    'HIGH':      { color: 'var(--danger)',  bg: 'var(--danger-muted)',  border: 'rgba(239,68,68,0.2)' },
-    'VERY HIGH': { color: 'var(--danger)',  bg: 'var(--danger-muted)',  border: 'rgba(239,68,68,0.3)' },
-  };
-  const rs = riskStyles[parlay.risk] || riskStyles['MEDIUM'];
+  // Compute per-leg derived metrics
+  const legs = useMemo(() => parlaySelections.map(sel => {
+    const odds = parseFloat(sel.odds) || 1;
+    const marketImplied = 1 / odds;                          // strict 1/odds; overround per-leg is small
+    const modelProb     = deriveModelProbability(sel, analyses);
+    const edge          = (modelProb != null) ? modelProb - marketImplied : null;
+    return { ...sel, odds, marketImplied, modelProb, edge, edgeClass: classifyEdge(edge) };
+  }), [parlaySelections, analyses]);
+
+  // Joint calculations (assume independence)
+  const totals = useMemo(() => {
+    if (legs.length === 0) return null;
+    let combinedOdds = 1;
+    let marketJoint = 1;
+    let modelJoint = 1;
+    let modelCoverage = 0; // how many legs had model data
+    for (const l of legs) {
+      combinedOdds *= l.odds;
+      marketJoint *= l.marketImplied;
+      if (l.modelProb != null) {
+        modelJoint *= l.modelProb;
+        modelCoverage++;
+      }
+    }
+    const hasFullModel = modelCoverage === legs.length;
+    const expectedValue = hasFullModel ? (modelJoint * combinedOdds) - 1 : null;  // EV per $1 stake
+    return {
+      combinedOdds,
+      marketImpliedPct: marketJoint * 100,
+      modelImpliedPct:  hasFullModel ? modelJoint * 100 : null,
+      expectedValuePct: expectedValue != null ? expectedValue * 100 : null,
+      hasFullModel,
+      modelCoverage,
+      expectedReturn:   stake * combinedOdds,
+      expectedProfit:   expectedValue != null ? stake * expectedValue : null,
+    };
+  }, [legs, stake]);
+
+  // ─── Empty state ───
+  if (legs.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="sticky top-20 rounded-2xl border border-outline-variant/30 bg-surface-container/60 overflow-hidden"
+      >
+        <header className="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Parlay</span>
+          </div>
+        </header>
+        <div className="px-6 py-10 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-container-high mb-3">
+            <ListChecks size={20} className="text-on-surface-variant" />
+          </div>
+          <div className="text-sm font-semibold text-on-surface mb-1">No selections yet</div>
+          <div className="text-xs text-on-surface-variant leading-relaxed max-w-[220px] mx-auto">
+            Tap odds in a match's Markets tab to build a parlay.
+            We'll show your model's edge vs the bookmaker.
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ─── Active state ───
+  const overallEdgeClass = totals.expectedValuePct == null
+    ? 'unknown'
+    : totals.expectedValuePct > 0 ? 'positive' : totals.expectedValuePct > -2 ? 'neutral' : 'negative';
 
   return (
-    <div style={{
-      position: 'sticky', top: 80,
-      display: 'flex', flexDirection: 'column', gap: 0,
-    }}>
-      <div className="card" style={{ overflow: 'hidden' }}>
-        {/* Header */}
-        <div style={{
-          padding: '12px 16px',
-          background: 'var(--bg-raised)',
-          borderBottom: '1px solid var(--border-subtle)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.04em' }}>
-              PARLAY BUILDER
-            </span>
-            <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10,
-              background: 'var(--accent-muted)', color: 'var(--accent)',
-            }}>
-              {parlaySelections.length}/3
-            </span>
-          </div>
-          {!isEmpty && (
-            <button
-              onClick={clearParlay}
-              style={{
-                fontSize: 10, fontWeight: 600, color: 'var(--text-muted)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                transition: 'color 150ms ease',
-              }}
-              onMouseOver={e => e.target.style.color = 'var(--danger)'}
-              onMouseOut={e => e.target.style.color = 'var(--text-muted)'}
-            >
-              Clear All
-            </button>
-          )}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="sticky top-20 rounded-2xl border border-outline-variant/30 bg-surface-container/60 overflow-hidden shadow-lg shadow-black/20"
+    >
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Parlay</span>
+          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-neon/15 text-neon text-[11px] font-bold">
+            {legs.length}
+          </span>
         </div>
+        <button
+          onClick={clearParlay}
+          className="text-[11px] font-medium text-on-surface-variant hover:text-error transition-colors"
+        >
+          Clear all
+        </button>
+      </header>
 
-        {/* Selections */}
-        {isEmpty ? (
-          <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>📋</div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)' }}>
-              No picks yet
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>
-              Select outcomes from the Markets tab to build your parlay. Max 3 picks, 1 per match.
-            </div>
-          </div>
-        ) : (
-          <div>
-            {parlaySelections.map((sel, idx) => (
-              <div
-                key={sel.matchId}
-                style={{
-                  padding: '10px 16px',
-                  borderBottom: idx < parlaySelections.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  transition: 'background 150ms ease',
-                }}
-                onMouseOver={e => e.currentTarget.style.background = 'var(--bg-hover)'}
-                onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {sel.matchLabel}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{
-                      fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 3,
-                      background: 'rgba(255,255,255,0.04)', color: 'var(--text-tertiary)',
-                    }}>
-                      {sel.marketType}
+      {/* Legs */}
+      <ul className="divide-y divide-outline-variant/15">
+        <AnimatePresence initial={false}>
+          {legs.map((leg, idx) => (
+            <motion.li
+              key={leg.matchId}
+              {...enterStagger(idx)}
+              exit={{ opacity: 0, x: 12, transition: snap }}
+              layout
+              className="px-4 py-3 hover:bg-surface-container-high/40 transition-colors group"
+            >
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] text-on-surface-variant truncate">{leg.matchLabel}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] uppercase tracking-wide text-on-surface-variant/70 px-1.5 py-0.5 rounded bg-surface-container-high">
+                      {leg.marketType}
                     </span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {sel.outcome}
-                    </span>
+                    <span className="text-sm font-semibold text-on-surface">{leg.outcome}</span>
                   </div>
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                  <span style={{
-                    fontSize: 14, fontWeight: 800, color: 'var(--accent)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>
-                    {parseFloat(sel.odds).toFixed(2)}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-base font-bold text-on-surface tabular-nums">
+                    {leg.odds.toFixed(2)}
                   </span>
                   <button
-                    onClick={() => removeParlaySelection(sel.matchId)}
-                    style={{
-                      width: 20, height: 20, borderRadius: '50%', border: 'none',
-                      background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)',
-                      cursor: 'pointer', fontSize: 12, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      transition: 'all 150ms ease',
-                    }}
-                    onMouseOver={e => {
-                      e.target.style.background = 'var(--danger-muted)';
-                      e.target.style.color = 'var(--danger)';
-                    }}
-                    onMouseOut={e => {
-                      e.target.style.background = 'rgba(255,255,255,0.04)';
-                      e.target.style.color = 'var(--text-muted)';
-                    }}
+                    onClick={() => removeParlaySelection(leg.matchId)}
+                    className="w-6 h-6 rounded-full inline-flex items-center justify-center text-on-surface-variant hover:bg-error/15 hover:text-error transition-colors opacity-0 group-hover:opacity-100"
+                    aria-label="Remove selection"
                   >
-                    ×
+                    <X size={14} />
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Summary Footer */}
-        {!isEmpty && (
-          <div style={{
-            padding: '12px 16px',
-            background: 'var(--bg-raised)',
-            borderTop: '1px solid var(--border-subtle)',
-          }}>
-            {/* Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 2 }}>
-                  TOTAL ODDS
-                </div>
-                <div style={{
-                  fontSize: 18, fontWeight: 800, color: 'var(--text-primary)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>
-                  {parlay.totalOdds.toFixed(2)}
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 2 }}>
-                  IMPLIED %
-                </div>
-                <div style={{
-                  fontSize: 18, fontWeight: 800, color: 'var(--text-secondary)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>
-                  {parlay.impliedProb}%
-                </div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 2 }}>
-                  RISK
-                </div>
-                <div style={{
-                  fontSize: 14, fontWeight: 800, color: rs.color,
-                }}>
-                  {parlay.risk}
-                </div>
-              </div>
-            </div>
+              {/* Model vs Market */}
+              <EdgeRow leg={leg} />
+            </motion.li>
+          ))}
+        </AnimatePresence>
+      </ul>
 
-            {/* Payout Calculator */}
-            <div style={{
-              padding: '8px 12px', borderRadius: 'var(--radius-md)',
-              background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>$10 returns</span>
-              <span style={{
-                fontSize: 14, fontWeight: 800, color: 'var(--accent)',
-                fontVariantNumeric: 'tabular-nums',
-              }}>
-                ${(parlay.totalOdds * 10).toFixed(2)}
+      {/* Summary */}
+      <div className="px-4 py-4 bg-surface-container-low border-t border-outline-variant/20">
+        {/* Joint probability summary */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <SummaryStat label="Combined" value={`${totals.combinedOdds.toFixed(2)}×`} sub="odds" />
+          <SummaryStat label="Model" value={totals.modelImpliedPct != null
+            ? `${totals.modelImpliedPct.toFixed(1)}%` : '—'}
+            sub="joint prob" />
+          <SummaryStat label="Market" value={`${totals.marketImpliedPct.toFixed(1)}%`} sub="implied" />
+        </div>
+
+        {/* EV callout — the headline */}
+        {totals.expectedValuePct != null ? (
+          <div className={`rounded-xl p-3 border ${
+            overallEdgeClass === 'positive'
+              ? 'bg-secondary-container/30 border-secondary/40'
+              : overallEdgeClass === 'neutral'
+                ? 'bg-tertiary-container/20 border-tertiary/30'
+                : 'bg-error-container/20 border-error/30'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {overallEdgeClass === 'positive'
+                  ? <TrendingUp size={16} className="text-secondary" />
+                  : overallEdgeClass === 'negative'
+                    ? <TrendingDown size={16} className="text-error" />
+                    : <Info size={16} className="text-tertiary" />}
+                <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                  Expected value
+                </span>
+              </div>
+              <span className={`text-lg font-bold tabular-nums ${
+                overallEdgeClass === 'positive' ? 'text-secondary'
+                  : overallEdgeClass === 'negative' ? 'text-error' : 'text-tertiary'
+              }`}>
+                {totals.expectedValuePct > 0 ? '+' : ''}{totals.expectedValuePct.toFixed(1)}%
               </span>
             </div>
-
-            {/* Disclaimer */}
-            <div style={{
-              fontSize: 9, color: 'var(--text-muted)', textAlign: 'center',
-              marginTop: 8, lineHeight: 1.4,
-            }}>
-              Simulation only — for analytical and educational purposes
+            <p className="text-[11px] text-on-surface-variant mt-1.5 leading-relaxed">
+              {overallEdgeClass === 'positive'
+                ? `Your model thinks this parlay is undervalued by the market.`
+                : overallEdgeClass === 'neutral'
+                  ? `Model and market roughly agree. Edge is within calibration noise.`
+                  : `Market is more optimistic than your model. Negative expected value.`}
+            </p>
+            {legs.some(l => l.edgeClass === 'negative') && (
+              <div className="flex items-start gap-1.5 mt-2 text-[10px] text-error">
+                <AlertTriangle size={11} className="mt-0.5 flex-shrink-0" />
+                <span>One or more legs has negative edge and is dragging the parlay down.</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl p-3 border border-outline-variant/30 bg-surface-container/30">
+            <div className="flex items-center gap-2 text-on-surface-variant">
+              <Info size={14} />
+              <span className="text-[11px]">
+                {totals.modelCoverage}/{legs.length} legs have model probabilities.
+                Add picks from supported markets to see expected value.
+              </span>
             </div>
           </div>
         )}
+
+        {/* Stake input */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-outline-variant/20">
+          <span className="text-[11px] text-on-surface-variant uppercase tracking-wider">Stake</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setStake(s => Math.max(1, s - 5))}
+              className="w-7 h-7 rounded-md inline-flex items-center justify-center bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors"
+              aria-label="Decrease stake"
+            ><Minus size={12} /></button>
+            <span className="min-w-[3.5rem] text-center text-sm font-bold text-on-surface tabular-nums">${stake}</span>
+            <button
+              onClick={() => setStake(s => s + 5)}
+              className="w-7 h-7 rounded-md inline-flex items-center justify-center bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors"
+              aria-label="Increase stake"
+            ><Plus size={12} /></button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-[11px] text-on-surface-variant">If it wins</span>
+          <span className="text-sm font-bold text-neon tabular-nums">${totals.expectedReturn.toFixed(2)}</span>
+        </div>
+        {totals.expectedProfit != null && (
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-[11px] text-on-surface-variant">Expected profit</span>
+            <span className={`text-sm font-bold tabular-nums ${
+              totals.expectedProfit > 0 ? 'text-secondary' : 'text-error'
+            }`}>
+              {totals.expectedProfit > 0 ? '+' : ''}${totals.expectedProfit.toFixed(2)}
+            </span>
+          </div>
+        )}
+
+        <p className="text-[10px] text-on-surface-variant/60 text-center mt-3 leading-relaxed">
+          Simulation only — for analytical purposes.
+        </p>
       </div>
+    </motion.div>
+  );
+}
+
+// ─── EDGE ROW (per leg) ─────────────────────────────────────────────
+function EdgeRow({ leg }) {
+  const hasModel = leg.modelProb != null;
+  const edgePct = hasModel ? (leg.edge * 100) : null;
+
+  return (
+    <div className="grid grid-cols-3 gap-2 text-[11px] mt-1.5">
+      <Mini label="Market"
+        value={`${(leg.marketImplied * 100).toFixed(1)}%`}
+        tone="muted" />
+      <Mini label="Model"
+        value={hasModel ? `${(leg.modelProb * 100).toFixed(1)}%` : '—'}
+        tone="muted" />
+      <Mini label="Edge"
+        value={hasModel
+          ? `${edgePct > 0 ? '+' : ''}${edgePct.toFixed(1)}%`
+          : '—'}
+        tone={leg.edgeClass} />
+    </div>
+  );
+}
+
+function Mini({ label, value, tone }) {
+  const valueColor =
+    tone === 'positive' ? 'text-secondary' :
+    tone === 'negative' ? 'text-error' :
+    tone === 'neutral'  ? 'text-tertiary' :
+    'text-on-surface';
+  return (
+    <div className="flex flex-col">
+      <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/60">{label}</span>
+      <span className={`font-semibold tabular-nums ${valueColor}`}>{value}</span>
+    </div>
+  );
+}
+
+function SummaryStat({ label, value, sub }) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <span className="text-[9px] uppercase tracking-wider text-on-surface-variant/70 mb-0.5">{label}</span>
+      <span className="text-base font-bold text-on-surface tabular-nums leading-tight">{value}</span>
+      <span className="text-[9px] text-on-surface-variant/60">{sub}</span>
     </div>
   );
 }

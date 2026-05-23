@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import { Flame, Radio, Loader2, CalendarX } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useAIPicks } from '../hooks/useAIPicks';
 import LiveScoreCard from '../components/LiveScoreCard';
 import AIPickCard from '../components/AIPickCard';
+import BrierScoreHero from '../components/BrierScoreHero';
 import api from '../api/client';
 import { Link } from 'react-router-dom';
+import { enter, enterStagger } from '../lib/motion.js';
+
+// ─── HELPERS ────────────────────────────────────────────────────────
+const LeagueHeader = ({ name }) => (
+  <h3 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-outline-variant/20 pb-2">
+    <span className="w-1.5 h-1.5 rounded-full bg-neon" />
+    {name}
+  </h3>
+);
 
 const FixtureGroup = ({ fixtures, title }) => {
   const grouped = fixtures.reduce((acc, f) => {
@@ -16,71 +28,74 @@ const FixtureGroup = ({ fixtures, title }) => {
   if (fixtures.length === 0) return null;
 
   return (
-    <section className="mb-8">
-      <h2 className="text-xl font-bold mb-4 text-gray-200 uppercase tracking-widest">{title}</h2>
+    <motion.section {...enter} className="mb-8">
+      <h2 className="text-lg font-bold mb-4 text-on-surface uppercase tracking-wider">{title}</h2>
       <div className="space-y-6">
         {Object.entries(grouped).map(([leagueName, matches]) => (
-          <div key={leagueName} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-800 pb-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              {leagueName}
-            </h3>
+          <div key={leagueName} className="bg-surface-container border border-outline-variant/20 rounded-2xl p-6">
+            <LeagueHeader name={leagueName} />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {matches.map(m => <LiveScoreCard key={m.id} match={m} />)}
+              {matches.map((m, i) => (
+                <motion.div key={m.id} {...enterStagger(i)}>
+                  <LiveScoreCard match={m} />
+                </motion.div>
+              ))}
             </div>
           </div>
         ))}
       </div>
-    </section>
+    </motion.section>
   );
 };
 
 const UpcomingGroup = ({ fixtures }) => {
   const byDate = fixtures.reduce((acc, f) => {
-     const d = new Date(f.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
-     if (!acc[d]) acc[d] = [];
-     acc[d].push(f);
-     return acc;
+    const d = new Date(f.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    if (!acc[d]) acc[d] = [];
+    acc[d].push(f);
+    return acc;
   }, {});
 
   if (fixtures.length === 0) return null;
 
   return (
-    <section className="mb-8">
-      <h2 className="text-xl font-bold mb-6 text-gray-200 uppercase tracking-widest">UPCOMING THIS WEEK</h2>
+    <motion.section {...enter} className="mb-8">
+      <h2 className="text-lg font-bold mb-6 text-on-surface uppercase tracking-wider">Upcoming this week</h2>
       <div className="space-y-8">
-         {Object.entries(byDate).map(([dateStr, dayMatches]) => {
-            const byLeague = dayMatches.reduce((acc, f) => {
-              const lName = f.league?.name || 'Other';
-              if (!acc[lName]) acc[lName] = [];
-              acc[lName].push(f);
-              return acc;
-            }, {});
-            
-            return (
-               <div key={dateStr}>
-                 <h3 className="text-lg font-bold text-emerald-500 mb-4">{dateStr}</h3>
-                 <div className="space-y-6">
-                    {Object.entries(byLeague).map(([leagueName, matches]) => (
-                      <div key={leagueName} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-sm">
-                         <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-800 pb-2">
-                           <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                           {leagueName}
-                         </h4>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {matches.map(m => <LiveScoreCard key={m.id} match={m} />)}
-                         </div>
-                      </div>
-                    ))}
-                 </div>
-               </div>
-            );
-         })}
+        {Object.entries(byDate).map(([dateStr, dayMatches]) => {
+          const byLeague = dayMatches.reduce((acc, f) => {
+            const lName = f.league?.name || 'Other';
+            if (!acc[lName]) acc[lName] = [];
+            acc[lName].push(f);
+            return acc;
+          }, {});
+
+          return (
+            <div key={dateStr}>
+              <h3 className="text-base font-bold text-neon mb-4">{dateStr}</h3>
+              <div className="space-y-6">
+                {Object.entries(byLeague).map(([leagueName, matches]) => (
+                  <div key={leagueName} className="bg-surface-container border border-outline-variant/20 rounded-2xl p-6">
+                    <LeagueHeader name={leagueName} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {matches.map((m, i) => (
+                        <motion.div key={m.id} {...enterStagger(i)}>
+                          <LiveScoreCard match={m} />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
-    </section>
+    </motion.section>
   );
 };
 
+// ─── MAIN ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { todayPicks, loading: picksLoading } = useAIPicks();
   const [liveMatches, setLiveMatches] = useState([]);
@@ -93,19 +108,17 @@ export default function Dashboard() {
       try {
         const res = await api.get('/fixtures/live');
         setLiveMatches(res.data || []);
-      } catch(e) { console.error('Live sync error', e); }
+      } catch (e) { console.error('Live sync error', e); }
     };
 
     const fetchAll = async () => {
       setLoading(true);
       try {
         const [todayRes, upcomingRes] = await Promise.all([
-          api.get('/fixtures/today').catch(()=>({data:[]})),
-          api.get('/fixtures/upcoming').catch(()=>({data:[]}))
+          api.get('/fixtures/today').catch(() => ({ data: [] })),
+          api.get('/fixtures/upcoming').catch(() => ({ data: [] })),
         ]);
         setTodayMatches(todayRes.data || []);
-        
-        // Ensure upcoming doesn't include today's matches
         const todayIds = new Set((todayRes.data || []).map(m => m.id));
         setUpcomingMatches((upcomingRes.data || []).filter(m => !todayIds.has(m.id)));
       } catch (err) { console.error(err); }
@@ -121,72 +134,96 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-8 animate-pulse p-4">
-        <div className="h-8 w-48 bg-gray-800 rounded-md"></div>
-        <div className="h-64 bg-gray-900 border border-gray-800 rounded-2xl"></div>
-        <div className="h-64 bg-gray-900 border border-gray-800 rounded-2xl"></div>
+      <div className="space-y-8 p-4">
+        <div className="h-32 bg-surface-container border border-outline-variant/20 rounded-2xl animate-pulse" />
+        <div className="h-64 bg-surface-container border border-outline-variant/20 rounded-2xl animate-pulse" />
+        <div className="h-64 bg-surface-container border border-outline-variant/20 rounded-2xl animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 min-h-screen pb-16">
-      
+    <div className="space-y-10 min-h-screen pb-16 px-4 sm:px-6">
+      {/* ── BRIER SCORE HERO ─────────────────────────────────────────── */}
+      <BrierScoreHero />
+
+      {/* ── LIVE NOW ────────────────────────────────────────────────── */}
       {liveMatches.length > 0 && (
-        <section>
+        <motion.section {...enter}>
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="text-2xl font-black text-white tracking-tight">LIVE NOW</h2>
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            <h2 className="text-xl font-bold text-on-surface tracking-tight">Live now</h2>
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary" />
             </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {liveMatches.map(m => (
-              <div key={m.id} className="ring-1 ring-emerald-500/50 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] bg-emerald-950/10">
-                 <LiveScoreCard match={m} />
-              </div>
+            {liveMatches.map((m, i) => (
+              <motion.div
+                key={m.id}
+                {...enterStagger(i)}
+                className="ring-1 ring-secondary/40 rounded-xl shadow-[0_0_18px_rgba(47,248,1,0.10)] bg-secondary-container/5"
+              >
+                <LiveScoreCard match={m} />
+              </motion.div>
             ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* ── TODAY ───────────────────────────────────────────────────── */}
+      {todayMatches.length > 0 ? (
+        <FixtureGroup fixtures={todayMatches} title="Today's fixtures" />
+      ) : (
+        <section className="mb-8">
+          <h2 className="text-lg font-bold mb-4 text-on-surface uppercase tracking-wider">Today's fixtures</h2>
+          <div className="text-on-surface-variant text-sm p-8 bg-surface-container rounded-2xl border border-outline-variant/20 text-center flex flex-col items-center gap-3">
+            <CalendarX size={24} className="text-on-surface-variant/60" strokeWidth={1.5} />
+            <span>No fixtures scheduled for today.</span>
           </div>
         </section>
       )}
 
-      {todayMatches.length > 0 ? (
-        <FixtureGroup fixtures={todayMatches} title="TODAY'S FIXTURES" />
-      ) : (
-        <section className="mb-8">
-           <h2 className="text-xl font-bold mb-4 text-gray-200">TODAY'S FIXTURES</h2>
-           <div className="text-gray-500 text-sm italic p-6 bg-gray-900 rounded-2xl border border-gray-800 text-center">No fixtures scheduled for today.</div>
-        </section>
-      )}
-
+      {/* ── UPCOMING ────────────────────────────────────────────────── */}
       {upcomingMatches.length > 0 && (
         <UpcomingGroup fixtures={upcomingMatches} />
       )}
 
-      <section className="border-t border-gray-800 pt-8 mt-8">
+      {/* ── AI PICKS ────────────────────────────────────────────────── */}
+      <motion.section {...enter} className="border-t border-outline-variant/20 pt-8 mt-8">
         <div className="flex justify-between items-center mb-6">
-           <h2 className="text-2xl font-black text-white flex items-center gap-2">
-             🔥 AI PICKS TODAY
-           </h2>
-           <Link to="/ai-picks" className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">View detailed analysis &rarr;</Link>
+          <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
+            <Flame size={18} className="text-tertiary" />
+            AI picks today
+          </h2>
+          <Link
+            to="/ai-picks"
+            className="text-sm text-neon hover:text-primary-dim transition-colors font-medium"
+          >
+            View detailed analysis →
+          </Link>
         </div>
-        
+
         {picksLoading ? (
-           <div className="p-8 text-emerald-400 animate-pulse text-sm font-bold flex items-center justify-center bg-gray-900 rounded-2xl border border-gray-800">
-             <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mr-3"></div>
-             Analysing matches...
-           </div>
+          <div className="p-8 bg-surface-container rounded-2xl border border-outline-variant/20 flex items-center justify-center gap-3 text-sm font-semibold text-on-surface-variant">
+            <Loader2 size={16} className="animate-spin text-secondary" />
+            Analysing matches…
+          </div>
         ) : todayPicks.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {todayPicks.map(pick => <AIPickCard key={pick.id} pick={pick} />)}
+            {todayPicks.map((pick, i) => (
+              <motion.div key={pick.id} {...enterStagger(i)}>
+                <AIPickCard pick={pick} />
+              </motion.div>
+            ))}
           </div>
         ) : (
-          <div className="p-8 text-gray-500 italic bg-gray-900 rounded-2xl border border-gray-800 text-center">
-             No low-risk picks identified for today's matches.
+          <div className="p-8 bg-surface-container rounded-2xl border border-outline-variant/20 text-center flex flex-col items-center gap-3 text-on-surface-variant text-sm">
+            <Radio size={20} className="text-on-surface-variant/60" strokeWidth={1.5} />
+            <span>No low-risk picks identified for today's matches.</span>
           </div>
         )}
-      </section>
+      </motion.section>
     </div>
   );
 }

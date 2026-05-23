@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import { CalendarX } from 'lucide-react';
+import BrierScoreHero from './BrierScoreHero.jsx';
 
 // ─── CONFIDENCE CONFIG ───────────────────────────────────────────────────────
 const CONFIDENCE = {
@@ -221,6 +223,11 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
   return (
     <div style={{ padding: '32px 24px', maxWidth: 960, margin: '0 auto' }}>
 
+      {/* ── BRIER SCORE HERO (the moat, made visible) ────────────────── */}
+      <div style={{ marginBottom: 24 }}>
+        <BrierScoreHero />
+      </div>
+
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
@@ -268,7 +275,9 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
           border: '1px solid var(--border-subtle)',
           borderRadius: 16, background: 'var(--bg-surface)',
         }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>⚽</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <CalendarX size={36} color="var(--text-tertiary)" strokeWidth={1.5} />
+          </div>
           <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>No fixtures available</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
             Make sure the backend is running and the API keys are configured.

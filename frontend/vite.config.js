@@ -14,9 +14,21 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query', 'zustand'],
-          charts: ['recharts', 'd3'],
+        // Vite 8 / Rolldown requires manualChunks as a function, not an object.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('/react-router-dom/') ||
+            id.includes('/@tanstack/react-query/') ||
+            id.includes('/zustand/')
+          ) {
+            return 'vendor';
+          }
+          if (id.includes('/recharts/') || id.includes('/d3')) {
+            return 'charts';
+          }
         }
       }
     }
