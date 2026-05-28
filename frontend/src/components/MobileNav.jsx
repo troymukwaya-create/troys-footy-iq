@@ -14,7 +14,7 @@ export function MobileNav({ activeTab, onTabChange }) {
       style={{
         height: 'calc(56px + env(safe-area-inset-bottom))',
         paddingBottom: 'env(safe-area-inset-bottom)',
-        background: 'rgba(8,11,20,0.96)',
+        background: 'rgba(11,11,13,0.96)',
         borderColor: 'var(--border-subtle)',
       }}>
       {tabs.map(({ id, Icon, label }) => {

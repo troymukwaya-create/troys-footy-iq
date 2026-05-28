@@ -55,7 +55,7 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
       className={`match-card ${isSelected ? 'active' : ''}`}
       style={{
         borderRadius: 'var(--radius-md)',
-        border: `1px solid ${isSelected ? 'rgba(59,130,246,0.25)' : 'var(--border-subtle)'}`,
+        border: `1px solid ${isSelected ? 'rgba(168,52,74,0.30)' : 'var(--border-subtle)'}`,
         padding: '10px 12px',
         marginBottom: 4,
         background: isSelected ? 'var(--accent-muted)' : 'transparent',

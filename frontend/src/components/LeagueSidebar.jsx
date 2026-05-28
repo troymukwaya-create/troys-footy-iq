@@ -82,7 +82,7 @@ export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, o
                     {count > 0 && (
                       <span style={{
                         fontSize: 10, padding: '1px 6px', borderRadius: 10,
-                        background: active ? 'rgba(59,130,246,0.15)' : 'var(--bg-raised)',
+                        background: active ? 'rgba(168,52,74,0.18)' : 'var(--bg-raised)',
                         color: active ? 'var(--accent)' : 'var(--text-muted)',
                         fontWeight: 700,
                       }}>{count}</span>

@@ -29,13 +29,13 @@ class ErrorBoundary extends React.Component {
     if (this.state.error) {
       return (
         <div style={{
-          background: '#0a0e1a', color: '#e7eafb', height: '100vh',
+          background: '#0B0B0D', color: '#e7eafb', height: '100vh',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui", padding: 32, gap: 20,
         }}>
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px' }}>
-            <span style={{ color: '#00e5ff' }}>TROY'S</span> FOOTY{' '}
-            <span style={{ color: '#00e5ff' }}>IQ</span>
+            <span style={{ color: '#A8344A' }}>Footy</span>{' '}
+            <span style={{ color: '#9CA3AF' }}>IQ</span>
           </div>
           <div style={{ color: '#ef4444', fontSize: 15, fontWeight: 600 }}>
             Something crashed
@@ -55,7 +55,7 @@ class ErrorBoundary extends React.Component {
           <button
             onClick={() => { this.setState({ error: null, info: null }); window.location.reload(); }}
             style={{
-              padding: '12px 28px', background: 'linear-gradient(135deg, #00e5ff, #0096a7)',
+              padding: '12px 28px', background: '#A8344A',
               border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700,
               cursor: 'pointer', fontSize: 14, transition: 'transform 0.2s',
             }}

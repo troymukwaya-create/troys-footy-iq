@@ -406,8 +406,8 @@ function ScorelineGrid({ topScorelines }) {
           return (
             <div key={i} className="matrix-cell" style={{
               flexDirection: 'column', height: 52,
-              background: `rgba(59,130,246, ${0.04 + intensity * 0.12})`,
-              border: `1px solid rgba(59,130,246, ${0.08 + intensity * 0.15})`,
+              background: `rgba(168,52,74, ${0.04 + intensity * 0.12})`,
+              border: `1px solid rgba(168,52,74, ${0.08 + intensity * 0.15})`,
             }}>
               <span style={{ fontSize: 15, fontWeight: 800 }}>{s.score}</span>
               <span style={{ fontSize: 9, color: 'var(--accent)', opacity: 0.7 }}>{s.probability}%</span>
