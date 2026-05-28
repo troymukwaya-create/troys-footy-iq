@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'motion/react';
-import { TrendingDown, Info, Sparkles } from 'lucide-react';
+import { TrendingDown, Info, Activity } from 'lucide-react';
 import api from '../api/client.js';
 import { barFill, numberRoll } from '../lib/motion.js';
 
@@ -23,15 +23,29 @@ function scoreToPosition(score) {
   return ((worst.value - clamped) / (worst.value - best.value)) * 100;
 }
 
-// ─── ANIMATED NUMBER ────────────────────────────────────────────────
-function AnimatedNumber({ value, decimals = 3, className }) {
+// ─── TWO-TONE ANIMATED NUMBER ────────────────────────────────────────
+// "0." in calibration-slate, significant digits in brier-oxblood.
+// font-feature-settings tnum (tabular) + ss02 (slashed zero) for IBM Plex Mono.
+function TwoToneNumber({ value, className }) {
   const motionValue = useMotionValue(0);
-  const rounded = useTransform(motionValue, latest => latest.toFixed(decimals));
+  const digits = useTransform(motionValue, latest => {
+    const str = latest.toFixed(3);
+    return str.slice(2); // e.g. "187" from "0.187"
+  });
   useEffect(() => {
     const controls = animate(motionValue, value, numberRoll);
     return () => controls.stop();
   }, [value, motionValue]);
-  return <motion.span className={className}>{rounded}</motion.span>;
+
+  return (
+    <span
+      className={className}
+      style={{ fontFamily: 'var(--font-mono)', fontFeatureSettings: '"tnum", "ss02"' }}
+    >
+      <span style={{ color: 'var(--calibration-slate)' }}>0.</span>
+      <motion.span style={{ color: 'var(--accent)' }}>{digits}</motion.span>
+    </span>
+  );
 }
 
 // ─── HERO COMPONENT ─────────────────────────────────────────────────
@@ -99,7 +113,7 @@ export default function BrierScoreHero() {
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-            <Sparkles size={12} className="text-neon" />
+            <Activity size={12} style={{ color: 'var(--accent)' }} />
             Model Accuracy
           </span>
           <span className="inline-flex items-center gap-1 text-[11px] text-on-surface-variant/70" title="Lower Brier score = better-calibrated probability predictions">
@@ -117,15 +131,15 @@ export default function BrierScoreHero() {
       {/* Headline number + statement */}
       <div className="flex items-end justify-between gap-6 mb-7 flex-wrap">
         <div>
-          <div className="flex items-baseline gap-3">
-            <AnimatedNumber
+          <div className="flex items-end gap-3">
+            <TwoToneNumber
               value={data.brier}
-              className="text-5xl sm:text-6xl font-bold text-on-surface tabular-nums tracking-tight"
+              className="text-5xl sm:text-6xl font-bold tabular-nums tracking-tight leading-none"
             />
-            <span className="text-sm text-on-surface-variant">Brier</span>
+            <span className="mb-1" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 500, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--calibration-slate)' }}>BRIER</span>
           </div>
           <div className="flex items-center gap-2 mt-2">
-            <span className="inline-flex items-center gap-1 text-sm font-semibold text-neon">
+            <span className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--accent)' }}>
               <TrendingDown size={14} />
               {headline}
             </span>
@@ -151,7 +165,8 @@ export default function BrierScoreHero() {
             initial={{ width: 0 }}
             animate={{ width: `${ourPosition}%` }}
             transition={barFill}
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-secondary-container via-neon/40 to-neon rounded-full"
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{ background: 'linear-gradient(to right, rgba(168,52,74,0.3), var(--accent))' }}
           />
         </div>
 
@@ -183,8 +198,8 @@ export default function BrierScoreHero() {
           className="absolute top-0 -translate-x-1/2 z-10"
           style={{ left: `${ourPosition}%` }}
         >
-          <div className="w-1 h-5 bg-neon rounded-full shadow-[0_0_8px_rgba(0,229,255,0.6)]" />
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-neon text-on-primary text-[10px] font-bold whitespace-nowrap shadow-md">
+          <div className="w-1 h-5 rounded-full" style={{ background: 'var(--accent)', boxShadow: '0 0 8px rgba(168,52,74,0.5)' }} />
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap shadow-md" style={{ background: 'var(--accent)', color: 'var(--bone)', fontFamily: 'var(--font-mono)' }}>
             YOU · {data.brier.toFixed(3)}
           </div>
         </motion.div>

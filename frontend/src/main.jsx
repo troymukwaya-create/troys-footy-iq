@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
@@ -30,7 +31,7 @@ class ErrorBoundary extends React.Component {
         <div style={{
           background: '#0a0e1a', color: '#e7eafb', height: '100vh',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', fontFamily: "'Inter', system-ui", padding: 32, gap: 20,
+          justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui", padding: 32, gap: 20,
         }}>
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px' }}>
             <span style={{ color: '#00e5ff' }}>TROY'S</span> FOOTY{' '}
@@ -72,8 +73,10 @@ class ErrorBoundary extends React.Component {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </BrowserRouter>
   </ErrorBoundary>
 )

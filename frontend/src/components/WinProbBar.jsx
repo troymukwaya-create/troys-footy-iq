@@ -1,28 +1,51 @@
 import React from 'react';
+import { motion } from 'motion/react';
 
-export default function WinProbBar({ homePct, drawPct, awayPct, homeName = 'Home', awayName = 'Away' }) {
+export default function WinProbBar({
+  homePct, drawPct, awayPct,
+  homeName = 'Home', awayName = 'Away',
+  animate = true,
+}) {
+  const segments = [
+    { pct: homePct, label: homeName, color: 'var(--accent)', key: 'home' },
+    { pct: drawPct, label: 'Draw',   color: 'var(--calibration-slate)', key: 'draw' },
+    { pct: awayPct, label: awayName, color: 'rgba(168,52,74,0.45)', key: 'away' },
+  ];
+
   return (
-    <div className="w-full flex h-8 rounded-md overflow-hidden text-xs font-bold text-white shadow-inner">
-      <div 
-        className="bg-blue-600 flex items-center justify-center truncate px-1 transition-all duration-500"
-        style={{ width: `${homePct}%` }}
-        title={`${homeName} Win: ${homePct}%`}
-      >
-        {homePct > 15 ? `${homeName} ${homePct}%` : `${homePct}%`}
+    <div className="w-full space-y-1.5">
+      {/* Labels row */}
+      <div className="flex justify-between text-[10px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+        <span className="truncate max-w-[35%]">{homeName}</span>
+        <span>Draw</span>
+        <span className="truncate max-w-[35%] text-right">{awayName}</span>
       </div>
-      <div 
-        className="bg-gray-500 flex items-center justify-center truncate border-x border-gray-700 transition-all duration-500"
-        style={{ width: `${drawPct}%` }}
-        title={`Draw: ${drawPct}%`}
-      >
-        {drawPct > 15 && `Draw ${drawPct}%`}
+
+      {/* Bar */}
+      <div className="flex h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-subtle)' }}>
+        {segments.map(({ pct, color, key }) =>
+          animate ? (
+            <motion.div
+              key={key}
+              initial={{ width: 0 }}
+              animate={{ width: `${pct ?? 0}%` }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              style={{ background: color, height: '100%' }}
+            />
+          ) : (
+            <div
+              key={key}
+              style={{ width: `${pct ?? 0}%`, background: color, height: '100%' }}
+            />
+          )
+        )}
       </div>
-      <div 
-        className="bg-red-600 flex items-center justify-center truncate px-1 transition-all duration-500"
-        style={{ width: `${awayPct}%` }}
-        title={`${awayName} Win: ${awayPct}%`}
-      >
-         {awayPct > 15 ? `${awayName} ${awayPct}%` : `${awayPct}%`}
+
+      {/* Percentage row */}
+      <div className="flex justify-between tabular-nums" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)' }}>
+        <span style={{ color: 'var(--accent)' }}>{homePct ?? '—'}%</span>
+        <span style={{ color: 'var(--calibration-slate)' }}>{drawPct ?? '—'}%</span>
+        <span style={{ color: 'rgba(168,52,74,0.7)' }}>{awayPct ?? '—'}%</span>
       </div>
     </div>
   );

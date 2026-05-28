@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -28,9 +28,23 @@
   --text-tertiary:  rgba(255,255,255, 0.36);
   --text-muted:     rgba(255,255,255, 0.20);
 
-  /* Accent */
-  --accent:        #3b82f6;
-  --accent-muted:  rgba(59,130,246, 0.15);
+  /* Brand signature (replaces generic blue) */
+  --signature-light: #7A1F2B;
+  --signature-dark:  #A8344A;
+  --accent:          #A8344A;
+  --accent-muted:    rgba(168, 52, 74, 0.15);
+
+  /* Brand palette */
+  --bone:              #F7F4EE;
+  --press-ink:         #1C1A17;
+  --calibration-slate: #3A4B5C;
+  --margin-ochre:      #C8893A;
+  --calibration-cyan:  #5BC0BE;
+
+  /* Typography */
+  --font-body:    'IBM Plex Sans', system-ui, sans-serif;
+  --font-serif:   'IBM Plex Serif', Georgia, serif;
+  --font-mono:    'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
 
   /* Semantic */
   --success:       #22c55e;
@@ -59,7 +73,7 @@
   body {
     background-color: var(--bg-base);
     color: var(--text-primary);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -143,7 +157,7 @@
   }
   .match-card.active {
     background: var(--accent-muted);
-    border-color: rgba(59,130,246, 0.30);
+    border-color: rgba(168, 52, 74, 0.30);
   }
 
   /* ─── SKELETON LOADING ────────────────────────────── */

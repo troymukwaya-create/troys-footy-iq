@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFixtures, useLiveMatches, useAnalysis, useAIAnalysisProgressive, api as queryApi } from './hooks/useQueries.js';
 import { useRealTime } from './hooks/useRealTime.js';
@@ -6,6 +7,7 @@ import { useStore } from './store/useStore.js';
 
 import { TopNav } from './components/TopNav.jsx';
 import { MobileNav } from './components/MobileNav.jsx';
+import { HonestBar } from './components/HonestBar.jsx';
 import { LeagueSidebar } from './components/LeagueSidebar.jsx';
 import { GoalFlash } from './components/GoalFlash.jsx';
 import { AnalystDashboard } from './components/AnalystDashboard.jsx';
@@ -80,7 +82,11 @@ export default function App() {
     });
   }, [queryClient]);
 
-  const [mobileTab, setMobileTab] = useState('leagues');
+  // ─── Mobile tab routing via URL search params ─────────────────
+  // Replaces CSS display-none toggling — now the browser back button works on mobile.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mobileTab = searchParams.get('tab') ?? 'leagues';
+  const setMobileTab = useCallback((tab) => setSearchParams({ tab }), [setSearchParams]);
   const [isInvestorMode, setIsInvestorMode] = useState(false);
 
   // ─── Fixture filtering ─────────────────────────────────────────
@@ -145,7 +151,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: "'Inter', system-ui, sans-serif", fontSize: '14px' }}>
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
       {isInvestorMode && <InvestorDashboard onClose={() => setIsInvestorMode(false)} />}
       <GoalFlash flashes={goalFlashes} />
       <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} onInvestorMode={() => setIsInvestorMode(true)} />
@@ -260,12 +266,7 @@ export default function App() {
       </div>
 
       <MobileNav activeTab={mobileTab} onTabChange={setMobileTab} />
-
-
-      {/* Footer */}
-      <div style={{ padding: '8px 16px', background: 'var(--bg-base)', borderTop: '1px solid var(--border-subtle)', fontSize: 10, color: 'var(--text-muted)', textAlign: 'center' }}>
-        Troy's Footy IQ — For analytical and educational purposes only.
-      </div>
+      <HonestBar />
 
       <style>{`
         @media (min-width: 769px) {

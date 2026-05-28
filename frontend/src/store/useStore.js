@@ -1,8 +1,11 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 const MAX_PARLAY_SELECTIONS = 3;
 
-export const useStore = create((set, get) => ({
+export const useStore = create(
+  persist(
+    (set, get) => ({
   // Connection
   connectionStatus: 'connecting',
   setConnectionStatus: (status) => set({ connectionStatus: status }),
@@ -161,4 +164,11 @@ export const useStore = create((set, get) => ({
       count: selections.length,
     };
   },
-}));
+    }),
+    {
+      name: 'footy-iq-store',
+      // Only persist parlay selections — all other state is server-derived
+      partialize: (state) => ({ parlaySelections: state.parlaySelections }),
+    }
+  )
+);

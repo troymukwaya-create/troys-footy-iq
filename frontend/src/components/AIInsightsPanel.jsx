@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { BarChart3, Send } from 'lucide-react';
 import { useAIChat } from '../hooks/useQueries.js';
+import { QEDMark } from './QEDMark.jsx';
 
 /**
  * AIInsightsPanel — Right panel showing AI analysis.
@@ -35,10 +37,10 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center' }}>
         <div style={{
           width: 48, height: 48, borderRadius: 'var(--radius-lg)',
-          background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
+          background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.2)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
         }}>
-          <span style={{ fontSize: 20 }}>📊</span>
+          <BarChart3 size={22} style={{ color: 'var(--accent)' }} />
         </div>
         <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>AI Analysis</h3>
         <p style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.6, maxWidth: 200 }}>
@@ -57,7 +59,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
             width: 28, height: 28, borderRadius: 'var(--radius-sm)',
             background: 'var(--accent-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ fontSize: 13 }}>📊</span>
+            <BarChart3 size={14} style={{ color: 'var(--accent)' }} />
           </div>
           <div>
             <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>AI Analysis</h3>
@@ -68,12 +70,28 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-        {/* Loading */}
+        {/* Content-shaped loading skeleton — mirrors the actual panel structure */}
         {isLoading && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="skeleton" style={{ height: 64 }} />
-            <div className="skeleton" style={{ height: 48 }} />
-            <div className="skeleton" style={{ height: 48, width: '75%' }} />
+            {/* Risk / verdict block */}
+            <div className="skeleton" style={{ height: 72, borderRadius: 'var(--radius-md)' }} />
+            {/* Pick card */}
+            <div className="skeleton" style={{ height: 56, borderRadius: 'var(--radius-md)' }} />
+            {/* Reasoning lines */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="skeleton" style={{ height: 12, width: '90%', borderRadius: 4 }} />
+              <div className="skeleton" style={{ height: 12, width: '75%', borderRadius: 4 }} />
+              <div className="skeleton" style={{ height: 12, width: '82%', borderRadius: 4 }} />
+            </div>
+            {/* Probability indicators */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div className="skeleton" style={{ height: 44, flex: 1, borderRadius: 'var(--radius-md)' }} />
+              <div className="skeleton" style={{ height: 44, flex: 1, borderRadius: 'var(--radius-md)' }} />
+              <div className="skeleton" style={{ height: 44, flex: 1, borderRadius: 'var(--radius-md)' }} />
+            </div>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
+              Analysing match…
+            </p>
           </div>
         )}
 
@@ -84,9 +102,10 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
               <div className={prob.riskLevel === 'LOW' ? 'risk-low' : prob.riskLevel === 'MEDIUM' ? 'risk-medium' : 'risk-high'}
                 style={{ borderRadius: 'var(--radius-md)', padding: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>
-                    {prob.riskLevel === 'LOW' ? '🟢' : prob.riskLevel === 'MEDIUM' ? '🟡' : '🔴'}
-                  </span>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                    background: prob.riskLevel === 'LOW' ? 'var(--success)' : prob.riskLevel === 'MEDIUM' ? 'var(--warning)' : 'var(--danger)',
+                  }} />
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>{prob.riskLevel} RISK</div>
                     {ai.confidence && (
@@ -102,6 +121,9 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
               <div className="card-raised" style={{ padding: 12 }}>
                 <div className="section-title" style={{ marginBottom: 8 }}>Verdict</div>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{ai.verdict}</p>
+                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+                  <QEDMark />
+                </div>
               </div>
             )}
 
@@ -112,7 +134,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
                 padding: '8px 12px', borderRadius: 'var(--radius-md)',
                 background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
               }}>
-                <span style={{ fontSize: 13 }}>⚡</span>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--margin-ochre)', flexShrink: 0 }} />
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>{ai.matchPattern}</span>
               </div>
             )}
@@ -121,7 +143,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
             {ai.recommendedPick && ai.recommendedPick !== 'N/A' && (
               <div style={{
                 padding: 12, borderRadius: 'var(--radius-md)',
-                background: 'var(--accent-muted)', border: '1px solid rgba(59,130,246,0.15)',
+                background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.15)',
               }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em', marginBottom: 4 }}>BEST PICK</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{ai.recommendedPick}</div>
