@@ -224,7 +224,7 @@ function Stat({ label, value, unit, good }) {
     <div className="flex flex-col">
       <span className="text-[10px] uppercase tracking-wider text-on-surface-variant/70 mb-1">{label}</span>
       <div className="flex items-baseline gap-1.5">
-        <span className={`text-lg font-bold tabular-nums ${good ? 'text-secondary' : 'text-error'}`}>
+        <span className={`text-lg font-bold tabular-nums ${good ? 'text-calibration-cyan' : 'text-error'}`}>
           {value}
         </span>
         <span className="text-[10px] text-on-surface-variant/60">{unit}</span>
