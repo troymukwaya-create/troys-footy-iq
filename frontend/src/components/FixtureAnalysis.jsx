@@ -140,7 +140,7 @@ function AnalysisSection({ analysis, home, away }) {
           { label: home.name + ' Win', val: m.result?.homeWin || 33, col: hCol },
           { label: 'Draw', val: m.result?.draw || 34, col: '#717583' },
           { label: away.name + ' Win', val: m.result?.awayWin || 33, col: aCol },
-          { label: 'Top Score', val: m.topScoreline?.prob || 10, score: m.topScoreline?.h !== undefined ? `${m.topScoreline.h}-${m.topScoreline.a}` : '1-1', col: '#2ff801' }
+          { label: 'Top Score', val: m.topScoreline?.prob || 10, score: m.topScoreline?.h !== undefined ? `${m.topScoreline.h}-${m.topScoreline.a}` : '1-1', col: '#22c55e' }
         ].map(c => (
           <div key={c.label} className="bg-surface-container rounded-xl border border-outline-variant/10 p-4">
             <div className="text-[9px] font-bold text-on-surface-variant/40 uppercase tracking-wider mb-2 truncate">{c.label}</div>

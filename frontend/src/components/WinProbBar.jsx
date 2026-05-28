@@ -1,15 +1,18 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { getVisibleTeamColor } from '../constants/teamColors.js';
 
 export default function WinProbBar({
   homePct, drawPct, awayPct,
   homeName = 'Home', awayName = 'Away',
   animate = true,
 }) {
+  const homeColor = getVisibleTeamColor(homeName);
+  const awayColor = getVisibleTeamColor(awayName);
   const segments = [
-    { pct: homePct, label: homeName, color: 'var(--accent)', key: 'home' },
+    { pct: homePct, label: homeName, color: homeColor, key: 'home' },
     { pct: drawPct, label: 'Draw',   color: 'var(--calibration-slate)', key: 'draw' },
-    { pct: awayPct, label: awayName, color: 'rgba(168,52,74,0.45)', key: 'away' },
+    { pct: awayPct, label: awayName, color: awayColor, key: 'away' },
   ];
 
   return (
@@ -43,9 +46,9 @@ export default function WinProbBar({
 
       {/* Percentage row */}
       <div className="flex justify-between tabular-nums" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)' }}>
-        <span style={{ color: 'var(--accent)' }}>{homePct ?? '—'}%</span>
+        <span style={{ color: homeColor }}>{homePct ?? '—'}%</span>
         <span style={{ color: 'var(--calibration-slate)' }}>{drawPct ?? '—'}%</span>
-        <span style={{ color: 'rgba(168,52,74,0.7)' }}>{awayPct ?? '—'}%</span>
+        <span style={{ color: awayColor }}>{awayPct ?? '—'}%</span>
       </div>
     </div>
   );

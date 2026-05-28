@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { CalendarX } from 'lucide-react';
 import BrierScoreHero from './BrierScoreHero.jsx';
+import { getVisibleTeamColor } from '../constants/teamColors.js';
 
 // ─── CONFIDENCE CONFIG ───────────────────────────────────────────────────────
 const CONFIDENCE = {
@@ -45,6 +46,8 @@ function InsightCard({ fixture, onSelect, featured }) {
   const cfg = CONFIDENCE[confidence];
   const insights = getInsight(fixture);
   const isLive = fixture.status === 'IN_PLAY' || fixture.status === 'PAUSED';
+  const homeColor = getVisibleTeamColor(fixture.homeTeam?.name);
+  const awayColor = getVisibleTeamColor(fixture.awayTeam?.name);
 
   const kickoff = fixture.date
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -54,8 +57,8 @@ function InsightCard({ fixture, onSelect, featured }) {
     <div
       onClick={() => onSelect?.(fixture)}
       style={{
-        background: featured ? 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(13,18,33,1) 60%)' : 'var(--bg-surface)',
-        border: `1px solid ${featured ? 'rgba(59,130,246,0.25)' : 'var(--border-subtle)'}`,
+        background: featured ? 'linear-gradient(135deg, rgba(168,52,74,0.08) 0%, rgba(13,18,33,1) 60%)' : 'var(--bg-surface)',
+        border: `1px solid ${featured ? 'rgba(168,52,74,0.25)' : 'var(--border-subtle)'}`,
         borderRadius: 16,
         padding: '20px 24px',
         cursor: 'pointer',
@@ -65,12 +68,12 @@ function InsightCard({ fixture, onSelect, featured }) {
         gap: 16,
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.borderColor = featured ? 'rgba(59,130,246,0.45)' : 'var(--border-default)';
+        e.currentTarget.style.borderColor = featured ? 'rgba(168,52,74,0.45)' : 'var(--border-default)';
         e.currentTarget.style.transform = 'translateY(-2px)';
         e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.borderColor = featured ? 'rgba(59,130,246,0.25)' : 'var(--border-subtle)';
+        e.currentTarget.style.borderColor = featured ? 'rgba(168,52,74,0.25)' : 'var(--border-subtle)';
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = 'none';
       }}
@@ -111,14 +114,14 @@ function InsightCard({ fixture, onSelect, featured }) {
       {prob && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
-            <span>H <strong style={{ color: 'var(--text-secondary)' }}>{prob.home}%</strong></span>
+            <span>H <strong style={{ color: homeColor }}>{prob.home}%</strong></span>
             <span>D <strong style={{ color: 'var(--text-secondary)' }}>{prob.draw}%</strong></span>
-            <span>A <strong style={{ color: 'var(--text-secondary)' }}>{prob.away}%</strong></span>
+            <span>A <strong style={{ color: awayColor }}>{prob.away}%</strong></span>
           </div>
           <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.05)', display: 'flex', overflow: 'hidden' }}>
-            <div style={{ width: `${prob.home}%`, background: '#3b82f6', transition: 'width 600ms ease' }} />
+            <div style={{ width: `${prob.home}%`, background: homeColor, transition: 'width 600ms ease' }} />
             <div style={{ width: `${prob.draw}%`, background: 'rgba(255,255,255,0.12)', transition: 'width 600ms ease' }} />
-            <div style={{ width: `${prob.away}%`, background: '#6366f1', transition: 'width 600ms ease' }} />
+            <div style={{ width: `${prob.away}%`, background: awayColor, transition: 'width 600ms ease' }} />
           </div>
         </div>
       )}
@@ -128,7 +131,7 @@ function InsightCard({ fixture, onSelect, featured }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {insights.map((text, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <span style={{ color: '#3b82f6', fontSize: 13, lineHeight: 1.5, flexShrink: 0 }}>›</span>
+              <span style={{ color: 'var(--accent)', fontSize: 13, lineHeight: 1.5, flexShrink: 0 }}>›</span>
               <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{text}</span>
             </div>
           ))}
@@ -149,12 +152,12 @@ function InsightCard({ fixture, onSelect, featured }) {
           style={{
             fontSize: 12, fontWeight: 600, padding: '6px 14px',
             borderRadius: 8, cursor: 'pointer', border: 'none',
-            background: featured ? '#3b82f6' : 'rgba(59,130,246,0.15)',
-            color: featured ? '#fff' : '#3b82f6',
+            background: featured ? 'var(--accent)' : 'var(--accent-muted)',
+            color: featured ? '#fff' : 'var(--accent)',
             transition: 'background 180ms ease',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#3b82f6'}
-          onMouseLeave={e => e.currentTarget.style.background = featured ? '#3b82f6' : 'rgba(59,130,246,0.15)'}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--accent)'}
+          onMouseLeave={e => e.currentTarget.style.background = featured ? 'var(--accent)' : 'var(--accent-muted)'}
         >
           View Match →
         </button>

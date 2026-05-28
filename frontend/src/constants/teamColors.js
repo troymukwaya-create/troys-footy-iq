@@ -258,3 +258,31 @@ export const getColor = getTeamColor;
 
 // Draw color — always neutral
 export const DRAW_COLOR = '#374151';
+
+// ── Bar / segment visibility ────────────────────────────────────────
+// On the dark UI, very dark team primaries (black/navy kits like Juventus,
+// Newcastle, Corinthians) vanish as a bar fill. getVisibleTeamColor returns
+// the team's primary colour, but swaps to a lighter alternative (its
+// secondary, or a lightened primary) when the primary is too dark to see.
+function _luminance(hex) {
+  const c = (hex || '').replace('#', '');
+  if (c.length !== 6) return 1;
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+function _lighten(hex, amt) {
+  const c = (hex || '').replace('#', '');
+  if (c.length !== 6) return hex;
+  const ch = i => Math.min(255, Math.round(parseInt(c.slice(i, i + 2), 16) + 255 * amt));
+  return `#${[ch(0), ch(2), ch(4)].map(x => x.toString(16).padStart(2, '0')).join('')}`;
+}
+
+export function getVisibleTeamColor(teamName) {
+  const { primary, secondary } = getTeamColor(teamName);
+  if (_luminance(primary) >= 0.22) return primary;             // bright enough
+  if (secondary && _luminance(secondary) >= 0.30) return secondary; // lighter alt
+  return _lighten(primary, 0.4);                               // last resort
+}

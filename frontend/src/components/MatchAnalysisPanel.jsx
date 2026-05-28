@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MarketsPanel } from './MarketsPanel.jsx';
+import { getVisibleTeamColor } from '../constants/teamColors.js';
 
 /**
  * MatchAnalysisPanel — Center panel for match analysis.
@@ -12,6 +13,8 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
 
   const home = fixture?.homeTeam?.name || 'Home';
   const away = fixture?.awayTeam?.name || 'Away';
+  const homeColor = getVisibleTeamColor(fixture?.homeTeam?.name);
+  const awayColor = getVisibleTeamColor(fixture?.awayTeam?.name);
   const homeCrest = fixture?.homeTeam?.crest || null;
   const awayCrest = fixture?.awayTeam?.crest || null;
   const league = fixture?.league?.name || '';
@@ -89,14 +92,14 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
         {prob && dataQuality !== 'INSUFFICIENT' && (
           <div style={{ marginTop: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>{prob.probabilities?.home || 0}%</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: homeColor }}>{prob.probabilities?.home || 0}%</span>
               <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-tertiary)' }}>{prob.probabilities?.draw || 0}%</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--warning)' }}>{prob.probabilities?.away || 0}%</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: awayColor }}>{prob.probabilities?.away || 0}%</span>
             </div>
             <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2 }}>
-              <div style={{ width: `${prob.probabilities?.home || 33}%`, background: 'var(--accent)', borderRadius: '4px 0 0 4px', transition: 'width 600ms ease' }} />
+              <div style={{ width: `${prob.probabilities?.home || 33}%`, background: homeColor, borderRadius: '4px 0 0 4px', transition: 'width 600ms ease' }} />
               <div style={{ width: `${prob.probabilities?.draw || 33}%`, background: 'rgba(255,255,255,0.12)', transition: 'width 600ms ease' }} />
-              <div style={{ width: `${prob.probabilities?.away || 33}%`, background: 'var(--warning)', borderRadius: '0 4px 4px 0', transition: 'width 600ms ease' }} />
+              <div style={{ width: `${prob.probabilities?.away || 33}%`, background: awayColor, borderRadius: '0 4px 4px 0', transition: 'width 600ms ease' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
               <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{home}</span>

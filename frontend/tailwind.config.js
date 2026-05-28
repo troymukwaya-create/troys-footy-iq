@@ -25,10 +25,10 @@ module.exports = {
           'fixed-dim': '#00e2ee',
         },
         secondary: {
-          DEFAULT: '#2ff801',
-          dim: '#2be800',
-          container: '#106e00',
-          fixed: '#2ff801',
+          DEFAULT: '#22c55e',
+          dim: '#16a34a',
+          container: '#14532d',
+          fixed: '#22c55e',
         },
         tertiary: {
           DEFAULT: '#ffd16f',
