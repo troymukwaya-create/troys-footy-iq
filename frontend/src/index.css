@@ -11,11 +11,11 @@
 
 /* ─── DESIGN TOKENS ─────────────────────────────────── */
 :root {
-  /* Surfaces */
-  --bg-base:     #080b14;
-  --bg-surface:  #0d1221;
-  --bg-raised:   #131a2e;
-  --bg-hover:    #171f36;
+  /* Surfaces — inverted theme: gray center "page", black chrome + tiles */
+  --bg-base:     #1B1E25;  /* center canvas = gray (the "page") */
+  --bg-surface:  #0B0B0D;  /* sides, top nav, footer = black */
+  --bg-raised:   #14161B;  /* near-black — card gradient top sheen */
+  --bg-hover:    #1E2128;
 
   /* Borders */
   --border-subtle:  rgba(255,255,255, 0.05);
@@ -92,8 +92,9 @@
 @layer components {
 
   /* ─── SURFACE CARDS ───────────────────────────────── */
+  /* Subtle gradient on tiles (near-black on the gray page) */
   .card {
-    background: var(--bg-surface);
+    background: linear-gradient(155deg, var(--bg-raised) 0%, var(--bg-surface) 65%);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
     transition: border-color 180ms ease, box-shadow 180ms ease;

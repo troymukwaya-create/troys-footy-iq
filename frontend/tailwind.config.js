@@ -9,13 +9,13 @@ module.exports = {
     extend: {
       colors: {
         surface: {
-          DEFAULT: '#090e19',
-          dim: '#090e19',
-          container: '#131927',
-          'container-low': '#0e131f',
-          'container-high': '#191f2e',
-          'container-highest': '#1f2636',
-          bright: '#242c3d',
+          DEFAULT: '#0B0B0D',
+          dim: '#0B0B0D',
+          container: '#121318',
+          'container-low': '#0B0B0D',
+          'container-high': '#1A1C22',
+          'container-highest': '#22252E',
+          bright: '#2A2E38',
         },
         primary: {
           DEFAULT: '#99f7ff',

@@ -97,9 +97,9 @@ export function ParlayBuilderPanel() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="sticky top-20 rounded-2xl border border-outline-variant/30 bg-surface-container/60 overflow-hidden"
+        className="sticky top-20 rounded-2xl border border-outline-variant/30 bg-surface-container-highest overflow-hidden"
       >
-        <header className="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">
+        <header className="flex items-center justify-between px-4 py-3 bg-surface-container-high border-b border-outline-variant/20">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Parlay</span>
           </div>
@@ -127,7 +127,7 @@ export function ParlayBuilderPanel() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="sticky top-20 rounded-2xl border border-outline-variant/30 bg-surface-container/60 overflow-hidden shadow-lg shadow-black/20"
+      className="sticky top-20 rounded-2xl border border-outline-variant/30 bg-surface-container-highest overflow-hidden shadow-lg shadow-black/20"
     >
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">

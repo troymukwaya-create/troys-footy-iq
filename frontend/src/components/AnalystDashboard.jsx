@@ -57,7 +57,7 @@ function InsightCard({ fixture, onSelect, featured }) {
     <div
       onClick={() => onSelect?.(fixture)}
       style={{
-        background: featured ? 'linear-gradient(135deg, rgba(168,52,74,0.08) 0%, rgba(13,18,33,1) 60%)' : 'var(--bg-surface)',
+        background: featured ? 'linear-gradient(135deg, rgba(168,52,74,0.12) 0%, #0B0B0D 58%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)',
         border: `1px solid ${featured ? 'rgba(168,52,74,0.25)' : 'var(--border-subtle)'}`,
         borderRadius: 16,
         padding: '20px 24px',

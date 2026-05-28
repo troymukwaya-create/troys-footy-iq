@@ -39,7 +39,7 @@ export function HonestBar() {
       className="honest-bar"
       style={{
         padding: '6px 16px',
-        background: 'var(--bg-base)',
+        background: 'var(--bg-surface)',
         borderTop: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
