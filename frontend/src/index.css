@@ -82,6 +82,13 @@
   }
 }
 
+/* Full-height app shell — uses dynamic viewport height on mobile so the
+   fixed bottom nav is never hidden behind the browser address bar. */
+.app-shell {
+  height: 100vh;    /* fallback for older browsers */
+  height: 100dvh;   /* modern mobile: excludes browser chrome */
+}
+
 @layer components {
 
   /* ─── SURFACE CARDS ───────────────────────────────── */

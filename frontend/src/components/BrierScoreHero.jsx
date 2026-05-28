@@ -180,10 +180,11 @@ export default function BrierScoreHero() {
               style={{ left: `${pos}%` }}
             >
               <div className="w-px h-4 bg-on-surface-variant/40" />
-              <div className="text-[10px] text-on-surface-variant/70 whitespace-nowrap mt-1 -translate-x-1/2 ml-1">
+              {/* Text labels crowd on phones — hide them there; the vs-callout row below carries the comparison */}
+              <div className="hidden sm:block text-[10px] text-on-surface-variant/70 whitespace-nowrap mt-1 -translate-x-1/2 ml-1">
                 {b.label}
               </div>
-              <div className="text-[10px] text-on-surface-variant/50 tabular-nums whitespace-nowrap -translate-x-1/2 ml-1">
+              <div className="hidden sm:block text-[10px] text-on-surface-variant/50 tabular-nums whitespace-nowrap -translate-x-1/2 ml-1">
                 {b.value.toFixed(3)}
               </div>
             </div>

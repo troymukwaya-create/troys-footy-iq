@@ -10,8 +10,13 @@ export function MobileNav({ activeTab, onTabChange }) {
   ];
 
   return (
-    <div className="mobile-bottom-nav fixed bottom-0 left-0 right-0 h-14 backdrop-blur-xl border-t hidden justify-around items-center z-[100]"
-      style={{ background: 'rgba(8,11,20,0.96)', borderColor: 'var(--border-subtle)' }}>
+    <div className="mobile-bottom-nav fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t hidden justify-around items-center z-[100]"
+      style={{
+        height: 'calc(56px + env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        background: 'rgba(8,11,20,0.96)',
+        borderColor: 'var(--border-subtle)',
+      }}>
       {tabs.map(({ id, Icon, label }) => {
         const isActive = activeTab === id;
         return (

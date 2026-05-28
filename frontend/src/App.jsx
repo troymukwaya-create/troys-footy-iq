@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFixtures, useLiveMatches, useAnalysis, useAIAnalysisProgressive, api as queryApi } from './hooks/useQueries.js';
@@ -17,7 +17,6 @@ import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.
 const MatchAnalysisPanel = React.lazy(() => import('./components/MatchAnalysisPanel.jsx').then(m => ({ default: m.MatchAnalysisPanel })));
 const AIInsightsPanel = React.lazy(() => import('./components/AIInsightsPanel.jsx').then(m => ({ default: m.AIInsightsPanel })));
 const ParlayBuilderPanel = React.lazy(() => import('./components/ParlayBuilderPanel.jsx').then(m => ({ default: m.ParlayBuilderPanel })));
-import { InvestorDashboard } from './components/InvestorDashboard.jsx';
 
 export default function App() {
   useRealTime();
@@ -87,7 +86,6 @@ export default function App() {
   const [searchParams, setSearchParams] = useSearchParams();
   const mobileTab = searchParams.get('tab') ?? 'leagues';
   const setMobileTab = useCallback((tab) => setSearchParams({ tab }), [setSearchParams]);
-  const [isInvestorMode, setIsInvestorMode] = useState(false);
 
   // ─── Fixture filtering ─────────────────────────────────────────
   const allFixtures = useMemo(() => {
@@ -124,11 +122,13 @@ export default function App() {
   const handleSelectFixture = useCallback((fixture) => {
     if (!fixture?.id) return;
     setSelectedFixture(fixture);
-  }, [setSelectedFixture]);
+    setMobileTab('match');   // mobile: jump to the analysis view on tap
+  }, [setSelectedFixture, setMobileTab]);
 
   const handleDeselectFixture = useCallback(() => {
     setSelectedFixture(null);
-  }, [setSelectedFixture]);
+    setMobileTab('leagues'); // mobile: return to the fixture list
+  }, [setSelectedFixture, setMobileTab]);
 
   // ─── Keyboard shortcuts ───────────────────────────────────────
   useEffect(() => {
@@ -151,10 +151,9 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
-      {isInvestorMode && <InvestorDashboard onClose={() => setIsInvestorMode(false)} />}
+    <div className="flex flex-col app-shell overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
       <GoalFlash flashes={goalFlashes} />
-      <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} onInvestorMode={() => setIsInvestorMode(true)} />
+      <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* ═══ LEFT SIDEBAR ═══ */}
@@ -275,9 +274,10 @@ export default function App() {
           .right-panel { display: flex !important; }
         }
         @media (max-width: 768px) {
-          .left-panel { display: ${mobileTab === 'today' || mobileTab === 'leagues' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-right: none !important; padding-bottom: 60px; }
-          .center-panel { display: ${mobileTab === 'match' ? 'flex' : 'none'} !important; width: 100% !important; padding-bottom: 60px; }
-          .right-panel { display: ${mobileTab === 'ai' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-left: none !important; padding-bottom: 60px; }
+          .left-panel { display: ${mobileTab === 'today' || mobileTab === 'leagues' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-right: none !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
+          .center-panel { display: ${mobileTab === 'match' ? 'flex' : 'none'} !important; width: 100% !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
+          .right-panel { display: ${mobileTab === 'ai' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-left: none !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
+          .honest-bar { display: none !important; }
         }
       `}</style>
     </div>

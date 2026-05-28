@@ -36,6 +36,7 @@ export function HonestBar() {
 
   return (
     <footer
+      className="honest-bar"
       style={{
         padding: '6px 16px',
         background: 'var(--bg-base)',
