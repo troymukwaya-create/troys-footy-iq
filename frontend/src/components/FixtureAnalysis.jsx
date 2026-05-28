@@ -280,7 +280,7 @@ function LineupSection({ home, away }) {
   return (
     <div className="bg-surface-container rounded-2xl p-10 text-center border border-outline-variant/10">
       <div className="w-full max-w-[400px] mx-auto h-[500px] border-2 border-secondary/10 rounded-lg relative"
-        style={{ background: 'radial-gradient(circle, rgba(47,248,1,0.03) 0%, rgba(9,14,25,1) 100%)' }}>
+        style={{ background: 'radial-gradient(circle, rgba(34,197,94,0.03) 0%, rgba(9,14,25,1) 100%)' }}>
         <div className="absolute top-1/2 left-0 right-0 h-px bg-secondary/10" />
         <div className="absolute top-1/2 left-1/2 w-20 h-20 border border-secondary/10 rounded-full -translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-white"

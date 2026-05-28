@@ -162,7 +162,7 @@ export default function Dashboard() {
               <motion.div
                 key={m.id}
                 {...enterStagger(i)}
-                className="ring-1 ring-secondary/40 rounded-xl shadow-[0_0_18px_rgba(47,248,1,0.10)] bg-secondary-container/5"
+                className="ring-1 ring-secondary/40 rounded-xl shadow-[0_0_18px_rgba(34,197,94,0.10)] bg-secondary-container/5"
               >
                 <LiveScoreCard match={m} />
               </motion.div>
