@@ -25,7 +25,17 @@ const apiHealth = {
 /**
  * Record an API call outcome for health monitoring.
  */
-export function recordApiCall(source, success, responseTimeMs) {
+export function recordApiCall(source, success, responseTimeMs, endpoint = null) {
+  // Persist to api_usage_log for the CEO dashboard quota gauges.
+  // Fire-and-forget — never blocks or throws into the caller.
+  if (isDbAvailable()) {
+    safeQuery(
+      `INSERT INTO api_usage_log (source, endpoint, success, response_time_ms)
+       VALUES ($1, $2, $3, $4)`,
+      [source, endpoint, !!success, Math.round(responseTimeMs) || null]
+    ).catch(() => {});
+  }
+
   const tracker = apiHealth[source];
   if (!tracker) return;
 
@@ -307,6 +317,109 @@ export async function checkForModelDegradation() {
   return { shouldRollback: false, reason: 'Model performing within tolerance' };
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// CEO DASHBOARD — COST + USAGE ACCOUNTING
+// ═══════════════════════════════════════════════════════════════════
+
+// Per-1M-token pricing (USD). Anthropic Claude Sonnet 4 reference rates.
+// cached = prompt-cache read rate (~10% of input).
+const CLAUDE_PRICING = {
+  default:                    { input: 3.0, output: 15.0, cached: 0.30 },
+  'claude-sonnet-4-20250514': { input: 3.0, output: 15.0, cached: 0.30 },
+  'claude-3-5-haiku':         { input: 0.80, output: 4.0, cached: 0.08 },
+};
+
+/**
+ * Record a Claude API call's token usage + cost. Fire-and-forget.
+ * Call this right after every Anthropic request resolves.
+ *
+ * @param {Object} usage - { input_tokens, output_tokens, cache_read_input_tokens }
+ * @param {string} model - model id (for pricing + audit)
+ * @param {string} endpoint - logical call site ('ai_verdict', etc.)
+ */
+export function logApiCost(usage = {}, model = 'default', endpoint = null) {
+  const price = CLAUDE_PRICING[model] || CLAUDE_PRICING.default;
+  const input = usage.input_tokens || 0;
+  const output = usage.output_tokens || 0;
+  const cached = usage.cache_read_input_tokens || 0;
+  const billableInput = Math.max(0, input - cached);
+
+  const cost =
+    (billableInput * price.input +
+     cached * price.cached +
+     output * price.output) / 1_000_000;
+
+  if (isDbAvailable()) {
+    safeQuery(
+      `INSERT INTO api_cost_log (provider, model, input_tokens, output_tokens, cached_tokens, cost_usd, endpoint)
+       VALUES ('anthropic', $1, $2, $3, $4, $5, $6)`,
+      [model, input, output, cached, +cost.toFixed(6), endpoint]
+    ).catch(() => {});
+  }
+  return cost;
+}
+
+/**
+ * API quota usage per source for today + this month.
+ * Powers the dashboard's quota progress bars.
+ */
+export async function getApiUsageStats() {
+  if (!isDbAvailable()) return { sources: {}, available: false };
+
+  const result = await safeQuery(`
+    SELECT source,
+      COUNT(*) FILTER (WHERE called_at >= CURRENT_DATE)::int                        AS today,
+      COUNT(*) FILTER (WHERE called_at >= date_trunc('month', CURRENT_DATE))::int   AS month,
+      COUNT(*) FILTER (WHERE called_at >= NOW() - INTERVAL '1 minute')::int         AS last_minute,
+      COUNT(*) FILTER (WHERE NOT success AND called_at >= CURRENT_DATE)::int         AS failures_today,
+      MAX(called_at) AS last_call
+    FROM api_usage_log
+    GROUP BY source
+  `);
+
+  const sources = {};
+  for (const r of result?.rows || []) {
+    sources[r.source] = {
+      today: r.today, month: r.month, lastMinute: r.last_minute,
+      failuresToday: r.failures_today, lastCall: r.last_call,
+    };
+  }
+  return { sources, available: true };
+}
+
+/**
+ * Claude spend today + this month. Powers the spend-vs-budget card.
+ */
+export async function getApiCostStats() {
+  if (!isDbAvailable()) return { available: false };
+
+  const result = await safeQuery(`
+    SELECT
+      COALESCE(SUM(cost_usd) FILTER (WHERE called_at >= CURRENT_DATE), 0)                      AS today_usd,
+      COALESCE(SUM(cost_usd) FILTER (WHERE called_at >= date_trunc('month', CURRENT_DATE)), 0) AS month_usd,
+      COUNT(*) FILTER (WHERE called_at >= CURRENT_DATE)::int                                    AS calls_today,
+      COALESCE(SUM(cached_tokens), 0)::bigint                                                   AS cached_tokens_total,
+      COALESCE(SUM(input_tokens + output_tokens), 0)::bigint                                    AS tokens_total
+    FROM api_cost_log
+  `);
+
+  const row = result?.rows?.[0] || {};
+  const cached = Number(row.cached_tokens_total || 0);
+  const totalIn = Number(row.tokens_total || 0);
+  return {
+    available: true,
+    todayUsd: +Number(row.today_usd || 0).toFixed(4),
+    monthUsd: +Number(row.month_usd || 0).toFixed(4),
+    callsToday: row.calls_today || 0,
+    cacheHitRate: totalIn > 0 ? +((cached / totalIn) * 100).toFixed(1) : 0,
+  };
+}
+
+/** Expose the in-memory API health summary (used by /api/admin/system). */
+export function getApiHealth() {
+  return getApiHealthSummary();
+}
+
 export default {
   recordApiCall,
   runHealthCheck,
@@ -314,4 +427,8 @@ export default {
   acknowledgeAlert,
   createAlert,
   checkForModelDegradation,
+  logApiCost,
+  getApiUsageStats,
+  getApiCostStats,
+  getApiHealth,
 };

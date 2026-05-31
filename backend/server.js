@@ -66,6 +66,10 @@ import performanceRouter from './routes/performance.js';
 import feedbackRouter from './routes/feedback.js';
 import verifyRouter from './routes/verify.js';
 import demoRouter from './routes/demo.js';
+import adminRouter from './routes/admin.js';
+import adminDetailRouter from './routes/adminDetail.js';
+import trackRouter from './routes/track.js';
+import { registerClientCounter } from './services/runtimeStats.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -73,6 +77,9 @@ const port = process.env.PORT || 3001;
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 const clients = new Set();
+
+// Expose live WS client count to the admin dashboard (no circular import).
+registerClientCounter(() => clients.size);
 
 wss.on('connection', (ws) => {
   clients.add(ws);
@@ -190,6 +197,9 @@ safeMount('/api/model', feedbackRouter, 'model');  // Mount feedback routes unde
 safeMount('/api/verify', verifyRouter, 'verify');
 safeMount('/api/monitor', verifyRouter, 'monitor');
 safeMount('/api/demo', demoRouter, 'demo');
+safeMount('/api/track', trackRouter, 'track');   // public first-party analytics ingestion
+safeMount('/api/admin', adminRouter, 'admin');         // CEO command center (token-protected)
+safeMount('/api/admin', adminDetailRouter, 'admin-detail'); // drill-down detail endpoints
 
 // Debug / integrity routes — served from the fixtures router
 // GET /api/debug/fixtures-integrity

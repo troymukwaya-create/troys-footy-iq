@@ -391,3 +391,74 @@ CREATE TABLE IF NOT EXISTS ai_analysis_cache (
 );
 
 CREATE INDEX IF NOT EXISTS idx_cache_fixture ON ai_analysis_cache(fixture_id, created_at DESC);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- CEO COMMAND CENTER TABLES (v8)
+-- Powers the /admin analytics dashboard: first-party visitor tracking,
+-- external API quota usage, and AI (Claude) cost accounting.
+-- ═══════════════════════════════════════════════════════════════════
+
+-- ─── SITE EVENTS (first-party analytics) ───────────────────────────
+-- Every visitor pageview / interaction. Written by the public /api/track
+-- endpoint. This makes the CEO dashboard show real traffic with ZERO
+-- external dependency — PostHog (if configured) is purely additive.
+CREATE TABLE IF NOT EXISTS site_events (
+  id SERIAL PRIMARY KEY,
+  visitor_id VARCHAR(40) NOT NULL,        -- anonymous client id (localStorage uuid)
+  session_id VARCHAR(40),                 -- per-session id (resets on tab close)
+  event_name VARCHAR(60) NOT NULL,        -- '$pageview' | 'prediction_viewed' | 'ai_analysis_opened' | ...
+  path VARCHAR(300),                      -- page path
+  referrer VARCHAR(300),                  -- document.referrer
+  country VARCHAR(60),                    -- best-effort from CF/Vercel headers
+  device VARCHAR(20),                     -- 'mobile' | 'desktop' | 'tablet'
+  props JSONB,                            -- arbitrary event properties (fixture_id, teams, etc.)
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_site_events_time   ON site_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_site_events_visitor ON site_events(visitor_id);
+CREATE INDEX IF NOT EXISTS idx_site_events_name   ON site_events(event_name, created_at DESC);
+
+-- ─── API USAGE LOG (external quota tracking) ───────────────────────
+-- One row per outbound call to football-data.org / api-sports.io / anthropic.
+-- Written by monitor.recordApiCall(). Powers the quota gauges that stop
+-- you from silently blowing through a free-tier limit on a match day.
+CREATE TABLE IF NOT EXISTS api_usage_log (
+  id SERIAL PRIMARY KEY,
+  source VARCHAR(30) NOT NULL,            -- 'footballdata' | 'apisports' | 'anthropic'
+  endpoint VARCHAR(200),
+  success BOOLEAN NOT NULL DEFAULT true,
+  response_time_ms INT,
+  called_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_usage_source_date ON api_usage_log(source, called_at DESC);
+
+-- ─── API COST LOG (Claude spend accounting) ────────────────────────
+-- One row per Claude API call with token counts + computed USD cost.
+-- Lets the CEO dashboard show spend-vs-budget in real time.
+CREATE TABLE IF NOT EXISTS api_cost_log (
+  id SERIAL PRIMARY KEY,
+  provider VARCHAR(30) DEFAULT 'anthropic',
+  model VARCHAR(60),
+  input_tokens INT NOT NULL DEFAULT 0,
+  output_tokens INT NOT NULL DEFAULT 0,
+  cached_tokens INT NOT NULL DEFAULT 0,
+  cost_usd FLOAT NOT NULL DEFAULT 0,
+  endpoint VARCHAR(100),                  -- 'ai_verdict' | 'model_insights' | ...
+  called_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_cost_date ON api_cost_log(called_at DESC);
+
+-- ─── SITE EVENTS — accuracy columns (v9) ───────────────────────────
+-- synthetic separates demo/seed data from real visitors; browser/os enrich
+-- the per-visitor detail view. Idempotent so existing deploys upgrade safely.
+DO $$ BEGIN
+  ALTER TABLE site_events ADD COLUMN IF NOT EXISTS synthetic BOOLEAN DEFAULT false;
+  ALTER TABLE site_events ADD COLUMN IF NOT EXISTS browser VARCHAR(40);
+  ALTER TABLE site_events ADD COLUMN IF NOT EXISTS os VARCHAR(40);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_site_events_synthetic ON site_events(synthetic, created_at DESC);

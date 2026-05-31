@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { query } from '../db/index.js';
+import { logApiCost } from './monitor.js';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
@@ -47,6 +48,11 @@ Supported pick types: Over 2.5 Goals, Under 2.5 Goals, BTTS Yes, BTTS No, Home W
         'content-type': 'application/json'
       }
     });
+
+    // Cost accounting for the CEO dashboard spend card (fire-and-forget).
+    try {
+      logApiCost(response.data?.usage, 'claude-sonnet-4-20250514', 'ai_verdict');
+    } catch { /* never let accounting break analysis */ }
 
     const outputText = response.data?.content?.[0]?.text || '{}';
     const cleanOutput = outputText.replace(/^\\s*\\`\\`\\`[a-z]*\\n?/im, '').replace(/\\n?\\`\\`\\`\\s*$/im, '');

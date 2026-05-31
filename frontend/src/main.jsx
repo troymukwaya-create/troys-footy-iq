@@ -4,6 +4,11 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
+import { initAnalytics } from './lib/analytics.js'
+
+// First-party visitor tracking (feeds the CEO command center at /admin).
+// Never blocks render; fails silent if the backend is unreachable.
+try { initAnalytics() } catch { /* ignore */ }
 
 const queryClient = new QueryClient({
   defaultOptions: {

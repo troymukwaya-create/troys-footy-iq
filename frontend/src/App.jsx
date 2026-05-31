@@ -1,9 +1,10 @@
 import React, { useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Routes, Route } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFixtures, useLiveMatches, useAnalysis, useAIAnalysisProgressive, api as queryApi } from './hooks/useQueries.js';
 import { useRealTime } from './hooks/useRealTime.js';
 import { useStore } from './store/useStore.js';
+import { track } from './lib/analytics.js';
 
 import { TopNav } from './components/TopNav.jsx';
 import { MobileNav } from './components/MobileNav.jsx';
@@ -17,8 +18,9 @@ import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.
 const MatchAnalysisPanel = React.lazy(() => import('./components/MatchAnalysisPanel.jsx').then(m => ({ default: m.MatchAnalysisPanel })));
 const AIInsightsPanel = React.lazy(() => import('./components/AIInsightsPanel.jsx').then(m => ({ default: m.AIInsightsPanel })));
 const ParlayBuilderPanel = React.lazy(() => import('./components/ParlayBuilderPanel.jsx').then(m => ({ default: m.ParlayBuilderPanel })));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard.jsx'));
 
-export default function App() {
+function MainApp() {
   useRealTime();
 
   const {
@@ -123,6 +125,13 @@ export default function App() {
     if (!fixture?.id) return;
     setSelectedFixture(fixture);
     setMobileTab('match');   // mobile: jump to the analysis view on tap
+    // CEO dashboard engagement signal
+    track('prediction_viewed', {
+      fixture_id: fixture.id,
+      home_team: fixture.home?.name || fixture.homeTeam?.name || fixture.home_team,
+      away_team: fixture.away?.name || fixture.awayTeam?.name || fixture.away_team,
+      league_code: fixture.league?.code,
+    });
   }, [setSelectedFixture, setMobileTab]);
 
   const handleDeselectFixture = useCallback(() => {
@@ -281,5 +290,19 @@ export default function App() {
         }
       `}</style>
     </div>
+  );
+}
+
+// ─── ROOT ROUTER ──────────────────────────────────────────────────────
+// The public app lives at "/*"; the CEO command center at "/admin".
+export default function App() {
+  return (
+    <Routes>
+      <Route
+        path="/admin/*"
+        element={<React.Suspense fallback={null}><AdminDashboard /></React.Suspense>}
+      />
+      <Route path="*" element={<MainApp />} />
+    </Routes>
   );
 }
