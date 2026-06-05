@@ -11,6 +11,7 @@ const BASE = 'https://v3.football.api-sports.io/';
 const SEASON = 2025;
 
 const LEAGUES = {
+  WC: 1,                                  // FIFA World Cup 2026 — without this, WC fixtures are filtered out
   PL: 39, PD: 140, BL1: 78, SA: 135, FL1: 61,
   BSA: 71, BSB: 72, CL: 2, EL: 3, ECL: 848,
   ERE: 88, PPL: 94, CDB: 73,

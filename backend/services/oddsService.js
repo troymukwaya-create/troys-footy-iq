@@ -4,6 +4,7 @@
 // Caches aggressively to respect free-tier rate limits.
 
 import api from './apisports.js';
+import * as toa from './sources/theOddsApi.js';
 import cache from './cache.js';
 import { predictStatic } from '../engine/inferenceEngine.js';
 
@@ -40,12 +41,20 @@ const lastFetchTime = new Map();
  * Fetch odds for a single fixture from API-Football.
  * Uses aggressive caching to stay within rate limits.
  */
-export async function getFixtureOdds(fixtureId) {
-  if (!api.hasKey()) return null;
-
+export async function getFixtureOdds(fixtureId, teams = null) {
   const cacheKey = `odds_${fixtureId}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
+
+  // Preferred: The Odds API (paid, broader bookmaker coverage), matched by team name.
+  if (toa.hasKey() && teams?.home && teams?.away) {
+    try {
+      const ev = toa.matchEvent(await toa.getEvents(), teams.home, teams.away);
+      if (ev) { cache.set(cacheKey, ev, ODDS_CACHE_TTL); return ev; }
+    } catch (err) { console.warn('[ODDS] The Odds API match failed:', err.message); }
+  }
+
+  if (!api.hasKey()) return null;
 
   // Cooldown check
   const numId = String(fixtureId).replace('apf_', '').replace('fd_', '');
@@ -81,11 +90,23 @@ export async function getFixtureOdds(fixtureId) {
  * Fetch odds for all today's fixtures (batch, rate-limited).
  */
 export async function getTodayOdds() {
-  if (!api.hasKey()) return [];
-
   const cacheKey = 'odds_today_batch';
   const cached = cache.get(cacheKey);
   if (cached) return cached;
+
+  // Preferred: The Odds API (paid). Returns all upcoming soccer events normalized.
+  if (toa.hasKey()) {
+    try {
+      const events = await toa.getEvents();
+      if (events.length) {
+        for (const ev of events) cache.set(`odds_${ev.fixtureId}`, ev, ODDS_CACHE_TTL);
+        cache.set(cacheKey, events, 300);
+        return events;
+      }
+    } catch (err) { console.warn('[ODDS] The Odds API batch failed:', err.message); }
+  }
+
+  if (!api.hasKey()) return [];
 
   try {
     const today = new Date().toISOString().split('T')[0];

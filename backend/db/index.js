@@ -21,6 +21,8 @@ const pool = new Pool({
 
 // ─── DB Availability Tracking ───────────────────────────────────────
 let dbAvailable = false;
+let dbLastError = null;     // last connection error message — surfaced on /health
+let reconnectTimer = null;  // background retry handle
 
 /**
  * Check if the database is currently available.
@@ -28,29 +30,65 @@ let dbAvailable = false;
  */
 export function isDbAvailable() { return dbAvailable; }
 
-// ─── Initialize Database ────────────────────────────────────────────
-export async function initDb() {
-  try {
-    const client = await pool.connect();
-    console.log('✅ Connected to PostgreSQL successfully.');
-    dbAvailable = true;
+/** Last DB connection error, or null when healthy. Surfaced on /health for remote diagnosis. */
+export function getDbError() { return dbLastError; }
 
-    // Auto-run schema
+// One connection attempt: connect, run the idempotent schema, release.
+async function connectOnce() {
+  const client = await pool.connect();
+  try {
     const schemaPath = path.join(__dirname, 'schema.sql');
     if (fs.existsSync(schemaPath)) {
-      const sql = fs.readFileSync(schemaPath, 'utf-8');
-      await client.query(sql);
-      console.log('✅ Schema executed successfully.');
+      await client.query(fs.readFileSync(schemaPath, 'utf-8'));
     } else {
       console.warn('⚠️  schema.sql not found at', schemaPath);
     }
-
+  } finally {
     client.release();
+  }
+}
+
+// ─── Initialize Database ────────────────────────────────────────────
+// Connects once at boot. On failure it does NOT give up — it keeps retrying
+// in the background so a slow-booting or just-restored DB self-heals without
+// a manual redeploy. R3 Loudness: the failure is logged loud + put on /health.
+export async function initDb() {
+  if (!process.env.DATABASE_URL) {
+    dbLastError = 'DATABASE_URL is not set';
+    console.error('🔴 [FATAL] DATABASE_URL is not set — predictions will NOT be persisted.');
+  }
+  try {
+    await connectOnce();
+    dbAvailable = true;
+    dbLastError = null;
+    console.log('✅ Connected to PostgreSQL successfully.');
   } catch (err) {
     dbAvailable = false;
-    console.error('Failed to initialize database:', err.message);
-    throw err; // Let caller handle (server.js catches and continues)
+    dbLastError = err.message;
+    console.error('🔴 [FATAL] Database connection FAILED:', err.message);
+    console.error('   → predictions will NOT be stored until this is fixed. Retrying in the background…');
+    scheduleReconnect();
+    throw err; // preserve existing caller behaviour (server.js logs + continues)
   }
+}
+
+// Keep retrying every 15s until the DB answers, then flip availability on.
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  reconnectTimer = setInterval(async () => {
+    try {
+      await connectOnce();
+      dbAvailable = true;
+      dbLastError = null;
+      clearInterval(reconnectTimer);
+      reconnectTimer = null;
+      console.log('✅ [DB] Reconnected to PostgreSQL — persistence is live again.');
+    } catch (err) {
+      dbLastError = err.message;
+      console.warn('[DB] Reconnect attempt failed:', err.message);
+    }
+  }, 15000);
+  if (reconnectTimer.unref) reconnectTimer.unref(); // don't keep the process alive just for this
 }
 
 // ─── Query Wrapper ──────────────────────────────────────────────────

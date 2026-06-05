@@ -44,7 +44,7 @@ import cors from 'cors';
 process.on('uncaughtException',  err => console.error('[CRASH PREVENTED]', err.message));
 process.on('unhandledRejection', err => console.error('[PROMISE REJECTION]', err?.message || err));
 
-import { initDb, query, isDbAvailable } from './db/index.js';
+import { initDb, query, isDbAvailable, getDbError } from './db/index.js';
 import initJobs from './jobs/scheduler.js';
 import { FD_LEAGUES, APF_LEAGUES } from './constants/leagues.js';
 import dataRouter from './services/dataRouter.js';
@@ -147,6 +147,7 @@ app.get('/health', (_req, res) => {
     env: {
       hasDBUrl:       hasDb,
       dbConnected:    dbConnected,
+      dbError:        dbConnected ? null : getDbError(),
       hasApisports:   !!hasApi,
       hasFootballdata: !!hasFd,
       hasClaude:      !!hasClaude,

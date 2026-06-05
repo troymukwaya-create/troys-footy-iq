@@ -5,6 +5,7 @@
 
 import { query, safeQuery, isDbAvailable } from '../db/index.js';
 import * as fd from './footballdata.js';
+import apisports from './apisports.js';
 
 const MODEL_VERSION = 'hybrid-dc-v2';
 
@@ -28,12 +29,16 @@ export async function ingestResults(lookbackDays = 3) {
 
   console.log(`[RESULTS] Ingesting finished matches from last ${lookbackDays} days...`);
 
-  // ─── Step 1: Fetch finished matches ───────────────────────────
+  // ─── Step 1: Fetch finished matches (football-data.org + API-Football) ──
+  // The World Cup and other API-Football competitions carry apf_ external IDs
+  // and are NOT in football-data.org's feed, so we must pull finished matches
+  // from BOTH sources — otherwise those predictions (the entire World Cup
+  // included) never get a final score and never enter model_performance.
   let finishedMatches = [];
+
   try {
     const today = new Date().toISOString().split('T')[0];
     const past = new Date(Date.now() - lookbackDays * 86400000).toISOString().split('T')[0];
-
     const response = await fd.client.get('matches', {
       params: {
         competitions: fd.LEAGUE_CODES.join(','),
@@ -44,8 +49,15 @@ export async function ingestResults(lookbackDays = 3) {
     });
     finishedMatches = (response.data.matches || []).map(fd.normalise);
   } catch (err) {
-    console.error('[RESULTS] Failed to fetch finished matches:', err.message);
-    return { error: err.message, updated: 0, evaluated: 0 };
+    console.error('[RESULTS] football-data.org finished fetch failed:', err.message);
+  }
+
+  // World Cup + other API-Football competitions (apf_ IDs).
+  try {
+    const apfFinished = await apisports.getRecentFixtures(lookbackDays);
+    finishedMatches = [...finishedMatches, ...apfFinished];
+  } catch (err) {
+    console.error('[RESULTS] API-Football finished fetch failed:', err.message);
   }
 
   if (finishedMatches.length === 0) {
