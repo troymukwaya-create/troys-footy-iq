@@ -1,4 +1,5 @@
 import React from 'react';
+import { flagGradient } from '../constants/nationColors.js';
 
 /**
  * FixtureCard — Compact sidebar match card.
@@ -58,7 +59,7 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
         border: `1px solid ${isSelected ? 'rgba(168,52,74,0.30)' : 'var(--border-subtle)'}`,
         padding: '10px 12px',
         marginBottom: 4,
-        background: isSelected ? 'var(--accent-muted)' : 'transparent',
+        background: isSelected ? 'var(--accent-muted)' : flagGradient(home, away, null, '30'),
       }}
     >
       {/* League + Status */}

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { CalendarX } from 'lucide-react';
 import BrierScoreHero from './BrierScoreHero.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
+import { flagGradient, getMatchColor } from '../constants/nationColors.js';
 
 // ─── CONFIDENCE CONFIG ───────────────────────────────────────────────────────
 const CONFIDENCE = {
@@ -9,6 +10,22 @@ const CONFIDENCE = {
   MEDIUM: { label: 'Medium', color: '#eab308', bg: 'rgba(234,179,8,0.10)',   border: 'rgba(234,179,8,0.20)'   },
   LOW:    { label: 'Low',    color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.15)' },
 };
+
+// Animated count-up for probability percentages.
+function CountUp({ value, duration = 750 }) {
+  const [n, setN] = React.useState(0);
+  React.useEffect(() => {
+    let raf; const start = performance.now(); const to = Number(value) || 0;
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / duration);
+      setN(to * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) raf = requestAnimationFrame(tick); else setN(to);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+  return <>{n.toFixed(1)}%</>;
+}
 
 function getConfidence(prob) {
   if (!prob) return 'LOW';
@@ -40,7 +57,7 @@ function getInsight(fixture) {
 }
 
 // ─── INSIGHT CARD ────────────────────────────────────────────────────────────
-function InsightCard({ fixture, onSelect, featured }) {
+function InsightCard({ fixture, onSelect, featured, index }) {
   const prob = fixture.probability?.probabilities;
   const confidence = getConfidence(prob);
   const cfg = CONFIDENCE[confidence];
@@ -48,6 +65,8 @@ function InsightCard({ fixture, onSelect, featured }) {
   const isLive = fixture.status === 'IN_PLAY' || fixture.status === 'PAUSED';
   const homeColor = getVisibleTeamColor(fixture.homeTeam?.name);
   const awayColor = getVisibleTeamColor(fixture.awayTeam?.name);
+  const homeBar = getMatchColor(fixture.homeTeam?.name);
+  const awayBar = getMatchColor(fixture.awayTeam?.name);
 
   const kickoff = fixture.date
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -57,11 +76,13 @@ function InsightCard({ fixture, onSelect, featured }) {
     <div
       onClick={() => onSelect?.(fixture)}
       style={{
-        background: featured ? 'linear-gradient(135deg, rgba(168,52,74,0.12) 0%, #0B0B0D 58%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)',
+        background: flagGradient(fixture.homeTeam?.name, fixture.awayTeam?.name, featured ? 'linear-gradient(135deg, rgba(168,52,74,0.10) 0%, #0B0B0D 60%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)'),
         border: `1px solid ${featured ? 'rgba(168,52,74,0.25)' : 'var(--border-subtle)'}`,
         borderRadius: 16,
         padding: '20px 24px',
         cursor: 'pointer',
+        animation: 'cardIn 0.5s cubic-bezier(0.16,1,0.3,1) both',
+        animationDelay: `${(index || 0) * 70}ms`,
         transition: 'border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease',
         display: 'flex',
         flexDirection: 'column',
@@ -114,14 +135,14 @@ function InsightCard({ fixture, onSelect, featured }) {
       {prob && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
-            <span>H <strong style={{ color: homeColor }}>{prob.home}%</strong></span>
-            <span>D <strong style={{ color: 'var(--text-secondary)' }}>{prob.draw}%</strong></span>
-            <span>A <strong style={{ color: awayColor }}>{prob.away}%</strong></span>
+            <span>H <strong style={{ color: homeColor }}><CountUp value={prob.home} /></strong></span>
+            <span>D <strong style={{ color: 'var(--text-secondary)' }}><CountUp value={prob.draw} /></strong></span>
+            <span>A <strong style={{ color: awayColor }}><CountUp value={prob.away} /></strong></span>
           </div>
-          <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.05)', display: 'flex', overflow: 'hidden' }}>
-            <div style={{ width: `${prob.home}%`, background: homeColor, transition: 'width 600ms ease' }} />
-            <div style={{ width: `${prob.draw}%`, background: 'rgba(255,255,255,0.12)', transition: 'width 600ms ease' }} />
-            <div style={{ width: `${prob.away}%`, background: awayColor, transition: 'width 600ms ease' }} />
+          <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.05)', display: 'flex', overflow: 'hidden' }}>
+            <div style={{ width: `${prob.home}%`, background: homeBar, transition: 'width 700ms ease' }} />
+            <div style={{ width: `${prob.draw}%`, background: 'rgba(255,255,255,0.14)', transition: 'width 700ms ease' }} />
+            <div style={{ width: `${prob.away}%`, background: awayBar, transition: 'width 700ms ease' }} />
           </div>
         </div>
       )}
@@ -176,7 +197,7 @@ function TeamBlock({ team, align }) {
       {team?.crest && (
         <img
           src={team.crest} alt=""
-          style={{ width: 32, height: 32, objectFit: 'contain' }}
+          style={{ width: 40, height: 40, objectFit: 'contain' }}
           onError={e => e.target.style.display = 'none'}
         />
       )}
@@ -225,11 +246,7 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
 
   return (
     <div style={{ padding: '32px 24px', maxWidth: 960, margin: '0 auto' }}>
-
-      {/* ── BRIER SCORE HERO (the moat, made visible) ────────────────── */}
-      <div style={{ marginBottom: 24 }}>
-        <BrierScoreHero />
-      </div>
+      <style>{`@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}`}</style>
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
@@ -268,6 +285,7 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
               fixture={fixture}
               onSelect={onSelect}
               featured={i === 0}
+              index={i}
             />
           ))}
         </div>
@@ -287,6 +305,14 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
           </div>
         </div>
       )}
+
+      {/* ── TRACK RECORD (proof, below the matches) ──────────────────── */}
+      <div style={{ marginTop: 36 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12 }}>
+          Why trust these calls — our public track record
+        </div>
+        <BrierScoreHero />
+      </div>
 
       {/* ── MORE FIXTURES HINT ────────────────────────────────────── */}
       {fixtures.length > 6 && (
