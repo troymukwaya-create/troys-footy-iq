@@ -41,12 +41,28 @@ export function buildReasoning({ homeName, awayName, prediction, homeStats, away
       text: `${homeName} average ${homeStats.avgGoalsFor} scored / ${homeStats.avgGoalsAgainst} conceded; ${awayName} ${awayStats.avgGoalsFor} / ${awayStats.avgGoalsAgainst}.` });
   }
 
+  // 3b. Defensive record (clean sheets) — from deep recent form
+  for (const [side, st, name] of [['home', homeStats, homeName], ['away', awayStats, awayName]]) {
+    if (st && st.cleanSheets != null && st.played >= 4 && st.cleanSheets >= Math.ceil(st.played / 2)) {
+      reasons.push({ key: 'defense', favors: side, text: `${name} are defensively solid — ${st.cleanSheets} clean sheets in their last ${st.played}.` });
+    }
+  }
+
   // 4. Head-to-head
   if (h2h && h2h.totalMatches > 0) {
     const hw = h2h.homeWins || 0, aw = h2h.awayWins || 0, dr = h2h.draws || 0, tot = h2h.totalMatches;
     if (hw > aw) reasons.push({ key: 'h2h', favors: 'home', text: `${homeName} have the head-to-head edge — won ${hw} of the last ${tot} meetings.` });
     else if (aw > hw) reasons.push({ key: 'h2h', favors: 'away', text: `${awayName} have the head-to-head edge — won ${aw} of the last ${tot} meetings.` });
     else reasons.push({ key: 'h2h', favors: 'even', text: `Evenly matched historically (${hw}-${dr}-${aw} across ${tot} meetings).` });
+  }
+
+  // 4b. Last meeting result (often the most telling single data point)
+  if (h2h?.matches?.length) {
+    const lm = h2h.matches[0];
+    if (lm.homeGoals != null && lm.awayGoals != null) {
+      const yr = lm.date ? new Date(lm.date).getFullYear() : '';
+      reasons.push({ key: 'h2h-last', favors: 'even', text: `Last meeting: ${lm.home} ${lm.homeGoals}-${lm.awayGoals} ${lm.away}${yr ? ` (${yr})` : ''}.` });
+    }
   }
 
   // 5. Market agreement / value edge

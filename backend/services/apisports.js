@@ -121,22 +121,32 @@ async function getLeagueSeasonFixtures(leagueCode, season) {
   return raw.map(normalise);
 }
 
-// Recent-form stats from a team's last N finished matches. Works for national
-// teams, which have no single-season league table to read stats from.
-async function getTeamRecentForm(teamId, last = 8) {
+// Deep recent-form stats from a team's last N finished matches across ALL
+// competitions (qualifiers, friendlies, Nations League…). Works for national
+// teams, which have no single-season league table. Returns rich intelligence:
+// clean sheets, win rate, scoring consistency, and a recent-results list.
+async function getTeamRecentForm(teamId, last = 10) {
   if (!hasKey()) return null;
   const numId = String(teamId).replace('apf_t_', '');
   const raw = await safeFetch('fixtures', { team: numId, last });
   const finished = raw.map(normalise)
-    .filter(f => f.status === 'FINISHED' && f.score.home != null && f.score.away != null);
+    .filter(f => f.status === 'FINISHED' && f.score.home != null && f.score.away != null)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));   // most recent first
   if (!finished.length) return null;
-  let gf = 0, ga = 0, w = 0, d = 0, l = 0; const form = [];
+  let gf = 0, ga = 0, w = 0, d = 0, l = 0, cleanSheets = 0, failedToScore = 0;
+  const form = []; const recentResults = [];
   for (const m of finished) {
     const isHome = m.homeTeam.id === ('apf_t_' + numId);
     const my = isHome ? m.score.home : m.score.away;
     const opp = isHome ? m.score.away : m.score.home;
+    const oppName = isHome ? m.awayTeam.name : m.homeTeam.name;
     gf += my; ga += opp;
-    if (my > opp) { w++; form.push('W'); } else if (my < opp) { l++; form.push('L'); } else { d++; form.push('D'); }
+    if (opp === 0) cleanSheets++;
+    if (my === 0) failedToScore++;
+    const res = my > opp ? 'W' : my < opp ? 'L' : 'D';
+    if (res === 'W') w++; else if (res === 'L') l++; else d++;
+    form.push(res);
+    recentResults.push({ opponent: oppName, score: `${my}-${opp}`, result: res, competition: m.league?.name || '', date: m.date });
   }
   const played = w + d + l;
   if (!played) return null;
@@ -144,8 +154,19 @@ async function getTeamRecentForm(teamId, last = 8) {
     played, wins: w, draws: d, losses: l, goalsFor: gf, goalsAgainst: ga,
     avgGoalsFor: parseFloat((gf / played).toFixed(2)),
     avgGoalsAgainst: parseFloat((ga / played).toFixed(2)),
+    cleanSheets, failedToScore, winRate: Math.round((w / played) * 100),
     form: form.slice(0, 5).join(''),
+    recentResults: recentResults.slice(0, 6),
   };
+}
+
+// Squad list for a national team (key players / availability).
+async function getSquadList(teamId) {
+  if (!hasKey()) return [];
+  const numId = String(teamId).replace('apf_t_', '');
+  const raw = await safeFetch('players/squads', { team: numId });
+  const players = raw[0]?.players || [];
+  return players.map(p => ({ name: p.name, position: p.position, number: p.number, age: p.age }));
 }
 
 async function getFixture(id) {
@@ -294,7 +315,7 @@ async function getInjuries(leagueCode) {
 export default {
   hasKey, LEAGUES, SEASON, normalise,
   getLiveFixtures, getTodayFixtures, getUpcomingFixtures,
-  getRecentFixtures, getLeagueSeasonFixtures, getTeamRecentForm, getFixture,
+  getRecentFixtures, getLeagueSeasonFixtures, getTeamRecentForm, getSquadList, getFixture,
   getFixtureStats, getFixtureEvents, getFixtureLineups, getFixturePlayers,
   getStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures,
   getTopScorers, getPlayerStats,
