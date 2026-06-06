@@ -86,7 +86,7 @@ function MainApp() {
   // ─── Mobile tab routing via URL search params ─────────────────
   // Replaces CSS display-none toggling — now the browser back button works on mobile.
   const [searchParams, setSearchParams] = useSearchParams();
-  const mobileTab = searchParams.get('tab') ?? 'leagues';
+  const mobileTab = searchParams.get('tab') ?? 'home';
   const setMobileTab = useCallback((tab) => setSearchParams({ tab }), [setSearchParams]);
 
   // ─── Fixture filtering ─────────────────────────────────────────
@@ -136,7 +136,14 @@ function MainApp() {
 
   const handleDeselectFixture = useCallback(() => {
     setSelectedFixture(null);
-    setMobileTab('leagues'); // mobile: return to the fixture list
+    setMobileTab('home'); // mobile: return to the Home best-bets feed
+  }, [setSelectedFixture, setMobileTab]);
+
+  // Mobile bottom-nav handler — tapping "Home" clears any open match so the
+  // best-bets feed shows (not a stale match analysis).
+  const onMobileTab = useCallback((tab) => {
+    if (tab === 'home') setSelectedFixture(null);
+    setMobileTab(tab);
   }, [setSelectedFixture, setMobileTab]);
 
   // ─── Keyboard shortcuts ───────────────────────────────────────
@@ -263,7 +270,7 @@ function MainApp() {
         {/* ═══ RIGHT PANEL ═══ */}
         <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto' }}>
           <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
-            <AIInsightsPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading || aiLoading} />
+            <AIInsightsPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading || aiLoading} fixtures={filteredFixtures} onSelect={handleSelectFixture} />
           </React.Suspense>
           <div style={{ padding: '0 12px 12px' }}>
             <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
@@ -273,7 +280,7 @@ function MainApp() {
         </aside>
       </div>
 
-      <MobileNav activeTab={mobileTab} onTabChange={setMobileTab} />
+      <MobileNav activeTab={mobileTab} onTabChange={onMobileTab} />
       <HonestBar />
 
       <style>{`
@@ -283,8 +290,8 @@ function MainApp() {
           .right-panel { display: flex !important; }
         }
         @media (max-width: 768px) {
-          .left-panel { display: ${mobileTab === 'today' || mobileTab === 'leagues' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-right: none !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
-          .center-panel { display: ${mobileTab === 'match' ? 'flex' : 'none'} !important; width: 100% !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
+          .left-panel { display: ${mobileTab === 'leagues' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-right: none !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
+          .center-panel { display: ${mobileTab === 'home' || mobileTab === 'match' ? 'flex' : 'none'} !important; width: 100% !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
           .right-panel { display: ${mobileTab === 'ai' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-left: none !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
           .honest-bar { display: none !important; }
         }

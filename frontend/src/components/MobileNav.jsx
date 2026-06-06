@@ -3,7 +3,7 @@ import { Home, Trophy, BarChart2, Brain } from 'lucide-react';
 
 export function MobileNav({ activeTab, onTabChange }) {
   const tabs = [
-    { id: 'today',   Icon: Home,      label: 'Today' },
+    { id: 'home',    Icon: Home,      label: 'Home' },
     { id: 'leagues', Icon: Trophy,    label: 'Leagues' },
     { id: 'match',   Icon: BarChart2, label: 'Match' },
     { id: 'ai',      Icon: Brain,     label: 'AI' },

@@ -8,7 +8,7 @@ import { QEDMark } from './QEDMark.jsx';
  * Clean hierarchy: risk → verdict → pick → insights → chat.
  * Shows a proper empty state when no fixture is selected.
  */
-export function AIInsightsPanel({ fixture, analysis, isLoading }) {
+export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], onSelect }) {
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const aiChat = useAIChat();
@@ -31,21 +31,50 @@ export function AIInsightsPanel({ fixture, analysis, isLoading }) {
     setChatHistory(prev => [...prev, { role: 'assistant', content: reply }]);
   };
 
-  // ─── Empty state ────────────────────────────────────────────────
+  // ─── Empty state → AI Top Picks (always useful, even with nothing selected) ──
   if (!fixture) {
+    const picks = (fixtures || [])
+      .filter(f => f.probability?.probabilities && f.status !== 'FINISHED' && f.status !== 'FT')
+      .map(f => {
+        const p = f.probability.probabilities;
+        const maxProb = Math.max(p.home ?? 0, p.draw ?? 0, p.away ?? 0);
+        const edges = f.probability.valueEdges;
+        const bestEdge = edges ? Math.max(edges.home ?? 0, edges.draw ?? 0, edges.away ?? 0) : 0;
+        const pick = (p.home >= p.draw && p.home >= p.away) ? `${f.homeTeam?.name} win`
+          : (p.away >= p.draw) ? `${f.awayTeam?.name} win` : 'Draw';
+        return { f, maxProb, bestEdge, pick, score: maxProb + Math.max(0, bestEdge) * 1.2 };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center' }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: 'var(--radius-lg)',
-          background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-        }}>
-          <BarChart3 size={22} style={{ color: 'var(--accent)' }} />
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>AI Top Picks</h3>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Our highest-rated bets right now · tap one for the full breakdown</p>
         </div>
-        <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>AI Analysis</h3>
-        <p style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.6, maxWidth: 200 }}>
-          Select a fixture to view AI-powered match insights and probability analysis.
-        </p>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {picks.length === 0 && (
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', padding: '40px 0' }}>No matches to rate right now.</div>
+          )}
+          {picks.map(({ f, maxProb, bestEdge, pick }, i) => (
+            <button key={f.id} onClick={() => onSelect?.(f)} style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+              padding: '11px 12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', width: 18, flexShrink: 0 }}>{i + 1}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.homeTeam?.name} v {f.awayTeam?.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                  Pick: <strong style={{ color: 'var(--text-secondary)' }}>{pick}</strong> · {Math.round(maxProb)}%
+                  {bestEdge >= 3 && <span style={{ color: '#22c55e', fontWeight: 700 }}> · +{Math.round(bestEdge)}% value</span>}
+                </div>
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--accent)', flexShrink: 0 }}>›</span>
+            </button>
+          ))}
+        </div>
       </div>
     );
   }

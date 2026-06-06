@@ -67,6 +67,8 @@ function InsightCard({ fixture, onSelect, featured, index }) {
   const awayColor = getVisibleTeamColor(fixture.awayTeam?.name);
   const homeBar = getMatchColor(fixture.homeTeam?.name);
   const awayBar = getMatchColor(fixture.awayTeam?.name);
+  const ve = fixture.probability?.valueEdges;
+  const bestEdge = ve ? Math.max(ve.home ?? 0, ve.draw ?? 0, ve.away ?? 0) : 0;
 
   const kickoff = fixture.date
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -161,13 +163,20 @@ function InsightCard({ fixture, onSelect, featured, index }) {
 
       {/* Footer: Confidence + CTA */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-subtle)' }}>
-        <span style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
-          padding: '3px 10px', borderRadius: 99,
-          background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
-        }}>
-          {cfg.label} Confidence
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
+            padding: '3px 10px', borderRadius: 99,
+            background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+          }}>
+            {cfg.label} Confidence
+          </span>
+          {bestEdge >= 3 && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.22)' }}>
+              +{Math.round(bestEdge)}% value
+            </span>
+          )}
+        </div>
         <button
           onClick={e => { e.stopPropagation(); onSelect?.(fixture); }}
           style={{
@@ -217,22 +226,20 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
   // Prioritize: live → CL/EL → upcoming today → any scheduled
   const topMatches = useMemo(() => {
     const scored = (fixtures || [])
-      .filter(f => f.homeTeam?.name && f.awayTeam?.name && f.date)
+      .filter(f => f.homeTeam?.name && f.awayTeam?.name && f.date && f.status !== 'FINISHED' && f.status !== 'FT')
       .map(f => {
-        let score = 0;
-        if (f.status === 'IN_PLAY' || f.status === 'PAUSED') score += 100;
-        if (f.league?.code === 'CL' || f.league?.code === 'EL') score += 50;
-        if (f.status === 'SCHEDULED') score += 20;
         const prob = f.probability?.probabilities;
-        if (prob) {
-          const max = Math.max(prob.home ?? 0, prob.draw ?? 0, prob.away ?? 0);
-          score += max; // higher confidence = higher up
-        }
+        const maxProb = prob ? Math.max(prob.home ?? 0, prob.draw ?? 0, prob.away ?? 0) : 0;
+        const ve = f.probability?.valueEdges;
+        const bestEdge = ve ? Math.max(ve.home ?? 0, ve.draw ?? 0, ve.away ?? 0) : 0;
+        // Best bet = high confidence + positive value vs the bookmaker.
+        let score = maxProb + Math.max(0, bestEdge) * 1.2;
+        if (f.status === 'IN_PLAY' || f.status === 'PAUSED') score += 8; // small live nudge
         return { fixture: f, score };
       })
       .sort((a, b) => b.score - a.score);
 
-    return scored.slice(0, 6).map(s => s.fixture);
+    return scored.slice(0, 5).map(s => s.fixture);
   }, [fixtures]);
 
   const liveCount = useMemo(() =>
@@ -253,10 +260,10 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 4, lineHeight: 1.2 }}>
-              Top Match Insights
+              Today's Best Bets
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>
-              {today} · AI-powered predictions for today's key fixtures
+              {today} · The 5 matches our AI rates highest — confidence + value vs the bookies
             </p>
           </div>
           {liveCount > 0 && (
