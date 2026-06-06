@@ -117,6 +117,26 @@ function outcomeName(o, key, ev) {
   return null;
 }
 
+// De-margined 1X2 market probabilities {home, draw, away} (percent) from a
+// normalized odds object, or null if unavailable. Works on any odds object
+// in oddsService's normalized shape (markets['1X2'].bestOdds).
+export function impliedProbs(odds) {
+  const best = odds?.markets?.['1X2']?.bestOdds;
+  if (!best || !best.Home || !best.Draw || !best.Away) return null;
+  const raw = {
+    home: best.Home.impliedProbability,
+    draw: best.Draw.impliedProbability,
+    away: best.Away.impliedProbability,
+  };
+  const s = raw.home + raw.draw + raw.away;
+  if (!(s > 0)) return null;
+  return {
+    home: parseFloat((raw.home / s * 100).toFixed(1)),
+    draw: parseFloat((raw.draw / s * 100).toFixed(1)),
+    away: parseFloat((raw.away / s * 100).toFixed(1)),
+  };
+}
+
 function bestOdds(bookmakers) {
   const best = {};
   for (const bk of bookmakers) for (const o of bk.outcomes) {

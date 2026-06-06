@@ -11,6 +11,7 @@ import * as fd from '../services/footballdata.js';
 import cacheService from '../services/cache.js';
 import { predictStatic } from '../engine/inferenceEngine.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
+import * as toa from '../services/sources/theOddsApi.js';
 import { validateFixtureBatch, getValidationLog } from '../engine/fixtureValidator.js';
 import { LOCKED_DEMO_FIXTURES } from '../config/lockedDemoFixtures.js';
 
@@ -83,7 +84,23 @@ async function getAllFixturesData() {
     const fixtures = [];
     for (const f of valid) { if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); } }
     fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
-    fixtures.forEach(attachPrediction);
+
+    // Attach predictions, blending bookmaker odds (The Odds API) where available.
+    let wcOdds = [];
+    try { if (toa.hasKey()) wcOdds = await toa.getEvents(); } catch (e) { console.warn('[fixtures] WC odds fetch failed:', e.message); }
+    for (const f of fixtures) {
+      attachPrediction(f); // cache-attaches any AI verdict + base probability
+      const ev = wcOdds.length ? toa.matchEvent(wcOdds, f.homeTeam?.name, f.awayTeam?.name) : null;
+      const market = ev ? toa.impliedProbs(ev) : null;
+      const pred = predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name, market);
+      f.probability = {
+        riskLevel: pred.riskLevel,
+        probabilities: pred.probabilities,
+        topScorelines: (pred.topScorelines || []).slice(0, 2),
+        model: pred.model,
+        valueEdges: pred.valueEdges,
+      };
+    }
 
     if (fixtures.length > 0) {
       integrityState.lastFetchSource = 'apisports_worldcup';

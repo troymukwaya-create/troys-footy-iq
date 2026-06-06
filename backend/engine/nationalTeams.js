@@ -31,6 +31,7 @@ const DEFAULT_ELO    = 1640;   // unknown / weakest qualifiers
 const WC_AVG_GOALS   = 1.35;   // goals per team per match (recent WCs ≈ 2.7 total)
 const GOAL_SCALE     = 700;    // Elo→goals sensitivity (higher = flatter)
 const HOST_ELO_BOOST = 60;     // host nations get a modest home edge
+const MARKET_WEIGHT  = 0.35;   // how much bookmaker odds nudge the Elo model
 const HOSTS = new Set(['usa', 'united states', 'canada', 'mexico']);
 
 const norm = (s) => String(s || '').toLowerCase()
@@ -55,7 +56,7 @@ const isHost = (name) => HOSTS.has(String(name || '').toLowerCase().trim());
  * Full pre-match prediction for a World Cup match, from national-team Elo.
  * Returns the same shape as the Poisson core, enriched with strength metadata.
  */
-export function predictWorldCupMatch(homeName, awayName) {
+export function predictWorldCupMatch(homeName, awayName, marketProbs = null) {
   const homeElo = getElo(homeName);
   const awayElo = getElo(awayName);
   const homeAdv = isHost(homeName) ? HOST_ELO_BOOST : 0;   // neutral unless host nation
@@ -65,15 +66,39 @@ export function predictWorldCupMatch(homeName, awayName) {
   const lambdaAway = clamp(WC_AVG_GOALS * Math.exp(-dr / GOAL_SCALE), 0.25, 4.5);
 
   const result = generateProbabilities(lambdaHome, lambdaAway, -0.08);
-  const { home, draw, away } = result.probabilities;
+  const modelProbs = { ...result.probabilities };
+
+  // Blend a modest, sharp market signal (great for low-data international football)
+  // and surface the model-vs-market value edge — the core product feature.
+  let probabilities = modelProbs;
+  let valueEdges = null;
+  if (marketProbs && Number.isFinite(marketProbs.home)) {
+    const W = MARKET_WEIGHT;
+    let h = (1 - W) * modelProbs.home + W * marketProbs.home;
+    let d = (1 - W) * modelProbs.draw + W * marketProbs.draw;
+    let a = (1 - W) * modelProbs.away + W * marketProbs.away;
+    const s = (h + d + a) || 1;
+    probabilities = { home: r1(h / s * 100), draw: r1(d / s * 100), away: r1(a / s * 100) };
+    valueEdges = {
+      home: r1(modelProbs.home - marketProbs.home),
+      draw: r1(modelProbs.draw - marketProbs.draw),
+      away: r1(modelProbs.away - marketProbs.away),
+    };
+  }
+
+  const { home, draw, away } = probabilities;
   const bestPick = (home >= draw && home >= away) ? { name: `${homeName} win`, probability: home }
     : (away >= draw) ? { name: `${awayName} win`, probability: away }
     : { name: 'Draw', probability: draw };
 
   return {
     ...result,
-    model: 'wc-elo-dixon-coles-v1',
+    probabilities,
+    model: marketProbs ? 'wc-elo-market-v1' : 'wc-elo-dixon-coles-v1',
     bestPick,
+    modelProbs,
+    marketProbs: marketProbs || null,
+    valueEdges,
     nationalStrength: {
       homeElo, awayElo,
       neutral: homeAdv === 0,
@@ -85,5 +110,6 @@ export function predictWorldCupMatch(homeName, awayName) {
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function round(v) { return Math.round(v * 100) / 100; }
+function r1(v) { return parseFloat(Number(v).toFixed(1)); }
 
 export default { getElo, predictWorldCupMatch };

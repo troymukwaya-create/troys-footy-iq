@@ -27,6 +27,8 @@ import {
 } from '../services/normalizer.js';
 import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../services/probabilityEngine.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
+import oddsService from '../services/oddsService.js';
+import { impliedProbs } from '../services/sources/theOddsApi.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
 import { safeQuery } from '../db/index.js';
@@ -250,10 +252,16 @@ router.get('/:matchId', async (req, res) => {
     let probabilityResult = null;
 
     if (match.league?.code === 'WC') {
-      // World Cup: national teams have no league stats — predict from Elo strength.
+      // World Cup: national teams have no league stats — predict from Elo strength,
+      // blended with bookmaker odds (The Odds API) where available.
       dataQuality = 'COMPLETE';
-      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name);
-      console.log(`[analysis] ${matchId} World Cup prediction via national-team Elo`);
+      let marketProbs = null;
+      try {
+        const odds = await oddsService.getFixtureOdds(matchId, { home: match.homeTeam?.name, away: match.awayTeam?.name });
+        marketProbs = impliedProbs(odds);
+      } catch (e) { /* odds are optional */ }
+      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs);
+      console.log(`[analysis] ${matchId} World Cup prediction (market-blended: ${!!marketProbs})`);
     } else if (validation.valid) {
       // Full data available — run predictions
       dataQuality = 'COMPLETE';
