@@ -112,6 +112,15 @@ async function getRecentFixtures(days = 3) {
   return raw.filter(isTracked).map(normalise).filter(f => f.status === 'FINISHED');
 }
 
+// All fixtures for one competition + season (e.g. the full World Cup schedule).
+async function getLeagueSeasonFixtures(leagueCode, season) {
+  if (!hasKey()) return [];
+  const leagueId = LEAGUES[leagueCode];
+  if (!leagueId) return [];
+  const raw = await safeFetch('fixtures', { league: leagueId, season });
+  return raw.map(normalise);
+}
+
 async function getFixture(id) {
   if (!hasKey()) return null;
   const numId = String(id).replace('apf_', '');
@@ -258,7 +267,7 @@ async function getInjuries(leagueCode) {
 export default {
   hasKey, LEAGUES, SEASON, normalise,
   getLiveFixtures, getTodayFixtures, getUpcomingFixtures,
-  getRecentFixtures, getFixture,
+  getRecentFixtures, getLeagueSeasonFixtures, getFixture,
   getFixtureStats, getFixtureEvents, getFixtureLineups, getFixturePlayers,
   getStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures,
   getTopScorers, getPlayerStats,

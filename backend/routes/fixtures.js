@@ -60,6 +60,38 @@ async function getAllFixturesData() {
   const hasToken = process.env.FOOTBALLDATA_TOKEN?.length > 10;
   const hasApsKey = api.hasKey();
 
+  // ── WORLD CUP MODE ──────────────────────────────────────────────────────────
+  // During the FIFA World Cup window the public site shows ONLY World Cup
+  // fixtures — the real schedule from API-Football, with AI predictions attached.
+  // Toggle with WORLD_CUP_MODE=true|false; otherwise it's date-driven.
+  const now = new Date();
+  const inWcWindow = now >= new Date('2026-05-25T00:00:00Z') && now <= new Date('2026-07-20T23:59:59Z');
+  const worldCupMode = process.env.WORLD_CUP_MODE === 'true'
+    || (process.env.WORLD_CUP_MODE !== 'false' && inWcWindow);
+
+  if (worldCupMode && hasApsKey) {
+    console.log('[fixtures] 🏆 World Cup mode — fetching FIFA World Cup 2026 fixtures only');
+    const wcRaw = await api.getLeagueSeasonFixtures('WC', 2026)
+      .catch(e => { console.error('[fixtures] WC fetch error:', e.message); return []; });
+    const { valid, rejectedCount } = validateFixtureBatch(wcRaw, 'apisports_worldcup');
+    integrityState.rejectedCount += rejectedCount;
+
+    const seen = new Set();
+    const fixtures = [];
+    for (const f of valid) { if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); } }
+    fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+    fixtures.forEach(attachPrediction);
+
+    if (fixtures.length > 0) {
+      integrityState.lastFetchSource = 'apisports_worldcup';
+      integrityState.lastFetchAt = new Date().toISOString();
+      integrityState.servedFixtureIds = fixtures.map(f => f.id);
+      integrityState.usedLockedFallback = false;
+      return { fixtures, source: 'apisports_worldcup' };
+    }
+    console.warn('[fixtures] World Cup mode on but API returned 0 WC fixtures — check the API-Football plan covers league 1 / season 2026. Falling back.');
+  }
+
   // ── PRIMARY: football-data.org ─────────────────────────────────────────────
   if (hasToken) {
     console.log('[fixtures] Fetching from football-data.org (including CL + EL)...');
