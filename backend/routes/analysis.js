@@ -26,6 +26,7 @@ import {
   errorResponse,
 } from '../services/normalizer.js';
 import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../services/probabilityEngine.js';
+import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
 import { safeQuery } from '../db/index.js';
@@ -248,7 +249,12 @@ router.get('/:matchId', async (req, res) => {
     let dataQuality; // COMPLETE | PARTIAL | INSUFFICIENT
     let probabilityResult = null;
 
-    if (validation.valid) {
+    if (match.league?.code === 'WC') {
+      // World Cup: national teams have no league stats — predict from Elo strength.
+      dataQuality = 'COMPLETE';
+      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name);
+      console.log(`[analysis] ${matchId} World Cup prediction via national-team Elo`);
+    } else if (validation.valid) {
       // Full data available — run predictions
       dataQuality = 'COMPLETE';
       probabilityResult = await analyzeMatch(homeStats, awayStats);

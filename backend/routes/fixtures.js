@@ -10,6 +10,7 @@ import api from '../services/apisports.js';
 import * as fd from '../services/footballdata.js';
 import cacheService from '../services/cache.js';
 import { predictStatic } from '../engine/inferenceEngine.js';
+import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import { validateFixtureBatch, getValidationLog } from '../engine/fixtureValidator.js';
 import { LOCKED_DEMO_FIXTURES } from '../config/lockedDemoFixtures.js';
 
@@ -43,7 +44,9 @@ function attachPrediction(f) {
   }
   if (!f.probability) {
     try {
-      const pred = predictStatic({}, {});
+      const pred = f.league?.code === 'WC'
+        ? predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name)
+        : predictStatic({}, {});
       f.probability = {
         riskLevel: pred.riskLevel,
         probabilities: pred.probabilities,
