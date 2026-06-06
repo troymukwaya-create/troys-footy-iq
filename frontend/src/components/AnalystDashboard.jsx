@@ -79,7 +79,7 @@ function InsightCard({ fixture, onSelect, featured, index }) {
         background: flagGradient(fixture.homeTeam?.name, fixture.awayTeam?.name, featured ? 'linear-gradient(135deg, rgba(168,52,74,0.10) 0%, #0B0B0D 60%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)'),
         border: `1px solid ${featured ? 'rgba(168,52,74,0.25)' : 'var(--border-subtle)'}`,
         borderRadius: 16,
-        padding: '20px 24px',
+        padding: 'clamp(14px, 4vw, 20px) clamp(14px, 4vw, 24px)',
         cursor: 'pointer',
         animation: 'cardIn 0.5s cubic-bezier(0.16,1,0.3,1) both',
         animationDelay: `${(index || 0) * 70}ms`,
@@ -245,7 +245,7 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
   });
 
   return (
-    <div style={{ padding: '32px 24px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: 'clamp(16px, 4vw, 32px) clamp(12px, 4vw, 24px)', maxWidth: 960, margin: '0 auto' }}>
       <style>{`@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}`}</style>
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
@@ -276,7 +276,7 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
       {topMatches.length > 0 ? (
         <div className="animate-fade-in" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 380px), 1fr))',
           gap: 16,
         }}>
           {topMatches.map((fixture, i) => (

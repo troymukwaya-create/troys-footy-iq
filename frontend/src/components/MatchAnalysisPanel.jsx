@@ -37,7 +37,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
   ];
 
   return (
-    <div className="animate-fade-in" style={{ padding: '24px' }}>
+    <div className="animate-fade-in" style={{ padding: 'clamp(12px, 4vw, 24px)' }}>
       {/* ─── Match Header ─────────────────────────────────── */}
       <div className="card" style={{ padding: 24, marginBottom: 16 }}>
         {/* League */}
