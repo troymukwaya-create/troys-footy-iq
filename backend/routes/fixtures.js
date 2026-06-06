@@ -64,31 +64,29 @@ async function getAllFixturesData() {
   const hasToken = process.env.FOOTBALLDATA_TOKEN?.length > 10;
   const hasApsKey = api.hasKey();
 
-  // ── WORLD CUP MODE ──────────────────────────────────────────────────────────
-  // During the FIFA World Cup window the public site shows ONLY World Cup
-  // fixtures — the real schedule from API-Football, with AI predictions attached.
-  // Toggle with WORLD_CUP_MODE=true|false; otherwise it's date-driven.
+  // ── WORLD CUP SECTION ───────────────────────────────────────────────────────
+  // Footy IQ is a full football site; the World Cup is a SECTION alongside the
+  // club leagues. We always fetch the WC schedule (odds-blended predictions) and
+  // merge it into the main multi-league feed below.
+  let wcFixtures = [];
   const now = new Date();
   const inWcWindow = now >= new Date('2026-05-25T00:00:00Z') && now <= new Date('2026-07-20T23:59:59Z');
   const worldCupMode = process.env.WORLD_CUP_MODE === 'true'
     || (process.env.WORLD_CUP_MODE !== 'false' && inWcWindow);
 
   if (worldCupMode && hasApsKey) {
-    console.log('[fixtures] 🏆 World Cup mode — fetching FIFA World Cup 2026 fixtures only');
     const wcRaw = await api.getLeagueSeasonFixtures('WC', 2026)
       .catch(e => { console.error('[fixtures] WC fetch error:', e.message); return []; });
     const { valid, rejectedCount } = validateFixtureBatch(wcRaw, 'apisports_worldcup');
     integrityState.rejectedCount += rejectedCount;
-
-    const seen = new Set();
-    const fixtures = [];
-    for (const f of valid) { if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); } }
-    fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const seenWc = new Set();
+    for (const f of valid) { if (!seenWc.has(f.id)) { seenWc.add(f.id); wcFixtures.push(f); } }
+    wcFixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Attach predictions, blending bookmaker odds (The Odds API) where available.
     let wcOdds = [];
     try { if (toa.hasKey()) wcOdds = await toa.getEvents(); } catch (e) { console.warn('[fixtures] WC odds fetch failed:', e.message); }
-    for (const f of fixtures) {
+    for (const f of wcFixtures) {
       attachPrediction(f); // cache-attaches any AI verdict + base probability
       const ev = wcOdds.length ? toa.matchEvent(wcOdds, f.homeTeam?.name, f.awayTeam?.name) : null;
       const market = ev ? toa.impliedProbs(ev) : null;
@@ -101,16 +99,17 @@ async function getAllFixturesData() {
         valueEdges: pred.valueEdges,
       };
     }
-
-    if (fixtures.length > 0) {
-      integrityState.lastFetchSource = 'apisports_worldcup';
-      integrityState.lastFetchAt = new Date().toISOString();
-      integrityState.servedFixtureIds = fixtures.map(f => f.id);
-      integrityState.usedLockedFallback = false;
-      return { fixtures, source: 'apisports_worldcup' };
-    }
-    console.warn('[fixtures] World Cup mode on but API returned 0 WC fixtures — check the API-Football plan covers league 1 / season 2026. Falling back.');
+    console.log(`[fixtures] 🏆 World Cup section: ${wcFixtures.length} fixtures merged into the feed`);
   }
+
+  // Merge the World Cup section into whatever the club feed returns.
+  const mergeWc = (clubFixtures, source) => {
+    if (!wcFixtures.length) return { fixtures: clubFixtures, source };
+    const ids = new Set(wcFixtures.map(f => f.id));
+    const merged = [...wcFixtures, ...clubFixtures.filter(f => !ids.has(f.id))];
+    merged.sort((a, b) => new Date(a.date) - new Date(b.date));
+    return { fixtures: merged, source: `${source}+worldcup` };
+  };
 
   // ── PRIMARY: football-data.org ─────────────────────────────────────────────
   if (hasToken) {
@@ -164,7 +163,7 @@ async function getAllFixturesData() {
       integrityState.lastFetchAt = new Date().toISOString();
       integrityState.servedFixtureIds = fixtures.map(f => f.id);
       integrityState.usedLockedFallback = !hasCLorEL;
-      return { fixtures, source: hasCLorEL ? 'footballdata' : 'footballdata+demo_locked' };
+      return mergeWc(fixtures, hasCLorEL ? 'footballdata' : 'footballdata+demo_locked');
     }
   }
 
@@ -194,12 +193,21 @@ async function getAllFixturesData() {
       integrityState.lastFetchAt = new Date().toISOString();
       integrityState.servedFixtureIds = fixtures.map(f => f.id);
       integrityState.usedLockedFallback = false;
-      return { fixtures, source: 'apisports' };
+      return mergeWc(fixtures, 'apisports');
     }
   }
 
   // ── FALLBACK: LOCKED DEMO FIXTURES (CL/EL semi-finals only) ───────────────
   // CRITICAL: We only show the 4 verified semi-finals. NEVER random domestic matches.
+  // If the World Cup section has fixtures, show those rather than the club demo.
+  if (wcFixtures.length) {
+    integrityState.lastFetchSource = 'apisports_worldcup';
+    integrityState.lastFetchAt = new Date().toISOString();
+    integrityState.servedFixtureIds = wcFixtures.map(f => f.id);
+    integrityState.usedLockedFallback = false;
+    return { fixtures: wcFixtures, source: 'worldcup' };
+  }
+
   console.warn('[fixtures] ⚠️  Both APIs unavailable — serving LOCKED demo fixtures (CL/EL semi-finals)');
   const { valid: lockedValid } = validateFixtureBatch(LOCKED_DEMO_FIXTURES, 'locked_demo');
   const withPredictions = lockedValid.map(attachPrediction);
@@ -218,7 +226,7 @@ async function getAllFixturesData() {
 router.get('/all', async (req, res) => {
   try {
     const data = await getAllFixturesData();
-    const isDemo = data.source.includes('demo');
+    const isDemo = data.source === 'demo_locked' || data.source === 'demo_locked_error';
     res.json({ fixtures: data.fixtures, source: data.source, mode: isDemo ? 'demo' : 'live', total: data.fixtures.length });
   } catch (err) {
     console.error('[fixtures/all] Error:', err.message);

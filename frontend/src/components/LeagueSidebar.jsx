@@ -23,6 +23,7 @@ export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, o
       {/* Quick Filters */}
       <nav style={{ padding: '12px 8px 8px' }}>
         <FilterBtn active={activeLeague === 'ALL'} onClick={onGoDashboard} label="All Matches" />
+        <FilterBtn active={activeLeague === 'WC'} onClick={() => onSelectLeague?.({ code: 'WC' })} label="🏆 World Cup" highlight />
         <FilterBtn
           active={activeLeague === 'LIVE'}
           onClick={() => onSelectLeague?.({ code: 'LIVE' })}
@@ -98,16 +99,16 @@ export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, o
   );
 }
 
-function FilterBtn({ active, onClick, label, badge, isLive }) {
+function FilterBtn({ active, onClick, label, badge, isLive, highlight }) {
   return (
     <button
       onClick={onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 8, width: '100%',
         padding: '8px 12px', borderRadius: 'var(--radius-md)',
-        background: active ? 'var(--accent-muted)' : 'transparent',
-        border: 'none', color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
-        fontSize: 12, fontWeight: active ? 600 : 400, cursor: 'pointer',
+        background: active ? 'var(--accent-muted)' : highlight ? 'var(--accent-muted)' : 'transparent',
+        border: 'none', color: active ? 'var(--text-primary)' : highlight ? 'var(--accent)' : 'var(--text-tertiary)',
+        fontSize: 12, fontWeight: active || highlight ? 600 : 400, cursor: 'pointer',
         transition: 'all 150ms ease', textAlign: 'left',
       }}
     >
