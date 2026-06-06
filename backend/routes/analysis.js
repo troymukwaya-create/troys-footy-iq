@@ -29,6 +29,7 @@ import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../se
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import oddsService from '../services/oddsService.js';
 import { impliedProbs } from '../services/sources/theOddsApi.js';
+import { buildReasoning } from '../engine/reasoning.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
 import { safeQuery } from '../db/index.js';
@@ -219,6 +220,17 @@ router.get('/:matchId', async (req, res) => {
           };
         }
 
+        // World Cup (and any match without a league table): build stats from the
+        // team's last internationals so the Stats tab + reasoning are never empty.
+        if (match.league?.code === 'WC' && (!rawHomeStats || !rawAwayStats)) {
+          const [hForm, aForm] = await Promise.all([
+            api.getTeamRecentForm(match.homeTeam.id).catch(() => null),
+            api.getTeamRecentForm(match.awayTeam.id).catch(() => null),
+          ]);
+          if (hForm && !rawHomeStats) rawHomeStats = hForm;
+          if (aForm && !rawAwayStats) rawAwayStats = aForm;
+        }
+
         h2hData = normalizeH2H(h2hRaw, match.homeTeam.name, match.awayTeam.name);
       }
     }
@@ -275,6 +287,18 @@ router.get('/:matchId', async (req, res) => {
       // No usable data — do NOT predict
       dataQuality = 'INSUFFICIENT';
       console.warn(`[analysis] ${matchId} SKIPPING prediction: ${validation.issues.join(', ')}`);
+    }
+
+    // Attach plain-language "why this prediction" reasoning.
+    if (probabilityResult) {
+      probabilityResult.reasoning = buildReasoning({
+        homeName: match.homeTeam?.name,
+        awayName: match.awayTeam?.name,
+        prediction: probabilityResult,
+        homeStats: homeStats?.isValid ? homeStats : null,
+        awayStats: awayStats?.isValid ? awayStats : null,
+        h2h: h2hData,
+      });
     }
 
     // ─── STEP 4b: Log prediction for continuous learning ────────

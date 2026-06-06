@@ -121,6 +121,33 @@ async function getLeagueSeasonFixtures(leagueCode, season) {
   return raw.map(normalise);
 }
 
+// Recent-form stats from a team's last N finished matches. Works for national
+// teams, which have no single-season league table to read stats from.
+async function getTeamRecentForm(teamId, last = 8) {
+  if (!hasKey()) return null;
+  const numId = String(teamId).replace('apf_t_', '');
+  const raw = await safeFetch('fixtures', { team: numId, last });
+  const finished = raw.map(normalise)
+    .filter(f => f.status === 'FINISHED' && f.score.home != null && f.score.away != null);
+  if (!finished.length) return null;
+  let gf = 0, ga = 0, w = 0, d = 0, l = 0; const form = [];
+  for (const m of finished) {
+    const isHome = m.homeTeam.id === ('apf_t_' + numId);
+    const my = isHome ? m.score.home : m.score.away;
+    const opp = isHome ? m.score.away : m.score.home;
+    gf += my; ga += opp;
+    if (my > opp) { w++; form.push('W'); } else if (my < opp) { l++; form.push('L'); } else { d++; form.push('D'); }
+  }
+  const played = w + d + l;
+  if (!played) return null;
+  return {
+    played, wins: w, draws: d, losses: l, goalsFor: gf, goalsAgainst: ga,
+    avgGoalsFor: parseFloat((gf / played).toFixed(2)),
+    avgGoalsAgainst: parseFloat((ga / played).toFixed(2)),
+    form: form.slice(0, 5).join(''),
+  };
+}
+
 async function getFixture(id) {
   if (!hasKey()) return null;
   const numId = String(id).replace('apf_', '');
@@ -267,7 +294,7 @@ async function getInjuries(leagueCode) {
 export default {
   hasKey, LEAGUES, SEASON, normalise,
   getLiveFixtures, getTodayFixtures, getUpcomingFixtures,
-  getRecentFixtures, getLeagueSeasonFixtures, getFixture,
+  getRecentFixtures, getLeagueSeasonFixtures, getTeamRecentForm, getFixture,
   getFixtureStats, getFixtureEvents, getFixtureLineups, getFixturePlayers,
   getStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures,
   getTopScorers, getPlayerStats,

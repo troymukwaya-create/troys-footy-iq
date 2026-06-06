@@ -147,7 +147,7 @@ async function getAllFixturesData() {
     // The free football-data.org plan does NOT return CL/EL fixtures.
     // We always inject the 4 verified semi-finals so the demo is never missing them.
     const hasCLorEL = fixtures.some(f => f.league?.code === 'CL' || f.league?.code === 'EL');
-    if (!hasCLorEL) {
+    if (!hasCLorEL && !wcFixtures.length) {
       console.log('[fixtures] ℹ️  No CL/EL fixtures from API — injecting locked demo semi-finals');
       const { valid: lockedValid } = validateFixtureBatch(LOCKED_DEMO_FIXTURES, 'locked_demo_inject');
       for (const f of lockedValid) {

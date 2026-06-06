@@ -215,6 +215,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {prob ? (
                 <>
+                  {prob.reasoning && <WhyPanel reasoning={prob.reasoning} homeColor={homeColor} awayColor={awayColor} />}
                   {/* Expected Goals */}
                   <div className="card" style={{ padding: 16 }}>
                     <div className="section-title" style={{ marginBottom: 12 }}>Expected Goals</div>
@@ -391,6 +392,26 @@ function FormStrip({ form }) {
           color: r === 'W' ? 'var(--success)' : r === 'D' ? 'var(--warning)' : 'var(--danger)',
         }}>{r}</span>
       ))}
+    </div>
+  );
+}
+
+function WhyPanel({ reasoning, homeColor, awayColor }) {
+  if (!reasoning || !reasoning.reasons?.length) return null;
+  const dot = (favors) => favors === 'home' ? homeColor : favors === 'away' ? awayColor : 'var(--text-muted)';
+  return (
+    <div className="card" style={{ padding: 18, border: '1px solid var(--accent-muted)' }}>
+      <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 14, color: 'var(--text-primary)' }}>
+        {reasoning.headline}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {reasoning.reasons.map((r, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot(r.favors), marginTop: 5, flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{r.text}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
