@@ -14,6 +14,8 @@ export default function Overview() {
 
   return (
     <>
+      <StatusBanner o={o} s={s} a={a} alertCount={o.openAlerts} />
+
       <Section title="At a glance — tap any tile for in-depth stats">
         <div style={grid('150px')}>
           <Metric live label="Live visitors" value={o.traffic?.liveVisitors ?? '—'} sub="active in last 5 min" color={C.cyan} to="/admin/visitors" />
@@ -94,5 +96,49 @@ export default function Overview() {
         Auto-refreshing · {o.generatedAt ? new Date(o.generatedAt).toLocaleTimeString() : ''}
       </div>
     </>
+  );
+}
+
+// ─── SYSTEM STATUS BANNER — flags anything wrong, loud and at the top ──────────
+function StatusBanner({ o, s, a, alertCount }) {
+  const issues = [];
+  const dbDown = o.dbConnected === false || s.dbConnected === false;
+  if (dbDown) issues.push({ sev: 'critical', text: 'Database disconnected — predictions are NOT being saved' });
+  if ((s.errorsLast24h || 0) > 0) issues.push({ sev: 'critical', text: `${s.errorsLast24h} critical error${s.errorsLast24h > 1 ? 's' : ''} in the last 24h` });
+  if (s.lastPredictionRun) {
+    const ageH = (Date.now() - new Date(s.lastPredictionRun).getTime()) / 3600000;
+    if (ageH > 26) issues.push({ sev: 'warning', text: `No new prediction in ${Math.round(ageH)}h — check the scheduler` });
+  }
+  const apf = a.usage?.apisports;
+  if (apf && apf.failuresToday > 0) issues.push({ sev: 'warning', text: `${apf.failuresToday} API-Football request${apf.failuresToday > 1 ? 's' : ''} failed today` });
+  if ((alertCount || 0) > 0) issues.push({ sev: 'warning', text: `${alertCount} unacknowledged alert${alertCount > 1 ? 's' : ''}` });
+
+  const critical = issues.some(i => i.sev === 'critical');
+  const ok = issues.length === 0;
+  const color = ok ? C.ok : critical ? C.bad : C.warn;
+  const bg = ok ? 'var(--success-muted)' : critical ? 'var(--danger-muted)' : 'var(--warning-muted)';
+
+  return (
+    <div style={{ background: bg, border: `1px solid ${color}`, borderRadius: 12, padding: '14px 18px', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}`, flexShrink: 0 }} className={ok ? '' : 'animate-pulse'} />
+        <span style={{ fontSize: 15, fontWeight: 800, color }}>
+          {ok ? 'All systems operational' : critical ? `${issues.length} issue${issues.length > 1 ? 's' : ''} need attention` : `${issues.length} warning${issues.length > 1 ? 's' : ''}`}
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: C.t3, fontFamily: C.mono }}>
+          DB {(s.dbConnected ?? o.dbConnected) ? 'up' : 'down'} · uptime {uptime(s.uptimeSeconds)} · {s.wsClients ?? 0} live
+        </span>
+      </div>
+      {!ok && (
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {issues.map((i, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13, color: C.t2 }}>
+              <span style={{ color: i.sev === 'critical' ? C.bad : C.warn, fontWeight: 800, width: 14, textAlign: 'center', flexShrink: 0 }}>{i.sev === 'critical' ? '✕' : '!'}</span>
+              {i.text}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

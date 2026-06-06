@@ -312,6 +312,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
                   Team statistics are not available for this fixture.
                 </div>
               )}
+              {prob?.intelligence && <RecentForm intel={prob.intelligence} home={home} away={away} />}
             </div>
           )}
 
@@ -392,6 +393,41 @@ function FormStrip({ form }) {
           color: r === 'W' ? 'var(--success)' : r === 'D' ? 'var(--warning)' : 'var(--danger)',
         }}>{r}</span>
       ))}
+    </div>
+  );
+}
+
+function RecentForm({ intel, home, away }) {
+  const Team = ({ name, data }) => {
+    if (!data?.recentResults?.length) return null;
+    return (
+      <div style={{ marginTop: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
+          {name} <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 11 }}>
+            · last {data.played}: {data.wins}W-{data.draws}D-{data.losses}L · {data.cleanSheets} clean sheets
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {data.recentResults.slice(0, 5).map((r, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+              <span style={{ width: 16, height: 16, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700,
+                background: r.result === 'W' ? 'var(--success-muted)' : r.result === 'D' ? 'var(--warning-muted)' : 'var(--danger-muted)',
+                color: r.result === 'W' ? 'var(--success)' : r.result === 'D' ? 'var(--warning)' : 'var(--danger)' }}>{r.result}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', width: 36 }}>{r.score}</span>
+              <span style={{ color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>v {r.opponent}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>{(r.competition || '').replace('World Cup - Qualification ', 'WCQ · ')}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  if (!intel?.home?.recentResults?.length && !intel?.away?.recentResults?.length) return null;
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+      <div className="section-title" style={{ marginBottom: 4 }}>Recent Form · all competitions</div>
+      <Team name={home} data={intel.home} />
+      <Team name={away} data={intel.away} />
     </div>
   );
 }
