@@ -9,7 +9,7 @@ import { useAdmin, Card, Section, Metric, Row, PanelTitle, MiniChart, Empty, gri
 const SUBS = [
   { name: 'Render — PostgreSQL',     powers: 'Stores every prediction + the Brier feedback loop', monthly: 7,  status: 'pay',    link: 'render.com' },
   { name: 'Render — Backend (Node)', powers: 'Always-on API; no cold starts during WC traffic',   monthly: 7,  status: 'pay',    link: 'render.com' },
-  { name: 'Domain · oddyssa.com',    powers: 'Brand URL — bought, connecting to Vercel',          monthly: 1,  status: 'active', link: 'vercel.com' },
+  { name: 'Domain · oddyessa.com',   powers: 'Brand URL — live on Vercel',                        monthly: 1,  status: 'active', link: 'oddyessa.com' },
   { name: 'API-Football · Pro',      powers: 'All 104 WC fixtures, lineups, events, standings',    monthly: 19, status: 'wire',   link: 'api-football.com/pricing' },
   { name: 'The Odds API · 20K',      powers: 'Pre-match odds → fixes the broken value-edge layer', monthly: 30, status: 'wire',   link: 'the-odds-api.com' },
   { name: 'Claude API (Anthropic)',  powers: 'AI match verdicts',                                  monthly: 50, status: 'active', link: 'anthropic.com/startups — apply $50K credits' },

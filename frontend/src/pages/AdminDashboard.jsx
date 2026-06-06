@@ -34,7 +34,7 @@ function Login({ onAuthed }) {
     <div style={{ minHeight: '100vh', background: C.base, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <form onSubmit={submit} style={{ width: '100%', maxWidth: 360 }}>
         <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-0.5px', marginBottom: 4 }}>
-          <span style={{ color: C.accent }}>Odd</span><span style={{ color: C.t2 }}>yssa</span>
+          <span style={{ color: C.accent }}>Odd</span><span style={{ color: C.t2 }}>yessa</span>
         </div>
         <div style={{ fontSize: 12, color: C.t3, marginBottom: 24, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Command Center</div>
         <Card>
@@ -94,7 +94,7 @@ function Shell({ onLogout }) {
         <div style={{ position: 'sticky', top: 0, zIndex: 10, background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '10px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.5px' }}>
-              <span style={{ color: C.accent }}>Odd</span><span style={{ color: C.t2 }}>yssa</span>
+              <span style={{ color: C.accent }}>Odd</span><span style={{ color: C.t2 }}>yessa</span>
             </span>
             <nav style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               {NAV.map(n => (

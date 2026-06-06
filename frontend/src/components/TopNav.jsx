@@ -23,7 +23,7 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
           <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>O</span>
         </div>
         <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>
-          <span style={{ color: 'var(--accent)' }}>Odd</span><span style={{ color: 'var(--text-secondary)' }}>yssa</span>
+          <span style={{ color: 'var(--accent)' }}>Odd</span><span style={{ color: 'var(--text-secondary)' }}>yessa</span>
         </span>
       </div>
 
