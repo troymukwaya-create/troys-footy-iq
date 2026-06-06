@@ -39,8 +39,7 @@ class ErrorBoundary extends React.Component {
           justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui", padding: 32, gap: 20,
         }}>
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px' }}>
-            <span style={{ color: '#A8344A' }}>Footy</span>{' '}
-            <span style={{ color: '#9CA3AF' }}>IQ</span>
+            <span style={{ color: '#A8344A' }}>Odd</span><span style={{ color: '#9CA3AF' }}>yssa</span>
           </div>
           <div style={{ color: '#ef4444', fontSize: 15, fontWeight: 600 }}>
             Something crashed

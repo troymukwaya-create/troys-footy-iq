@@ -42,7 +42,7 @@ export function AIPanel({ fixture, analysis, loading }) {
 
   const disclaimer = (
     <div className="px-4 py-5 text-[10px] text-on-surface-variant/30 text-center border-t border-outline-variant/10 mt-auto">
-      Troy's Footy IQ is for analytical and educational purposes only.<br />
+      Oddyssa is for analytical and educational purposes only.<br />
       This platform does not facilitate, encourage, or promote gambling.<br />
       All analysis is AI-generated and should not be treated as financial advice.
     </div>

@@ -40,7 +40,7 @@ export function InvestorDashboard({ onClose }) {
       <header className="sticky top-0 z-10 px-8 py-4 flex justify-between items-center border-b border-white/10 backdrop-blur-md" style={{ background: 'rgba(10, 10, 12, 0.8)' }}>
         <div className="flex items-center gap-4">
           <div className="text-2xl font-black tracking-tighter">
-            <span style={{ color: '#00e5ff' }}>TROY'S</span> FOOTY <span style={{ color: '#00e5ff' }}>IQ</span>
+            <span style={{ color: '#00e5ff' }}>ODD</span>YSSA
           </div>
           <div className="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border" style={{ borderColor: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)' }}>
             Investor View

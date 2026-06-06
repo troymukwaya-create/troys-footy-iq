@@ -3,7 +3,7 @@ import React from 'react';
 export function TickerBar({ activeMatches }) {
   const events = [];
   if (!activeMatches || activeMatches.length === 0) {
-    events.push("🏆 TROY'S FOOTY IQ — Welcome to the ultimate live football analytics engine!");
+    events.push("🏆 ODDYSSA — Welcome to the ultimate live sports prediction engine!");
     events.push("🕐 Waiting for kick-offs...");
   } else {
     activeMatches.forEach(m => {
