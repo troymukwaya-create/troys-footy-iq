@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 /**
  * TopNav — Clean, minimal top navigation.
@@ -40,10 +41,15 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
         )}
       </div>
 
-      {/* Status */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
-        <span className="hidden sm:block" style={{ fontSize: 11, color: 'var(--text-muted)' }}>Connected</span>
+      {/* Guide link + status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <Link to="/how-it-works" style={{ fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none', fontWeight: 500 }}>
+          How it works
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
+          <span className="hidden sm:block" style={{ fontSize: 11, color: 'var(--text-muted)' }}>Connected</span>
+        </div>
       </div>
     </nav>
   );

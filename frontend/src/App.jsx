@@ -23,6 +23,7 @@ const MatchAnalysisPanel = React.lazy(() => import('./components/MatchAnalysisPa
 const AIInsightsPanel = React.lazy(() => import('./components/AIInsightsPanel.jsx').then(m => ({ default: m.AIInsightsPanel })));
 const ParlayBuilderPanel = React.lazy(() => import('./components/ParlayBuilderPanel.jsx').then(m => ({ default: m.ParlayBuilderPanel })));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard.jsx'));
+const HowItWorks = React.lazy(() => import('./pages/HowItWorks.jsx'));
 
 function MainApp() {
   useRealTime();
@@ -326,6 +327,10 @@ export default function App() {
       <Route
         path="/admin/*"
         element={<React.Suspense fallback={null}><AdminDashboard /></React.Suspense>}
+      />
+      <Route
+        path="/how-it-works"
+        element={<React.Suspense fallback={null}><HowItWorks /></React.Suspense>}
       />
       <Route path="*" element={<MainApp />} />
     </Routes>
