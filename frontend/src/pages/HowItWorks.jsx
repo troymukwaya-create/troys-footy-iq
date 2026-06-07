@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useReducedMotion, useMotionValue, animate } from 'motion/react';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { flagGradient } from '../constants/nationColors.js';
+import { EmailCapture } from '../components/EmailCapture.jsx';
 
 const ease = [0.16, 1, 0.3, 1];
 const reveal = {
@@ -268,6 +269,13 @@ export default function HowItWorks() {
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.66)', lineHeight: 1.6 }}>
             Plenty of tipsters shout about their winners and quietly forget the losers. We don’t. Every call we make gets marked against what actually happened — and the score lives right here, in the open. Trust us exactly as much as we earn it.
           </p>
+        </motion.div>
+      </section>
+
+      {/* ─── EMAIL CAPTURE ───────────────────────────────────── */}
+      <section style={{ position: 'relative', zIndex: 1, maxWidth: 620, margin: '0 auto', padding: 'clamp(10px,4vw,40px) 24px clamp(40px,10vw,90px)' }}>
+        <motion.div {...reveal} style={{ padding: 'clamp(22px,5vw,34px)', borderRadius: 24, background: 'rgba(168,52,74,0.10)', border: '1px solid rgba(168,52,74,0.25)' }}>
+          <EmailCapture source="landing" />
         </motion.div>
       </section>
 

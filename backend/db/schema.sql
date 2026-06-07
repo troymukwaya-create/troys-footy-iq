@@ -462,3 +462,22 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_site_events_synthetic ON site_events(synthetic, created_at DESC);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- EMAIL / CRM (v10) — owned subscriber list for the daily picks email
+-- ═══════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS subscribers (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  source VARCHAR(40),                       -- capture hook: 'landing' | 'in_app' | 'after_slip' | ...
+  visitor_id VARCHAR(40),                   -- stitches to site_events for CRM behaviour
+  prefs JSONB,                              -- {worldCup:true, leagues:[...]}
+  consent BOOLEAN DEFAULT true,
+  status VARCHAR(20) DEFAULT 'active',      -- 'active' | 'unsubscribed'
+  unsubscribe_token VARCHAR(64),
+  confirmed BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_subscribers_status ON subscribers(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_subscribers_visitor ON subscribers(visitor_id);
