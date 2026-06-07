@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BarChart3, Send } from 'lucide-react';
+import { Zap } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useAIChat } from '../hooks/useQueries.js';
 import { QEDMark } from './QEDMark.jsx';
 
@@ -50,19 +51,29 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>AI Top Picks</h3>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Our highest-rated bets right now · tap one for the full breakdown</p>
+          <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <Zap size={15} style={{ color: 'var(--accent)' }} /> Today’s Edge
+          </h3>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>Our model’s strongest calls — ranked by confidence + value vs the bookies. Tap for the breakdown.</p>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {picks.length === 0 && (
             <div style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', padding: '40px 0' }}>No matches to rate right now.</div>
           )}
           {picks.map(({ f, maxProb, bestEdge, pick }, i) => (
-            <button key={f.id} onClick={() => onSelect?.(f)} style={{
-              display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
-              padding: '11px 12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-              background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
-            }}>
+            <motion.button
+              key={f.id}
+              onClick={() => onSelect?.(f)}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+                padding: '11px 12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
+              }}
+            >
               <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', width: 18, flexShrink: 0 }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.homeTeam?.name} v {f.awayTeam?.name}</div>
@@ -70,9 +81,12 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
                   Pick: <strong style={{ color: 'var(--text-secondary)' }}>{pick}</strong> · {Math.round(maxProb)}%
                   {bestEdge >= 3 && <span style={{ color: '#22c55e', fontWeight: 700 }}> · +{Math.round(bestEdge)}% value</span>}
                 </div>
+                <div style={{ marginTop: 6, height: 4, borderRadius: 3, background: 'var(--bg-base)', overflow: 'hidden' }}>
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(maxProb)}%` }} transition={{ duration: 0.6, delay: 0.15 + i * 0.04, ease: [0.16, 1, 0.3, 1] }} style={{ height: '100%', background: 'var(--accent)' }} />
+                </div>
               </div>
               <span style={{ fontSize: 13, color: 'var(--accent)', flexShrink: 0 }}>›</span>
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -88,10 +102,10 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
             width: 28, height: 28, borderRadius: 'var(--radius-sm)',
             background: 'var(--accent-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <BarChart3 size={14} style={{ color: 'var(--accent)' }} />
+            <Zap size={14} style={{ color: 'var(--accent)' }} />
           </div>
           <div>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>AI Analysis</h3>
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>The Edge</h3>
             <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{home} vs {away}</p>
           </div>
         </div>
@@ -125,7 +139,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
         )}
 
         {!isLoading && ai && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Risk Badge */}
             {prob?.riskLevel && (
               <div className={prob.riskLevel === 'LOW' ? 'risk-low' : prob.riskLevel === 'MEDIUM' ? 'risk-medium' : 'risk-high'}
@@ -231,7 +245,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* Fallback */}

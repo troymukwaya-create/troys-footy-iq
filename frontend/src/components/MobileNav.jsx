@@ -1,13 +1,12 @@
 import React from 'react';
-import { Home, Trophy, BarChart2, Brain } from 'lucide-react';
+import { Home, Trophy, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function MobileNav({ activeTab, onTabChange }) {
   const tabs = [
-    { id: 'home',    Icon: Home,      label: 'Home' },
-    { id: 'leagues', Icon: Trophy,    label: 'Leagues' },
-    { id: 'match',   Icon: BarChart2, label: 'Match' },
-    { id: 'ai',      Icon: Brain,     label: 'AI' },
+    { id: 'home',    Icon: Home,   label: 'Home' },
+    { id: 'leagues', Icon: Trophy, label: 'Matches' },
+    { id: 'ai',      Icon: Zap,    label: 'Edge' },
   ];
 
   return (
@@ -24,7 +23,7 @@ export function MobileNav({ activeTab, onTabChange }) {
           <button
             key={id}
             onClick={() => onTabChange?.(id)}
-            className="relative flex flex-col items-center justify-center w-1/4 h-full cursor-pointer"
+            className="relative flex flex-col items-center justify-center w-1/3 h-full cursor-pointer"
             style={{ color: isActive ? 'var(--accent)' : 'rgba(255,255,255,0.28)', background: 'none', border: 'none' }}
           >
             {/* Sliding active pill — animates smoothly between tabs */}

@@ -127,7 +127,7 @@ function MainApp() {
   const handleSelectFixture = useCallback((fixture) => {
     if (!fixture?.id) return;
     setSelectedFixture(fixture);
-    setMobileTab('match');   // mobile: jump to the analysis view on tap
+    setMobileTab('home');   // mobile: detail opens over the Home stack (with a back arrow)
     // CEO dashboard engagement signal
     track('prediction_viewed', {
       fixture_id: fixture.id,
