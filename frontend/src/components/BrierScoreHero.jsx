@@ -94,13 +94,16 @@ export default function BrierScoreHero() {
   const beatsTipster = data.brier < BENCHMARKS.tipster.value;
   const beatsSharpMarket = data.brier < BENCHMARKS.sharpMarket.value;
 
-  const headline = beatsSharpMarket
-    ? 'Beating the sharp market'
-    : beatsTipster
-      ? 'Beating the average analyst'
-      : beatsRandom
-        ? 'Beating random chance'
-        : 'Calibrating';
+  const isBacktest = data.source !== 'live';
+  const headline = isBacktest
+    ? 'Backtested — live World Cup record starts at kick-off'
+    : beatsSharpMarket
+      ? 'Beating the sharp market'
+      : beatsTipster
+        ? 'Beating the average analyst'
+        : beatsRandom
+          ? 'Beating random chance'
+          : 'Calibrating';
 
   return (
     <motion.section
@@ -144,7 +147,7 @@ export default function BrierScoreHero() {
               {headline}
             </span>
             <span className="text-xs text-on-surface-variant">
-              · {data.sampleSize.toLocaleString()} predictions
+              · {data.sampleSize.toLocaleString()} {isBacktest ? 'backtested (PL)' : 'scored live'}
             </span>
           </div>
         </div>
