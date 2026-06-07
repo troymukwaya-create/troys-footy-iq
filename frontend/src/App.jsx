@@ -14,6 +14,9 @@ import { GoalFlash } from './components/GoalFlash.jsx';
 import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
+import { IntroCard } from './components/IntroCard.jsx';
+import { usePullToRefresh } from './hooks/usePullToRefresh.js';
+import { RefreshCw } from 'lucide-react';
 
 const MatchAnalysisPanel = React.lazy(() => import('./components/MatchAnalysisPanel.jsx').then(m => ({ default: m.MatchAnalysisPanel })));
 const AIInsightsPanel = React.lazy(() => import('./components/AIInsightsPanel.jsx').then(m => ({ default: m.AIInsightsPanel })));
@@ -146,6 +149,12 @@ function MainApp() {
     setMobileTab(tab);
   }, [setSelectedFixture, setMobileTab]);
 
+  // Pull-to-refresh (mobile) — re-fetch fixtures + live data on a downward pull
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries();
+  }, [queryClient]);
+  const ptr = usePullToRefresh(handleRefresh);
+
   // ─── Keyboard shortcuts ───────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -169,6 +178,7 @@ function MainApp() {
   return (
     <div className="flex flex-col app-shell overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
       <GoalFlash flashes={goalFlashes} />
+      <IntroCard />
       <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
 
       <div className="flex flex-1 overflow-hidden">
@@ -253,13 +263,19 @@ function MainApp() {
         </aside>
 
         {/* ═══ CENTER PANEL ═══ */}
-        <main className="center-panel flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
+        <main ref={ptr.ref} className="center-panel flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
+          {/* Pull-to-refresh indicator */}
+          <div style={{ height: ptr.pull, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: (ptr.pull > 0 && !ptr.refreshing) ? 'none' : 'height 220ms ease' }}>
+            <span className={ptr.refreshing ? 'animate-spin' : ''} style={{ opacity: Math.min(ptr.pull / 70, 1), display: 'flex' }}>
+              <RefreshCw size={18} style={{ color: 'var(--accent)' }} />
+            </span>
+          </div>
           <div style={{ maxWidth: 960, margin: '0 auto' }}>
             {fixturesLoading ? (
               <SkeletonDashboard />
             ) : selectedFixture ? (
               <React.Suspense fallback={<SkeletonDashboard />}>
-                <MatchAnalysisPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading} />
+                <MatchAnalysisPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading} onBack={handleDeselectFixture} />
               </React.Suspense>
             ) : (
               <AnalystDashboard fixtures={filteredFixtures} onSelect={handleSelectFixture} />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, Trophy, BarChart2, Brain } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export function MobileNav({ activeTab, onTabChange }) {
   const tabs = [
@@ -23,13 +24,27 @@ export function MobileNav({ activeTab, onTabChange }) {
           <button
             key={id}
             onClick={() => onTabChange?.(id)}
-            className="flex flex-col items-center justify-center w-1/4 h-full cursor-pointer transition-colors"
-            style={{ color: isActive ? 'var(--accent)' : 'rgba(255,255,255,0.25)', background: 'none', border: 'none' }}
+            className="relative flex flex-col items-center justify-center w-1/4 h-full cursor-pointer"
+            style={{ color: isActive ? 'var(--accent)' : 'rgba(255,255,255,0.28)', background: 'none', border: 'none' }}
           >
-            <Icon size={18} strokeWidth={isActive ? 2.2 : 1.6} />
-            <span className="mt-0.5" style={{ fontSize: 9, fontWeight: isActive ? 600 : 400, fontFamily: 'var(--font-body)', letterSpacing: '0.04em' }}>
-              {label}
-            </span>
+            {/* Sliding active pill — animates smoothly between tabs */}
+            {isActive && (
+              <motion.span
+                layoutId="mobileNavPill"
+                transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+                style={{ position: 'absolute', top: 7, width: 44, height: 30, borderRadius: 10, background: 'var(--accent-muted)' }}
+              />
+            )}
+            <motion.span
+              animate={{ scale: isActive ? 1.08 : 1, y: isActive ? -1 : 0 }}
+              transition={{ type: 'spring', damping: 18, stiffness: 340 }}
+              style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+            >
+              <Icon size={18} strokeWidth={isActive ? 2.2 : 1.6} />
+              <span className="mt-0.5" style={{ fontSize: 9, fontWeight: isActive ? 600 : 400, fontFamily: 'var(--font-body)', letterSpacing: '0.04em' }}>
+                {label}
+              </span>
+            </motion.span>
           </button>
         );
       })}

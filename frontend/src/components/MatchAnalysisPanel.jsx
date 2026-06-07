@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { ChevronLeft } from 'lucide-react';
 import { MarketsPanel } from './MarketsPanel.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 
@@ -6,7 +8,7 @@ import { getVisibleTeamColor } from '../constants/teamColors.js';
  * MatchAnalysisPanel — Center panel for match analysis.
  * Clean, structured: header → tabs → content.
  */
-export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
+export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
   const [activeTab, setActiveTab] = useState('analysis');
 
   if (!fixture) return null;
@@ -37,7 +39,23 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
   ];
 
   return (
-    <div className="animate-fade-in" style={{ padding: 'clamp(12px, 4vw, 24px)' }}>
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      style={{ padding: 'clamp(12px, 4vw, 24px)' }}
+    >
+      {/* ─── Sticky compact header — back + match identity while scrolling ─── */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', marginBottom: 8, background: 'rgba(11,11,13,0.82)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 12 }}>
+        {onBack && (
+          <button onClick={onBack} aria-label="Back" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 10, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0 }}>
+            <ChevronLeft size={18} />
+          </button>
+        )}
+        <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>{home} v {away}</span>
+        <span style={{ fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: 'var(--text-secondary)', flexShrink: 0 }}>{fixture?.score?.home ?? '–'}:{fixture?.score?.away ?? '–'}</span>
+      </div>
+
       {/* ─── Match Header ─────────────────────────────────── */}
       <div className="card" style={{ padding: 24, marginBottom: 16 }}>
         {/* League */}
@@ -97,9 +115,9 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
               <span style={{ fontSize: 13, fontWeight: 700, color: awayColor }}>{prob.probabilities?.away || 0}%</span>
             </div>
             <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', gap: 2 }}>
-              <div style={{ width: `${prob.probabilities?.home || 33}%`, background: homeColor, borderRadius: '4px 0 0 4px', transition: 'width 600ms ease' }} />
-              <div style={{ width: `${prob.probabilities?.draw || 33}%`, background: 'rgba(255,255,255,0.12)', transition: 'width 600ms ease' }} />
-              <div style={{ width: `${prob.probabilities?.away || 33}%`, background: awayColor, borderRadius: '0 4px 4px 0', transition: 'width 600ms ease' }} />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${prob.probabilities?.home || 33}%` }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} style={{ background: homeColor, borderRadius: '4px 0 0 4px' }} />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${prob.probabilities?.draw || 33}%` }} transition={{ duration: 0.7, delay: 0.05, ease: [0.16, 1, 0.3, 1] }} style={{ background: 'rgba(255,255,255,0.12)' }} />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${prob.probabilities?.away || 33}%` }} transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }} style={{ background: awayColor, borderRadius: '0 4px 4px 0' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
               <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{home}</span>
@@ -376,7 +394,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading }) {
           )}
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -483,7 +501,7 @@ function MarketBar({ label, value }) {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
       <span style={{ fontSize: 12, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>{label}</span>
       <div className="prob-bar" style={{ flex: 1 }}>
-        <div className="prob-bar-fill" style={{ width: `${Math.min(v, 100)}%`, background: color }} />
+        <motion.div className="prob-bar-fill" initial={{ width: 0 }} whileInView={{ width: `${Math.min(v, 100)}%` }} viewport={{ once: true }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} style={{ background: color }} />
       </div>
       <span style={{ fontSize: 13, fontWeight: 700, width: 40, textAlign: 'right', color, fontVariantNumeric: 'tabular-nums' }}>{v}%</span>
     </div>
