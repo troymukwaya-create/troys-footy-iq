@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams, Routes, Route } from 'react-router-dom';
+import { useSearchParams, Routes, Route, Navigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFixtures, useLiveMatches, useAnalysis, useAIAnalysisProgressive, api as queryApi } from './hooks/useQueries.js';
 import { useRealTime } from './hooks/useRealTime.js';
@@ -14,7 +14,6 @@ import { GoalFlash } from './components/GoalFlash.jsx';
 import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
-import { IntroCard } from './components/IntroCard.jsx';
 import { SuggestedSlips } from './components/SuggestedSlips.jsx';
 import { usePullToRefresh } from './hooks/usePullToRefresh.js';
 import { RefreshCw } from 'lucide-react';
@@ -177,10 +176,13 @@ function MainApp() {
     return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
   };
 
+  // First-visit gate: new visitors pass through the cinematic intro once.
+  const firstVisit = (() => { try { return !localStorage.getItem('oddyessa_welcomed'); } catch { return false; } })();
+  if (firstVisit) return <Navigate to="/how-it-works" replace />;
+
   return (
     <div className="flex flex-col app-shell overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
       <GoalFlash flashes={goalFlashes} />
-      <IntroCard />
       <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
 
       <div className="flex flex-1 overflow-hidden">

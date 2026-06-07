@@ -26,6 +26,7 @@ const STEPS = [
 ];
 
 export default function HowItWorks() {
+  const enter = () => { try { localStorage.setItem('oddyessa_welcomed', '1'); } catch { /* ignore */ } };
   return (
     <div style={{ minHeight: '100dvh', overflowY: 'auto', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
       {/* ─── HERO ─────────────────────────────────────────────── */}
@@ -49,7 +50,7 @@ export default function HowItWorks() {
             AI predictions for every match — who’ll win, <strong style={{ color: 'var(--text-primary)' }}>why</strong>, and where the bookies are wrong. And we publish how often we’re right.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 34 }}>
-            <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 26px', borderRadius: 14, background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+            <Link to="/" onClick={enter} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 26px', borderRadius: 14, background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
               Enter Oddyessa <ArrowRight size={17} />
             </Link>
           </div>
@@ -119,7 +120,7 @@ export default function HowItWorks() {
       <section style={{ padding: 'clamp(40px,10vw,90px) 24px clamp(60px,14vw,120px)', textAlign: 'center', borderTop: '1px solid var(--border-subtle)' }}>
         <motion.div {...reveal}>
           <h2 style={{ fontSize: 'clamp(24px,6vw,36px)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 24 }}>Ready to read the game?</h2>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '15px 30px', borderRadius: 14, background: 'var(--accent)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none' }}>
+          <Link to="/" onClick={enter} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '15px 30px', borderRadius: 14, background: 'var(--accent)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none' }}>
             Enter Oddyessa <ArrowRight size={18} />
           </Link>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 36, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
