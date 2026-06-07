@@ -13,17 +13,17 @@ const reveal = {
 };
 
 const PILLARS = [
-  { emoji: '🔮', title: 'Predict every match', body: 'Win probabilities, likely scorelines and goals — for every game, every league, powered by our model.' },
-  { emoji: '💡', title: 'Explain the why', body: 'Not just a number. Plain-language reasoning: form, head-to-head, home edge, injuries — the lot.' },
-  { emoji: '💎', title: 'Find the value', body: 'We compare our model to the bookmakers and flag exactly where they have the price wrong.' },
+  { emoji: '🔮', title: 'A call on every game', body: 'From the World Cup final to a quiet midweek fixture, you’ll know who we fancy, the likely score, and how the goals might fall — before a ball is kicked.' },
+  { emoji: '💡', title: 'The story, not just the score', body: 'Anyone can fire off a tip. We tell you why — the form, the history, the home crowd, who’s injured — so the call stays yours to make.' },
+  { emoji: '💎', title: 'Where the bookies slip up', body: 'We hold our numbers up next to the bookmakers’ odds and point you to the bets actually worth backing — not just the favourites everyone’s already on.' },
 ];
 
 const STEPS = [
-  { n: 1, title: 'Browse the matches', body: 'Home shows the day’s best bets. Matches lets you explore every fixture. Edge is where the value lives.' },
-  { n: 2, title: 'Open a match', body: 'See the prediction, the expected goals, the likely scorelines — and the plain-language why behind it.' },
-  { n: 3, title: 'Spot the edge', body: 'A green “+value” badge means our model rates the outcome higher than the bookies are pricing it.' },
-  { n: 4, title: 'Build a Slip', body: 'Add selections, or tap a Suggested Slip. We show the combined odds and the model’s edge on the whole slip.' },
-  { n: 5, title: 'Take it to your bookmaker', body: 'Copy or share your slip, then place it wherever you bet. We’re a data site — we don’t take bets.' },
+  { n: 1, title: 'Have a look around', body: 'Home gives you the day’s best shouts. Matches lets you wander through every fixture. Edge is where the real value hides.' },
+  { n: 2, title: 'Pick a game', body: 'Tap any match for our call, the scorelines we’re expecting, and the full reasoning — in plain English, no jargon.' },
+  { n: 3, title: 'Spot the value', body: 'See a green “+value” tag? That’s us telling you the bookmakers have priced this one in your favour.' },
+  { n: 4, title: 'Build your slip', body: 'Stack a few picks together, or load one we’ve already put together for you. We’ll show you exactly how much edge the whole slip carries.' },
+  { n: 5, title: 'Place it your way', body: 'Copy your slip and put it on wherever you like to bet. We do the homework — you stay in charge of the bet.' },
 ];
 
 // ─── Animated aurora glow behind everything ──────────────────────────
@@ -83,7 +83,7 @@ function PredictionCard() {
 
       <div style={{ borderRadius: 12, padding: 11, background: 'rgba(168,52,74,0.10)', border: '1px solid rgba(168,52,74,0.22)' }}>
         <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--accent)', marginBottom: 5, letterSpacing: '0.06em' }}>WHY</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>Spain control midfield; the market underrates them by 7%. Strong value on the win.</div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>Spain run the midfield and the market’s underrating them by 7%. Real value on the win.</div>
       </div>
     </div>
   );
@@ -93,7 +93,6 @@ function Device() {
   const reduce = useReducedMotion();
   return (
     <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', perspective: 1200 }}>
-      {/* glow pad */}
       <div aria-hidden style={{ position: 'absolute', width: 320, height: 320, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,52,74,0.35), transparent 65%)', filter: 'blur(30px)', top: '50%', left: '50%', transform: 'translate(-50%,-45%)' }} />
       <motion.div
         initial={{ opacity: 0, scale: 0.82, y: 56, rotateX: 10 }}
@@ -105,18 +104,16 @@ function Device() {
           animate={reduce ? {} : { y: [0, -12, 0] }}
           transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
           style={{
-            position: 'relative', width: 'clamp(232px, 64vw, 288px)', aspectRatio: '9 / 18.5',
+            position: 'relative', width: 'clamp(232px, 64vw, 300px)', aspectRatio: '9 / 18.5',
             borderRadius: 40, padding: 10,
             background: 'linear-gradient(160deg,#1c1e25,#0a0a0c)',
             border: '1px solid rgba(255,255,255,0.10)',
             boxShadow: '0 44px 120px rgba(168,52,74,0.28), 0 12px 44px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)',
           }}
         >
-          {/* notch */}
           <div aria-hidden style={{ position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', width: 84, height: 20, borderRadius: 99, background: '#000', zIndex: 3 }} />
           <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 31, overflow: 'hidden', background: '#0B0B0D' }}>
             <PredictionCard />
-            {/* shine sweep */}
             {!reduce && (
               <motion.div
                 aria-hidden
@@ -161,45 +158,62 @@ export default function HowItWorks() {
     <div style={{ position: 'relative', minHeight: '100dvh', overflowX: 'hidden', overflowY: 'auto', background: '#070708', color: 'var(--text-primary)' }}>
       <Aurora />
 
+      <style>{`
+        .lp-hero { display:flex; flex-direction:column; align-items:center; gap:34px; width:100%; max-width:1120px; }
+        .lp-text { text-align:center; }
+        .lp-h1 { font-size:clamp(40px,12vw,82px); }
+        .lp-sub { max-width:520px; margin:20px auto 0; font-size:clamp(15px,4vw,19px); }
+        .lp-cta-row { margin-top:30px; }
+        @media (min-width:920px) {
+          .lp-hero { flex-direction:row; justify-content:space-between; align-items:center; gap:60px; }
+          .lp-text { text-align:left; flex:1; }
+          .lp-sub { margin:22px 0 0; font-size:20px; }
+          .lp-h1 { font-size:clamp(56px,5.6vw,92px); }
+          .lp-device { flex-shrink:0; }
+        }
+      `}</style>
+
       {/* ─── HERO: the unboxing ─────────────────────────────── */}
-      <section ref={heroRef} style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 24px 24px', gap: 30 }}>
-        <motion.div style={{ y: textY, opacity: textOpacity }}>
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease }} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 18 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)' }}>O</span>
-            </div>
-            <span style={{ fontSize: 18, fontWeight: 700 }}><span style={{ color: 'var(--accent)' }}>Odd</span>yessa</span>
+      <section ref={heroRef} style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px 40px' }}>
+        <div className="lp-hero">
+          <motion.div className="lp-text" style={{ y: textY, opacity: textOpacity }}>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease }} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 18 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)' }}>O</span>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 700 }}><span style={{ color: 'var(--accent)' }}>Odd</span>yessa</span>
+            </motion.div>
+            <motion.h1
+              className="lp-h1"
+              initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.05, ease }}
+              style={{ fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 0.95, margin: 0, background: 'linear-gradient(180deg, #fff 30%, #b8889a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
+            >
+              Read the game.
+            </motion.h1>
+            <motion.p className="lp-sub" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15, ease }} style={{ color: 'rgba(255,255,255,0.66)', lineHeight: 1.55 }}>
+              Who’s going to win, and why — worked out for every match before kickoff. Plus the bets where the bookmakers have got it wrong.
+            </motion.p>
+            <motion.div className="lp-cta-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+              <Link to="/" onClick={enter} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '15px 30px', borderRadius: 14, background: 'var(--accent)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 10px 34px rgba(168,52,74,0.42)' }}>
+                Step inside <ArrowRight size={18} />
+              </Link>
+            </motion.div>
           </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.05, ease }}
-            style={{ fontSize: 'clamp(40px, 12vw, 84px)', fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 0.95, margin: 0, background: 'linear-gradient(180deg, #fff 30%, #b8889a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
-          >
-            Read the game.
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15, ease }} style={{ fontSize: 'clamp(15px, 4vw, 19px)', color: 'rgba(255,255,255,0.65)', maxWidth: 520, margin: '20px auto 0', lineHeight: 1.5 }}>
-            AI predictions for every match — who’ll win, <strong style={{ color: '#fff' }}>why</strong>, and where the bookies are wrong.
-          </motion.p>
-        </motion.div>
 
-        <motion.div style={{ y: deviceY, scale: deviceScale }}>
-          <Device />
-        </motion.div>
+          <motion.div className="lp-device" style={{ y: deviceY, scale: deviceScale }}>
+            <Device />
+          </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}>
-          <Link to="/" onClick={enter} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', borderRadius: 14, background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 8px 30px rgba(168,52,74,0.4)' }}>
-            Enter Oddyessa <ArrowRight size={17} />
-          </Link>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.5, y: [0, 8, 0] }} transition={{ delay: 1.2, duration: 2, repeat: Infinity }} style={{ position: 'absolute', bottom: 20 }}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.5, y: [0, 8, 0] }} transition={{ delay: 1.2, duration: 2, repeat: Infinity }} style={{ position: 'absolute', bottom: 18 }}>
           <ChevronDown size={24} style={{ color: 'rgba(255,255,255,0.5)' }} />
         </motion.div>
       </section>
 
       {/* ─── PILLARS ─────────────────────────────────────────── */}
       <section style={{ position: 'relative', zIndex: 1, maxWidth: 1000, margin: '0 auto', padding: 'clamp(40px,10vw,100px) 24px' }}>
-        <motion.h2 {...reveal} style={{ fontSize: 'clamp(26px,7vw,40px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center', marginBottom: 12 }}>What Oddyessa does</motion.h2>
-        <motion.p {...reveal} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', maxWidth: 480, margin: '0 auto 48px', fontSize: 15 }}>Three things, done well.</motion.p>
+        <motion.h2 {...reveal} style={{ fontSize: 'clamp(26px,7vw,40px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center', marginBottom: 12 }}>Football, with the homework done</motion.h2>
+        <motion.p {...reveal} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', maxWidth: 520, margin: '0 auto 48px', fontSize: 15, lineHeight: 1.6 }}>You bring the love of the game. We bring the numbers, the reasons, and a nose for value.</motion.p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%,260px),1fr))', gap: 16 }}>
           {PILLARS.map((p, i) => (
             <motion.div
@@ -221,7 +235,8 @@ export default function HowItWorks() {
 
       {/* ─── HOW TO USE ──────────────────────────────────────── */}
       <section style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', padding: 'clamp(20px,6vw,60px) 24px clamp(40px,10vw,100px)' }}>
-        <motion.h2 {...reveal} style={{ fontSize: 'clamp(26px,7vw,40px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center', marginBottom: 48 }}>How to use it</motion.h2>
+        <motion.h2 {...reveal} style={{ fontSize: 'clamp(26px,7vw,40px)', fontWeight: 800, letterSpacing: '-0.02em', textAlign: 'center', marginBottom: 14 }}>Five taps, start to finish</motion.h2>
+        <motion.p {...reveal} style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', maxWidth: 460, margin: '0 auto 48px', fontSize: 15, lineHeight: 1.6 }}>Here’s exactly how you’ll use it.</motion.p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {STEPS.map((s, i) => (
             <motion.div
@@ -245,13 +260,13 @@ export default function HowItWorks() {
       {/* ─── HONESTY ─────────────────────────────────────────── */}
       <section style={{ position: 'relative', zIndex: 1, padding: 'clamp(40px,10vw,110px) 24px', textAlign: 'center' }}>
         <motion.div {...reveal} style={{ maxWidth: 640, margin: '0 auto' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 18 }}>The honest part</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 18 }}>No hiding</div>
           <div style={{ fontSize: 'clamp(56px, 18vw, 120px)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>
             <BrierStat />
           </div>
-          <h2 style={{ fontSize: 'clamp(22px,5.5vw,34px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2, margin: '18px 0 16px' }}>We publish how often we’re right.</h2>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6 }}>
-            Every prediction is scored against what actually happened — and that track record is public. No hype, no quietly-deleted bad tips. Just the numbers.
+          <h2 style={{ fontSize: 'clamp(22px,5.5vw,34px)', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.2, margin: '18px 0 16px' }}>We tell you how often we’re right.</h2>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.66)', lineHeight: 1.6 }}>
+            Plenty of tipsters shout about their winners and quietly forget the losers. We don’t. Every call we make gets marked against what actually happened — and the score lives right here, in the open. Trust us exactly as much as we earn it.
           </p>
         </motion.div>
       </section>
@@ -259,12 +274,12 @@ export default function HowItWorks() {
       {/* ─── CTA + RESPONSIBLE ───────────────────────────────── */}
       <section style={{ position: 'relative', zIndex: 1, padding: 'clamp(40px,10vw,90px) 24px clamp(60px,14vw,120px)', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <motion.div {...reveal}>
-          <h2 style={{ fontSize: 'clamp(24px,6vw,38px)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 26 }}>Ready to read the game?</h2>
+          <h2 style={{ fontSize: 'clamp(24px,6vw,38px)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 26 }}>Come and read the game.</h2>
           <Link to="/" onClick={enter} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 32px', borderRadius: 14, background: 'var(--accent)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 10px 36px rgba(168,52,74,0.45)' }}>
-            Enter Oddyessa <ArrowRight size={18} />
+            Step inside <ArrowRight size={18} />
           </Link>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 36, maxWidth: 440, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-            Oddyessa is a data &amp; analytics product — we don’t accept bets. Predictions are for information only and are not betting advice. 18+. Please gamble responsibly.
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 36, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+            Oddyessa is for the love of the game and the numbers behind it — we don’t take bets. Everything here is information, not advice. 18+, and please play responsibly.
           </p>
         </motion.div>
       </section>

@@ -23,6 +23,7 @@ const AIInsightsPanel = React.lazy(() => import('./components/AIInsightsPanel.js
 const ParlayBuilderPanel = React.lazy(() => import('./components/ParlayBuilderPanel.jsx').then(m => ({ default: m.ParlayBuilderPanel })));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard.jsx'));
 const HowItWorks = React.lazy(() => import('./pages/HowItWorks.jsx'));
+const LogoOptions = React.lazy(() => import('./pages/LogoOptions.jsx'));
 
 function MainApp() {
   useRealTime();
@@ -333,6 +334,10 @@ export default function App() {
       <Route
         path="/how-it-works"
         element={<React.Suspense fallback={null}><HowItWorks /></React.Suspense>}
+      />
+      <Route
+        path="/logos"
+        element={<React.Suspense fallback={null}><LogoOptions /></React.Suspense>}
       />
       <Route path="*" element={<MainApp />} />
     </Routes>
