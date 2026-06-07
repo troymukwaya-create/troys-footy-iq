@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-const MAX_PARLAY_SELECTIONS = 3;
+const MAX_PARLAY_SELECTIONS = 6;
 
 export const useStore = create(
   persist(

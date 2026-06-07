@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Plus, Minus, TrendingUp, TrendingDown,
-  AlertTriangle, ListChecks, Sparkles, Info,
+  AlertTriangle, ListChecks, Sparkles, Info, Copy, Share2,
 } from 'lucide-react';
 import { useStore } from '../store/useStore.js';
 import { enterStagger, snap } from '../lib/motion.js';
@@ -52,6 +52,7 @@ export function ParlayBuilderPanel() {
   } = useStore();
 
   const [stake, setStake] = useState(10);
+  const [copied, setCopied] = useState(false);
 
   // Compute per-leg derived metrics
   const legs = useMemo(() => parlaySelections.map(sel => {
@@ -101,7 +102,7 @@ export function ParlayBuilderPanel() {
       >
         <header className="flex items-center justify-between px-4 py-3 bg-surface-container-high border-b border-outline-variant/20">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Parlay</span>
+            <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Slip</span>
           </div>
         </header>
         <div className="px-6 py-10 text-center">
@@ -110,7 +111,7 @@ export function ParlayBuilderPanel() {
           </div>
           <div className="text-sm font-semibold text-on-surface mb-1">No selections yet</div>
           <div className="text-xs text-on-surface-variant leading-relaxed max-w-[220px] mx-auto">
-            Tap odds in a match's Markets tab to build a parlay.
+            Tap odds in a match's Markets tab — or load a Suggested Slip.
             We'll show your model's edge vs the bookmaker.
           </div>
         </div>
@@ -123,6 +124,22 @@ export function ParlayBuilderPanel() {
     ? 'unknown'
     : totals.expectedValuePct > 0 ? 'positive' : totals.expectedValuePct > -2 ? 'neutral' : 'negative';
 
+  const slipText = () => {
+    const lines = legs.map((l, i) => `${i + 1}) ${l.matchLabel} — ${l.outcome} @ ${l.odds.toFixed(2)}`);
+    const edge = totals.expectedValuePct != null
+      ? ` · model edge ${totals.expectedValuePct > 0 ? '+' : ''}${totals.expectedValuePct.toFixed(0)}%` : '';
+    const header = `🎟️ Oddyessa Slip · ${legs.length}-leg @ ${totals.combinedOdds.toFixed(2)}${edge}`;
+    const footer = `Stake $${stake} → $${totals.expectedReturn.toFixed(2)} if it wins\nBuilt on oddyessa.com · data only, not betting advice · 18+`;
+    return [header, '', ...lines, '', footer].join('\n');
+  };
+  const handleCopy = async () => {
+    try { await navigator.clipboard.writeText(slipText()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* ignore */ }
+  };
+  const handleShare = async () => {
+    if (navigator.share) { try { await navigator.share({ title: 'My Oddyessa Slip', text: slipText() }); return; } catch { /* fall through to copy */ } }
+    handleCopy();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -132,7 +149,7 @@ export function ParlayBuilderPanel() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Parlay</span>
+          <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Slip</span>
           <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-neon/15 text-neon text-[11px] font-bold">
             {legs.length}
           </span>
@@ -284,8 +301,18 @@ export function ParlayBuilderPanel() {
           </div>
         )}
 
+        {/* Copy / Share — take it to your own bookmaker */}
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <button onClick={handleCopy} className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--accent-muted)', color: 'var(--accent)', border: '1px solid rgba(168,52,74,0.2)' }}>
+            <Copy size={13} /> {copied ? 'Copied!' : 'Copy slip'}
+          </button>
+          <button onClick={handleShare} className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--bg-raised)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}>
+            <Share2 size={13} /> Share
+          </button>
+        </div>
+
         <p className="text-[10px] text-on-surface-variant/60 text-center mt-3 leading-relaxed">
-          Simulation only — for analytical purposes.
+          Data only — we don't take bets. Copy your slip to your own bookmaker. 18+
         </p>
       </div>
     </motion.div>

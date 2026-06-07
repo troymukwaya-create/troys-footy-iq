@@ -15,6 +15,7 @@ import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
 import { IntroCard } from './components/IntroCard.jsx';
+import { SuggestedSlips } from './components/SuggestedSlips.jsx';
 import { usePullToRefresh } from './hooks/usePullToRefresh.js';
 import { RefreshCw } from 'lucide-react';
 
@@ -285,6 +286,7 @@ function MainApp() {
 
         {/* ═══ RIGHT PANEL ═══ */}
         <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto' }}>
+          {!selectedFixture && <SuggestedSlips fixtures={filteredFixtures} />}
           <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
             <AIInsightsPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading || aiLoading} fixtures={filteredFixtures} onSelect={handleSelectFixture} />
           </React.Suspense>
