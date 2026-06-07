@@ -3,6 +3,7 @@ import { CalendarX } from 'lucide-react';
 import BrierScoreHero from './BrierScoreHero.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient, getMatchColor } from '../constants/nationColors.js';
+import { motion } from 'motion/react';
 
 // ─── CONFIDENCE CONFIG ───────────────────────────────────────────────────────
 const CONFIDENCE = {
@@ -83,8 +84,6 @@ function InsightCard({ fixture, onSelect, featured, index }) {
         borderRadius: 16,
         padding: 'clamp(14px, 4vw, 20px) clamp(14px, 4vw, 24px)',
         cursor: 'pointer',
-        animation: 'cardIn 0.5s cubic-bezier(0.16,1,0.3,1) both',
-        animationDelay: `${(index || 0) * 70}ms`,
         transition: 'border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease',
         display: 'flex',
         flexDirection: 'column',
@@ -253,7 +252,19 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
 
   return (
     <div style={{ padding: 'clamp(16px, 4vw, 32px) clamp(12px, 4vw, 24px)', maxWidth: 960, margin: '0 auto' }}>
-      <style>{`@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}`}</style>
+      {/* ── VALUE LINE — instant "what is this" clarity ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{ marginBottom: 24, padding: 'clamp(16px, 5vw, 22px)', borderRadius: 16, border: '1px solid var(--accent-muted)', background: 'linear-gradient(135deg, rgba(168,52,74,0.14), transparent 75%)' }}
+      >
+        <div style={{ fontSize: 'clamp(20px, 6vw, 27px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+          AI predicts every match.
+        </div>
+        <div style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5 }}>
+          Who'll win, <strong style={{ color: 'var(--text-primary)' }}>why</strong>, and where the bookies are wrong — and we <strong style={{ color: 'var(--accent)' }}>publish how often we're right</strong>.
+        </div>
+      </motion.div>
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
@@ -287,13 +298,16 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
           gap: 16,
         }}>
           {topMatches.map((fixture, i) => (
-            <InsightCard
+            <motion.div
               key={fixture.id}
-              fixture={fixture}
-              onSelect={onSelect}
-              featured={i === 0}
-              index={i}
-            />
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
+              whileTap={{ scale: 0.985 }}
+            >
+              <InsightCard fixture={fixture} onSelect={onSelect} featured={i === 0} index={i} />
+            </motion.div>
           ))}
         </div>
       ) : (
