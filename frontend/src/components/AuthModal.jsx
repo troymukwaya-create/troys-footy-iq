@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../hooks/useAuth.js';
+import { GoogleSignIn } from './GoogleSignIn.jsx';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const HAS_GOOGLE = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export function AuthModal() {
   const { authOpen, closeAuth, requestLink } = useAuth();
@@ -47,8 +49,16 @@ export function AuthModal() {
             <>
               <h2 style={{ fontSize: 20, fontWeight: 800, margin: '8px 0 6px' }}>Sign in or create your account</h2>
               <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.55, marginBottom: 18 }}>
-                No password. We’ll email you a magic link — and keep you signed in, so you never have to do this again.
+                No password. Continue with Google, or we’ll email you a magic link — either way we keep you signed in.
               </p>
+              {HAS_GOOGLE && (
+                <>
+                  <GoogleSignIn />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0', color: 'var(--text-muted)', fontSize: 11 }}>
+                    <span style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} /> or <span style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+                  </div>
+                </>
+              )}
               <form onSubmit={submit}>
                 <input
                   type="email" required autoFocus value={email}

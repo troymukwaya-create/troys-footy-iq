@@ -53,6 +53,17 @@ export const useAuth = create((set, get) => ({
     } catch { return false; }
   },
 
+  googleAuth: async (credential) => {
+    try {
+      const res = await call('/auth/google', { method: 'POST', body: { credential } });
+      if (!res.ok) return false;
+      const d = await res.json();
+      try { localStorage.setItem(TKEY, d.token); localStorage.setItem('oddyessa_welcomed', '1'); } catch { /* ignore */ }
+      set({ token: d.token, user: d.user, authOpen: false });
+      return true;
+    } catch { return false; }
+  },
+
   logout: async () => {
     const token = get().token;
     try { await call('/auth/logout', { method: 'POST', token }); } catch { /* ignore */ }

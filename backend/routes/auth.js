@@ -44,6 +44,33 @@ router.post('/verify', async (req, res) => {
   }
 });
 
+// Sign in with Google — verifies the GIS ID token, then issues our session.
+router.post('/google', async (req, res) => {
+  try {
+    const credential = String(req.body?.credential || '');
+    if (!credential) return res.status(400).json({ error: 'missing_credential' });
+    const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (!CLIENT_ID) return res.status(503).json({ error: 'google_not_configured' });
+    if (!isDbAvailable()) return res.status(503).json({ error: 'unavailable' });
+
+    // Google validates signature + expiry server-side and returns the claims.
+    const tk = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!tk.ok) return res.status(401).json({ error: 'invalid_token' });
+    const p = await tk.json();
+    if (p.aud !== CLIENT_ID) return res.status(401).json({ error: 'aud_mismatch' });          // token must be for OUR app
+    if (p.email_verified !== 'true' && p.email_verified !== true) return res.status(401).json({ error: 'email_unverified' });
+    const email = String(p.email || '').trim().toLowerCase();
+    if (!email) return res.status(401).json({ error: 'no_email' });
+
+    const user = await findOrCreateUser(email);
+    const session = await createSession(user.id);
+    return res.json({ token: session.token, user: { email: user.email } });
+  } catch (e) {
+    console.error('[auth/google]', e.message);
+    return res.status(500).json({ error: 'server_error' });
+  }
+});
+
 router.get('/me', requireAuth, (req, res) => res.json({ user: { email: req.user.email } }));
 
 router.post('/logout', requireAuth, async (req, res) => {
