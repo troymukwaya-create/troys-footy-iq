@@ -320,6 +320,14 @@ async function startServer() {
     console.log(`  http://localhost:${port}`);
     console.log('==========================================');
   });
+
+  // Keep the instance warm so the first visitor of the day doesn't hit a cold
+  // start (Render spins idle instances down). Self-ping /health every ~12 min.
+  if (process.env.NODE_ENV === 'production') {
+    const SELF = (process.env.RENDER_EXTERNAL_URL || 'https://troys-footy-iq-api.onrender.com').replace(/\/+$/, '');
+    const keepWarm = setInterval(() => { fetch(`${SELF}/health`).catch(() => {}); }, 12 * 60 * 1000);
+    if (keepWarm.unref) keepWarm.unref();
+  }
 }
 
 startServer().catch(err => {
