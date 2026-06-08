@@ -216,7 +216,7 @@ router.post('/chat', async (req, res) => {
     const away = fixture?.awayTeam?.name || 'Away'
     const markets = context?.markets
 
-    const system = `You are Troy's Footy IQ, a professional football data analyst.
+    const system = `You are Oddyessa, a professional football data analyst.
 You are analysing: ${home} vs ${away} (${fixture?.league?.name || 'Football'}).
 Win probabilities: ${home} ${markets?.result?.homeWin || '?'}% | Draw ${markets?.result?.draw || '?'}% | ${away} ${markets?.result?.awayWin || '?'}%
 Over 2.5 goals: ${markets?.goals?.over25 || '?'}% | BTTS Yes: ${markets?.btts?.yes || '?'}%

@@ -1,0 +1,6 @@
+# Oddyessa — robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://oddyessa.com/sitemap.xml

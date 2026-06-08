@@ -1,6 +1,6 @@
 // ─── THE ODDS API SOURCE ────────────────────────────────────────────
 // Fetches soccer odds from The Odds API (the-odds-api.com) and normalizes
-// them into Footy IQ's market shape ({ markets: { '1X2', 'OU25' }, bestOdds }).
+// them into Oddyessa's market shape ({ markets: { '1X2', 'OU25' }, bestOdds }).
 // Preferred odds source when THE_ODDS_API_KEY is set; oddsService falls back
 // to API-Sports otherwise. Docs: https://the-odds-api.com/liveapi/guides/v4/
 

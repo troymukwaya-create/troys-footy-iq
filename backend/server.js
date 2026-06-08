@@ -9,7 +9,7 @@ dotenv.config({ path: envPath, override: true });
 
 // ─── STARTUP KEY VALIDATION ────────────────────────────────────────
 console.log('==========================================');
-console.log("  Troy's Footy IQ — Backend Startup");
+console.log("  Oddyessa — Backend Startup");
 console.log('==========================================');
 console.log('  ENV loaded from:', envPath);
 
@@ -158,6 +158,16 @@ app.get('/health', (_req, res) => {
     },
     warnings: warnings.length ? warnings : null,
   });
+});
+
+// ─── LIVENESS PROBE (external uptime pinger) ────────────────────────
+// Minimal, dependency-free liveness check for an EXTERNAL monitor
+// (UptimeRobot / cron-job.org). Pinging this every ~5 min keeps the Render
+// free instance from sleeping, so cold visitors don't hit "Failed to load
+// fixtures." The richer diagnostic probe lives at GET /health above.
+// See docs/monday-setup-runbook.md.
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, ts: Date.now() });
 });
 
 // ─── API STATUS ─────────────────────────────────────────────────────
@@ -316,7 +326,7 @@ async function startServer() {
   
   server.listen(port, () => {
     console.log('==========================================');
-    console.log("  Troy's Footy IQ Backend — RUNNING");
+    console.log("  Oddyessa Backend — RUNNING");
     console.log(`  http://localhost:${port}`);
     console.log('==========================================');
   });

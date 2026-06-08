@@ -357,7 +357,7 @@ async function chatAboutMatch(message, context, history) {
     return 'Claude API key not configured. Add ANTHROPIC_API_KEY to backend/.env.';
   }
 
-  const systemPrompt = `You are Troy's Footy IQ, an expert football data analyst.
+  const systemPrompt = `You are Oddyessa, an expert football data analyst.
 You are currently analysing: ${context.fixture.homeTeam.name} vs ${context.fixture.awayTeam.name} (${context.fixture.league.name}).
 
 Key statistics for this match:

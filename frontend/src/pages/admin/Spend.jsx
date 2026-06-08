@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAdmin, Card, Section, Metric, Row, PanelTitle, MiniChart, Empty, grid, fmtUsd, C } from '../../components/admin/ui.jsx';
 
-// The Footy IQ subscription ledger — the World Cup 2026 cost command center.
+// The Oddyessa subscription ledger — the World Cup 2026 cost command center.
 // Code-defined (these are known fixed costs, not telemetry). Live Claude
 // spend below is real, from api_cost_log. Keep this in sync with the vault:
 // "05 - Business Model/04 - Finance & Metrics/Pre-World-Cup Funding Plan".

@@ -31,6 +31,21 @@ api.interceptors.response.use(
 
 // ─── FIXTURES ───────────────────────────────────────────────────────
 
+// Persist the last good fixtures payload to localStorage so a page reload
+// paints instantly from cache (stale-while-revalidate) — even while the
+// backend is still waking from a cold start. Fresh data swaps in silently.
+const FIXTURES_CACHE_KEY = 'oddyessa_fixtures_v1';
+function readFixturesCache() {
+  try {
+    const raw = localStorage.getItem(FIXTURES_CACHE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && Array.isArray(parsed.fixtures) && parsed.fixtures.length ? parsed : undefined;
+  } catch { return undefined; }
+}
+function writeFixturesCache(value) {
+  try { localStorage.setItem(FIXTURES_CACHE_KEY, JSON.stringify(value)); } catch { /* quota / private mode */ }
+}
+
 export function useFixtures() {
   return useQuery({
     queryKey: ['fixtures'],
@@ -38,8 +53,14 @@ export function useFixtures() {
       const { data } = await api.get('/fixtures/all');
       const fixtures = Array.isArray(data) ? data : (data?.fixtures || []);
       const source = data?.source || 'api';
-      return { fixtures, source };
+      const result = { fixtures, source };
+      if (fixtures.length) writeFixturesCache(result); // only cache real, non-empty data
+      return result;
     },
+    // Instant paint on reload from last good data; marked stale (updatedAt 0)
+    // so it still refetches fresh data in the background immediately.
+    initialData: readFixturesCache,
+    initialDataUpdatedAt: 0,
     refetchInterval: 10 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
     retry: 2,

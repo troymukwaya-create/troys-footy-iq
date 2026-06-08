@@ -2,14 +2,16 @@ import axios from 'axios';
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 1000, // Strict 1s timeout for perceived instant load
+  // Long enough to survive a slow mobile network or a backend cold-start,
+  // short enough that a genuinely dead call falls back without a long hang.
+  timeout: 8000,
 });
 
 // Fast fallback interceptor: If request fails or times out, immediately return fallback data
 client.interceptors.response.use(
   response => response,
   async error => {
-    console.warn('[PERF] API Call failed or timed out in <1s. Falling back to static data.');
+    console.warn('[net] API call failed/timed out; returning empty payload so the UI degrades gracefully.', error?.code || '');
     
     // Minimal fallback payload to ensure UI renders instantly
     const fallbackData = {
@@ -19,8 +21,8 @@ client.interceptors.response.use(
       data: [],
       dashboard: { 
         model: { status: 'LIVE DEMO', version: 'v1.0 (Cached)' },
-        performance: { accuracy: '78.5', brierScore: '0.142' },
-        calibration: { status: 'Calibrated', ece: '2.1' },
+        performance: { accuracy: null, brierScore: null },
+        calibration: { status: null, ece: null },
         system: { demoMode: true }
       }
     };

@@ -5,6 +5,11 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { flagGradient } from '../constants/nationColors.js';
 import { EmailCapture } from '../components/EmailCapture.jsx';
 
+// Optional supporter link. Stays hidden until VITE_SUPPORT_URL is set to your
+// Ko-fi/Stripe page (see docs/monday-setup-runbook.md), so users never see a
+// broken placeholder.
+const SUPPORT_URL = import.meta.env.VITE_SUPPORT_URL || '';
+
 const ease = [0.16, 1, 0.3, 1];
 const reveal = {
   initial: { opacity: 0, y: 28 },
@@ -293,6 +298,15 @@ export default function HowItWorks() {
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 36, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
             Oddyessa is for the love of the game and the numbers behind it — we don’t take bets. Everything here is information, not advice. 18+, and please play responsibly.
           </p>
+          {SUPPORT_URL && (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 18, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+              Built independently, by one person, for the love of it.{' '}
+              <a href={SUPPORT_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
+                Support the project
+              </a>{' '}
+              — it keeps the model honest and ad-free.
+            </p>
+          )}
         </motion.div>
       </section>
     </div>

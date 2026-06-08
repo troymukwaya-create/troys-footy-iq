@@ -65,7 +65,7 @@ async function getAllFixturesData() {
   const hasApsKey = api.hasKey();
 
   // ── WORLD CUP SECTION ───────────────────────────────────────────────────────
-  // Footy IQ is a full football site; the World Cup is a SECTION alongside the
+  // Oddyessa is a full football site; the World Cup is a SECTION alongside the
   // club leagues. We always fetch the WC schedule (odds-blended predictions) and
   // merge it into the main multi-league feed below.
   let wcFixtures = [];
