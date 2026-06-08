@@ -70,6 +70,8 @@ import adminRouter from './routes/admin.js';
 import adminDetailRouter from './routes/adminDetail.js';
 import trackRouter from './routes/track.js';
 import subscribeRouter from './routes/subscribe.js';
+import authRouter from './routes/auth.js';
+import slipsRouter from './routes/slips.js';
 import { registerClientCounter } from './services/runtimeStats.js';
 
 const app = express();
@@ -201,6 +203,8 @@ safeMount('/api/monitor', verifyRouter, 'monitor');
 safeMount('/api/demo', demoRouter, 'demo');
 safeMount('/api/track', trackRouter, 'track');   // public first-party analytics ingestion
 safeMount('/api/subscribe', subscribeRouter, 'subscribe'); // email capture / CRM list
+safeMount('/api/auth', authRouter, 'auth');                // passwordless magic-link login
+safeMount('/api/slips', slipsRouter, 'slips');             // saved slips (account)
 safeMount('/api/admin', adminRouter, 'admin');         // CEO command center (token-protected)
 safeMount('/api/admin', adminDetailRouter, 'admin-detail'); // drill-down detail endpoints
 

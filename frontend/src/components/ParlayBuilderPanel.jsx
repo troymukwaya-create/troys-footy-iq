@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Plus, Minus, TrendingUp, TrendingDown,
-  AlertTriangle, ListChecks, Sparkles, Info, Copy, Share2,
+  AlertTriangle, ListChecks, Sparkles, Info, Copy, Share2, Bookmark,
 } from 'lucide-react';
 import { useStore } from '../store/useStore.js';
+import { useAuth } from '../hooks/useAuth.js';
 import { enterStagger, snap } from '../lib/motion.js';
 
 // ─── EDGE THRESHOLDS ────────────────────────────────────────────────
@@ -53,6 +54,8 @@ export function ParlayBuilderPanel() {
 
   const [stake, setStake] = useState(10);
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const { user, openAuth, authedFetch } = useAuth();
 
   // Compute per-leg derived metrics
   const legs = useMemo(() => parlaySelections.map(sel => {
@@ -138,6 +141,20 @@ export function ParlayBuilderPanel() {
   const handleShare = async () => {
     if (navigator.share) { try { await navigator.share({ title: 'My Oddyessa Slip', text: slipText() }); return; } catch { /* fall through to copy */ } }
     handleCopy();
+  };
+  const handleSave = async () => {
+    if (!user) { openAuth(); return; }
+    const payloadLegs = legs.map(l => ({
+      matchId: l.matchId, matchLabel: l.matchLabel, marketType: l.marketType,
+      outcome: l.outcome, odds: l.odds, modelProbability: l.modelProb,
+    }));
+    try {
+      const res = await authedFetch('/slips', {
+        method: 'POST',
+        body: { legs: payloadLegs, combinedOdds: totals.combinedOdds, evPct: totals.expectedValuePct },
+      });
+      if (res.ok) { setSaved(true); setTimeout(() => setSaved(false), 1800); }
+    } catch { /* ignore */ }
   };
 
   return (
@@ -301,8 +318,17 @@ export function ParlayBuilderPanel() {
           </div>
         )}
 
+        {/* Save to account */}
+        <button
+          onClick={handleSave}
+          className="w-full mt-4 py-2.5 rounded-lg text-xs font-semibold inline-flex items-center justify-center gap-1.5"
+          style={{ background: 'var(--bg-raised)', color: saved ? '#22c55e' : 'var(--text-secondary)', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+        >
+          <Bookmark size={13} /> {saved ? 'Saved to your slips ✓' : user ? 'Save to my slips' : 'Sign in to save'}
+        </button>
+
         {/* Copy / Share — take it to your own bookmaker */}
-        <div className="grid grid-cols-2 gap-2 mt-4">
+        <div className="grid grid-cols-2 gap-2 mt-2">
           <button onClick={handleCopy} className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--accent-muted)', color: 'var(--accent)', border: '1px solid rgba(168,52,74,0.2)' }}>
             <Copy size={13} /> {copied ? 'Copied!' : 'Copy slip'}
           </button>

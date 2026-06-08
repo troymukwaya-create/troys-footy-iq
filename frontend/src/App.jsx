@@ -15,6 +15,9 @@ import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
 import { SuggestedSlips } from './components/SuggestedSlips.jsx';
+import { AuthModal } from './components/AuthModal.jsx';
+import { SavedSlipsModal } from './components/SavedSlipsModal.jsx';
+import { useAuth } from './hooks/useAuth.js';
 import { usePullToRefresh } from './hooks/usePullToRefresh.js';
 import { RefreshCw } from 'lucide-react';
 
@@ -24,6 +27,7 @@ const ParlayBuilderPanel = React.lazy(() => import('./components/ParlayBuilderPa
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard.jsx'));
 const HowItWorks = React.lazy(() => import('./pages/HowItWorks.jsx'));
 const LogoOptions = React.lazy(() => import('./pages/LogoOptions.jsx'));
+const AuthVerify = React.lazy(() => import('./pages/AuthVerify.jsx'));
 
 function MainApp() {
   useRealTime();
@@ -33,6 +37,10 @@ function MainApp() {
     activeLeague, setActiveLeague,
     goalFlashes,
   } = useStore();
+
+  // Validate any stored session on load — keeps people signed in across visits.
+  const initAuth = useAuth(s => s.init);
+  useEffect(() => { initAuth(); }, [initAuth]);
 
   useEffect(() => {
     performance.mark('ttfr-start');
@@ -184,6 +192,8 @@ function MainApp() {
   return (
     <div className="flex flex-col app-shell overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
       <GoalFlash flashes={goalFlashes} />
+      <AuthModal />
+      <SavedSlipsModal />
       <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
 
       <div className="flex flex-1 overflow-hidden">
@@ -338,6 +348,10 @@ export default function App() {
       <Route
         path="/logos"
         element={<React.Suspense fallback={null}><LogoOptions /></React.Suspense>}
+      />
+      <Route
+        path="/auth"
+        element={<React.Suspense fallback={null}><AuthVerify /></React.Suspense>}
       />
       <Route path="*" element={<MainApp />} />
     </Routes>

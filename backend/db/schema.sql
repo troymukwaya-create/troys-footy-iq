@@ -481,3 +481,40 @@ CREATE TABLE IF NOT EXISTS subscribers (
 );
 CREATE INDEX IF NOT EXISTS idx_subscribers_status ON subscribers(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_subscribers_visitor ON subscribers(visitor_id);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- ACCOUNTS / AUTH (v11) — passwordless magic-link login + saved slips
+-- ═══════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  last_login_at TIMESTAMPTZ
+);
+-- one-time, short-lived magic-link tokens
+CREATE TABLE IF NOT EXISTS login_tokens (
+  token VARCHAR(80) PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+-- long-lived sessions so people stay signed in across visits
+CREATE TABLE IF NOT EXISTS sessions (
+  token VARCHAR(80) PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS saved_slips (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  label VARCHAR(120),
+  legs JSONB NOT NULL,
+  combined_odds FLOAT,
+  ev_pct FLOAT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_login_tokens_email ON login_tokens(email, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_slips_user ON saved_slips(user_id, created_at DESC);
