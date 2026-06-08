@@ -44,7 +44,7 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
 
       {/* Guide link + account + status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <Link to="/how-it-works" className="hidden sm:block" style={{ fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none', fontWeight: 500 }}>
+        <Link to="/how-it-works" style={{ fontSize: 12, color: 'var(--text-tertiary)', textDecoration: 'none', fontWeight: 500, whiteSpace: 'nowrap' }}>
           How it works
         </Link>
         <AccountButton />

@@ -28,15 +28,25 @@ const STEPS = [
 ];
 
 // ─── Animated aurora glow behind everything ──────────────────────────
-// Static glow (no per-frame blur animation — that froze low-end phones).
+// Living aurora — drifts in the background. Performant because each blob is
+// promoted to its own GPU layer (will-change:transform) and ONLY its transform
+// animates, so the (moderate) blur is rasterised once, not every frame. That's
+// what the earlier freezing version was missing. Calms for reduced-motion.
 function Aurora() {
-  const blob = (background, size, pos) => (
-    <div aria-hidden style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', background, filter: 'blur(55px)', ...pos }} />
+  const reduce = useReducedMotion();
+  const Blob = ({ background, size, pos, anim, dur }) => (
+    <motion.div
+      aria-hidden
+      animate={reduce ? undefined : anim}
+      transition={{ duration: dur, repeat: Infinity, ease: 'easeInOut' }}
+      style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', background, filter: 'blur(50px)', willChange: 'transform', ...pos }}
+    />
   );
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-      {blob('rgba(168,52,74,0.28)', 380, { top: '-10%', left: '-8%' })}
-      {blob('rgba(40,90,180,0.18)', 400, { bottom: '-14%', right: '-10%' })}
+      <Blob background="rgba(168,52,74,0.30)" size={360} pos={{ top: '-8%', left: '-6%' }} dur={20} anim={{ x: [0, 70, 10, 0], y: [0, 40, 80, 0], scale: [1, 1.15, 1.04, 1] }} />
+      <Blob background="rgba(40,90,180,0.22)" size={380} pos={{ bottom: '-12%', right: '-8%' }} dur={26} anim={{ x: [0, -60, -10, 0], y: [0, -36, -70, 0], scale: [1, 1.2, 1.06, 1] }} />
+      <Blob background="rgba(168,52,74,0.16)" size={300} pos={{ top: '42%', left: '55%' }} dur={32} anim={{ x: [0, -44, 40, 0], y: [0, 30, -30, 0], scale: [1, 1.12, 0.96, 1] }} />
     </div>
   );
 }
