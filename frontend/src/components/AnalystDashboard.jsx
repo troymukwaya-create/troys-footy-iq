@@ -221,7 +221,7 @@ function TeamBlock({ team, align }) {
 }
 
 // ─── HOMEPAGE ────────────────────────────────────────────────────────────────
-export function AnalystDashboard({ fixtures = [], onSelect }) {
+export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL' }) {
   // Prioritize: live → CL/EL → upcoming today → any scheduled
   const topMatches = useMemo(() => {
     const scored = (fixtures || [])
@@ -250,31 +250,54 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
     weekday: 'long', day: 'numeric', month: 'long'
   });
 
+  // When a competition/filter is picked (not the default Home), show ALL of its
+  // fixtures in the centre — not just the curated top-5 best bets.
+  const browse = !!activeLeague && activeLeague !== 'ALL';
+  const LEAGUE_NAMES = {
+    WC: 'World Cup 2026', PL: 'Premier League', PD: 'La Liga', BL1: 'Bundesliga',
+    SA: 'Serie A', FL1: 'Ligue 1', CL: 'Champions League', EL: 'Europa League',
+    BSA: 'Brasileirão', ERE: 'Eredivisie', PPL: 'Primeira Liga', ELC: 'Championship',
+    LIVE: 'Live Now', TODAY: "Today's Matches", TOMORROW: "Tomorrow's Matches",
+  };
+  const browseTitle = LEAGUE_NAMES[activeLeague] || activeLeague;
+  const browseMatches = useMemo(() => {
+    if (!browse) return [];
+    return (fixtures || [])
+      .filter(f => f.homeTeam?.name && f.awayTeam?.name && f.date)
+      .slice()
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [fixtures, browse]);
+  const matches = browse ? browseMatches : topMatches;
+
   return (
     <div style={{ padding: 'clamp(16px, 4vw, 32px) clamp(12px, 4vw, 24px)', maxWidth: 960, margin: '0 auto' }}>
-      {/* ── VALUE LINE — instant "what is this" clarity ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        style={{ marginBottom: 24, padding: 'clamp(16px, 5vw, 22px)', borderRadius: 16, border: '1px solid var(--accent-muted)', background: 'linear-gradient(135deg, rgba(168,52,74,0.14), transparent 75%)' }}
-      >
-        <div style={{ fontSize: 'clamp(20px, 6vw, 27px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em' }}>
-          AI predicts every match.
-        </div>
-        <div style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5 }}>
-          Who'll win, <strong style={{ color: 'var(--text-primary)' }}>why</strong>, and where the bookies are wrong — and we <strong style={{ color: 'var(--accent)' }}>publish how often we're right</strong>.
-        </div>
-      </motion.div>
+      {/* ── VALUE LINE — instant "what is this" clarity (Home only) ── */}
+      {!browse && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          style={{ marginBottom: 24, padding: 'clamp(16px, 5vw, 22px)', borderRadius: 16, border: '1px solid var(--accent-muted)', background: 'linear-gradient(135deg, rgba(168,52,74,0.14), transparent 75%)' }}
+        >
+          <div style={{ fontSize: 'clamp(20px, 6vw, 27px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+            AI predicts every match.
+          </div>
+          <div style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5 }}>
+            Who'll win, <strong style={{ color: 'var(--text-primary)' }}>why</strong>, and where the bookies are wrong — and we <strong style={{ color: 'var(--accent)' }}>publish how often we're right</strong>.
+          </div>
+        </motion.div>
+      )}
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <div className="animate-fade-in" style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 4, lineHeight: 1.2 }}>
-              Today's Best Bets
+              {browse ? browseTitle : "Today's Best Bets"}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>
-              {today} · The 5 matches our AI rates highest — confidence + value vs the bookies
+              {browse
+                ? `${matches.length} ${matches.length === 1 ? 'fixture' : 'fixtures'} · our AI prediction on every match`
+                : `${today} · The 5 matches our AI rates highest — confidence + value vs the bookies`}
             </p>
           </div>
           {liveCount > 0 && (
@@ -291,22 +314,22 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
       </div>
 
       {/* ── INSIGHT CARDS ────────────────────────────────────────────── */}
-      {topMatches.length > 0 ? (
+      {matches.length > 0 ? (
         <div className="animate-fade-in" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 380px), 1fr))',
           gap: 16,
         }}>
-          {topMatches.map((fixture, i) => (
+          {matches.map((fixture, i) => (
             <motion.div
               key={fixture.id}
               initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-30px' }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.05, 0.4) }}
               whileTap={{ scale: 0.985 }}
             >
-              <InsightCard fixture={fixture} onSelect={onSelect} featured={i === 0} index={i} />
+              <InsightCard fixture={fixture} onSelect={onSelect} featured={!browse && i === 0} index={i} />
             </motion.div>
           ))}
         </div>
@@ -320,9 +343,9 @@ export function AnalystDashboard({ fixtures = [], onSelect }) {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
             <CalendarX size={36} color="var(--text-tertiary)" strokeWidth={1.5} />
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>No fixtures available</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{browse ? `No ${browseTitle} fixtures right now` : 'No fixtures available'}</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-            Make sure the backend is running and the API keys are configured.
+            {browse ? 'Check back closer to kickoff, or pick another competition.' : 'Make sure the backend is running and the API keys are configured.'}
           </div>
         </div>
       )}

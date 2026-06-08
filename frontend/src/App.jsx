@@ -293,7 +293,7 @@ function MainApp() {
                 <MatchAnalysisPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading} onBack={handleDeselectFixture} />
               </React.Suspense>
             ) : (
-              <AnalystDashboard fixtures={filteredFixtures} onSelect={handleSelectFixture} />
+              <AnalystDashboard fixtures={filteredFixtures} onSelect={handleSelectFixture} activeLeague={activeLeague} />
             )}
           </div>
         </main>
