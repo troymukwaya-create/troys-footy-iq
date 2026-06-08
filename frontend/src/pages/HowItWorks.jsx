@@ -28,21 +28,15 @@ const STEPS = [
 ];
 
 // ─── Animated aurora glow behind everything ──────────────────────────
+// Static glow (no per-frame blur animation — that froze low-end phones).
 function Aurora() {
-  const reduce = useReducedMotion();
-  const blob = (background, size, pos, dur, delay) => (
-    <motion.div
-      aria-hidden
-      animate={reduce ? {} : { x: [0, 40, -20, 0], y: [0, -30, 24, 0] }}
-      transition={{ duration: dur, repeat: Infinity, ease: 'easeInOut', delay }}
-      style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', background, filter: 'blur(90px)', ...pos }}
-    />
+  const blob = (background, size, pos) => (
+    <div aria-hidden style={{ position: 'absolute', width: size, height: size, borderRadius: '50%', background, filter: 'blur(55px)', ...pos }} />
   );
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-      {blob('rgba(168,52,74,0.32)', 440, { top: '-8%', left: '-6%' }, 18, 0)}
-      {blob('rgba(40,90,180,0.22)', 480, { bottom: '-14%', right: '-8%' }, 22, 2)}
-      {blob('rgba(168,52,74,0.16)', 380, { top: '38%', left: '52%' }, 20, 1)}
+      {blob('rgba(168,52,74,0.28)', 380, { top: '-10%', left: '-8%' })}
+      {blob('rgba(40,90,180,0.18)', 400, { bottom: '-14%', right: '-10%' })}
     </div>
   );
 }
@@ -224,7 +218,7 @@ export default function HowItWorks() {
               whileHover={{ y: -6 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.55, delay: i * 0.1, ease }}
-              style={{ padding: 24, borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
+              style={{ padding: 24, borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
               <div style={{ fontSize: 36, marginBottom: 14 }}>{p.emoji}</div>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{p.title}</h3>
