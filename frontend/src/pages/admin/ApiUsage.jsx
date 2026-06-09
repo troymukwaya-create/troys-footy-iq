@@ -17,14 +17,37 @@ export default function ApiUsage() {
     (bySourceDaily[r.source] = bySourceDaily[r.source] || []).push(r);
   }
 
+  const conn = health.connections || {};
+
   return (
     <>
+      <Section title="API connections">
+        <div style={grid('220px')}>
+          {['apisports', 'footballdata', 'anthropic'].map((k) => {
+            const c = conn[k];
+            const wired = c?.wired;
+            return (
+              <Card key={k}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: wired ? C.ok : C.bad, boxShadow: wired ? `0 0 6px ${C.ok}` : 'none', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{c?.label || LABEL[k] || k}</div>
+                    <div style={{ fontSize: 11, color: wired ? C.ok : C.bad }}>{wired ? 'Wired & active' : 'Not configured'}</div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </Section>
+
       <Section title="External API usage today">
         <div style={grid('260px')}>
           <Card>
-            <PanelTitle>Quota — API-Football (free tier)</PanelTitle>
-            <Bar label="Calls today" used={health.usage?.apisports?.today || 0} limit={100} />
-            <div style={{ fontSize: 10, color: C.t3 }}>Free tier resets daily. Upgrade before the World Cup.</div>
+            <PanelTitle>API-Football (paid plan)</PanelTitle>
+            <Row left="Calls today" right={health.usage?.apisports?.today || 0} />
+            <Row left="This month" right={health.usage?.apisports?.month || 0} />
+            <div style={{ fontSize: 10, color: C.t3 }}>Paid plan active — live fixtures, stats, injuries, predictions.</div>
           </Card>
           <Card>
             <PanelTitle>football-data.org rate</PanelTitle>

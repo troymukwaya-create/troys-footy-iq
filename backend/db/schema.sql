@@ -529,3 +529,28 @@ CREATE TABLE IF NOT EXISTS national_elo (
   played       INT NOT NULL DEFAULT 0,    -- results learned from
   last_updated TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ─── PLATFORM UPDATES (CEO dashboard changelog) ────────────────────
+-- Dated record of every shipped/incoming platform update, shown in the CEO
+-- command center. The CEO can "approve" an update to feature it.
+CREATE TABLE IF NOT EXISTS platform_updates (
+  id          SERIAL PRIMARY KEY,
+  slug        VARCHAR(80) UNIQUE,
+  title       VARCHAR(200) NOT NULL,
+  body        TEXT,
+  category    VARCHAR(40) DEFAULT 'engine',
+  status      VARCHAR(20) DEFAULT 'shipped',   -- 'shipped' | 'approved'
+  shipped_at  TIMESTAMPTZ DEFAULT NOW(),
+  approved_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_platform_updates_time ON platform_updates(shipped_at DESC);
+
+-- Seed the updates shipped so far (idempotent).
+INSERT INTO platform_updates (slug, title, body, category, status, shipped_at) VALUES
+ ('honest-confidence','Honest, evidence-based confidence','Match confidence now reflects real evidence — recent form and strength gap — instead of an artificial cap. Clear mismatches read high, toss-ups read low.','engine','shipped','2026-06-09 11:20:00+00'),
+ ('recent-form','Predictions use recent qualifiers & friendlies','The World Cup model now blends each team''s last 10 results into the prediction, so teams are judged on the games leading up to the tournament.','engine','shipped','2026-06-09 12:00:00+00'),
+ ('elo-learning','Engine learns from results','National-team strength now updates automatically from match results every 6 hours.','engine','shipped','2026-06-09 11:45:00+00'),
+ ('rest-injuries','Fatigue & injuries factored in','Fixture congestion (rest days) and player injuries now adjust expected goals.','engine','shipped','2026-06-09 12:30:00+00'),
+ ('player-importance','Injuries weighted by player importance','Losing a star scorer now hurts far more than losing a backup, using real player goal/minutes data.','engine','shipped','2026-06-09 12:55:00+00'),
+ ('apf-second-opinion','API-Football second opinion','Predictions now blend API-Football''s own win-probability model as an independent second opinion.','engine','shipped','2026-06-09 13:10:00+00')
+ON CONFLICT (slug) DO NOTHING;

@@ -328,6 +328,21 @@ router.get('/:matchId', async (req, res) => {
         const odds = await oddsService.getFixtureOdds(matchId, { home: match.homeTeam?.name, away: match.awayTeam?.name });
         marketProbs = impliedProbs(odds);
       } catch (e) { /* odds are optional */ }
+      // Second opinion: blend API-Football's own win-probability model (a sharp,
+      // independent signal — especially valuable for low-data international football).
+      try {
+        const apf = await api.getPredictions(matchId).catch(() => null);
+        const p = apf?.percent;
+        const s = p ? (p.home || 0) + (p.draw || 0) + (p.away || 0) : 0;
+        if (s > 0) {
+          const apfProbs = { home: p.home / s * 100, draw: p.draw / s * 100, away: p.away / s * 100 };
+          marketProbs = marketProbs
+            ? { home: 0.6 * marketProbs.home + 0.4 * apfProbs.home,
+                draw: 0.6 * marketProbs.draw + 0.4 * apfProbs.draw,
+                away: 0.6 * marketProbs.away + 0.4 * apfProbs.away }
+            : apfProbs;
+        }
+      } catch (e) { /* api-football prediction is optional */ }
       // Pass each team's REAL recent form (qualifiers/friendlies), rest days
       // (fixture congestion) and injuries so the model judges matchday-1 teams
       // from the games + conditions that led up to the tournament.

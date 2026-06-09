@@ -199,14 +199,28 @@ const QUOTA_LIMITS = {
   anthropic:    { monthlyBudget: 100, label: 'Anthropic (Claude)' },
 };
 
+// Is an API key actually configured (wired) in this environment?
+function keyWired(key, minLen = 10) {
+  return !!(key && key.length >= minLen
+    && !key.startsWith('YOUR') && !key.startsWith('PASTE') && !key.includes('placeholder'));
+}
+
 router.get('/api-health', async (_req, res) => {
   try {
     const [usage, cost] = await Promise.all([getApiUsageStats(), getApiCostStats()]);
+    // Explicit wired/configured status so the CEO can see each paid API is live,
+    // independent of how many calls have been logged yet.
+    const connections = {
+      apisports:    { wired: keyWired(process.env.APISPORTS_KEY),         label: 'API-Football (api-sports.io)' },
+      footballdata: { wired: keyWired(process.env.FOOTBALLDATA_TOKEN),    label: 'football-data.org' },
+      anthropic:    { wired: keyWired(process.env.ANTHROPIC_API_KEY, 20), label: 'Anthropic (Claude)' },
+    };
     res.json({ error: false, data: {
       usage: usage.sources || {},
       cost,
       limits: QUOTA_LIMITS,
       liveHealth: getApiHealth(),
+      connections,
     }});
   } catch (err) {
     res.status(500).json({ error: true, message: err.message });

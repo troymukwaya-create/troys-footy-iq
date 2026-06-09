@@ -1,7 +1,45 @@
 // ─── OVERVIEW — clickable KPI tiles → drill-down pages ──────────────
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAdmin, Metric, Card, Section, Row, PanelTitle, Empty, grid, fmtUsd, flag, uptime, timeAgo, C } from '../../components/admin/ui.jsx';
+import adminApi from '../../api/adminClient.js';
+
+// Dated platform updates (engine/feature ships + incoming), with CEO approval.
+function PlatformUpdates() {
+  const qc = useQueryClient();
+  const updates = useAdmin('/updates', 60000).data || [];
+  const setApprove = async (id, approve) => {
+    try { await adminApi.post(`/updates/${id}/approve`, { approve }); qc.invalidateQueries({ queryKey: ['adm'] }); } catch { /* ignore */ }
+  };
+  if (!updates.length) return null;
+  return (
+    <Section title="Platform updates — what's shipped & incoming">
+      <Card>
+        {updates.map((u, i) => (
+          <div key={u.id} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < updates.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>
+                {u.title}
+                {u.status === 'approved' && <span style={{ marginLeft: 8, fontSize: 9, color: C.ok, background: 'var(--success-muted)', padding: '1px 6px', borderRadius: 8 }}>APPROVED</span>}
+              </div>
+              {u.body && <div style={{ fontSize: 12, color: C.t2, marginTop: 2 }}>{u.body}</div>}
+              <div style={{ fontSize: 10, color: C.t3, fontFamily: C.mono, marginTop: 3 }}>
+                {new Date(u.shipped_at).toLocaleString()} · {u.category}
+              </div>
+            </div>
+            <button onClick={() => setApprove(u.id, u.status !== 'approved')}
+              style={{ alignSelf: 'center', flexShrink: 0, fontSize: 11, fontWeight: 600,
+                color: u.status === 'approved' ? C.t3 : C.accent, background: 'none',
+                border: `1px solid ${u.status === 'approved' ? C.border : C.accent}`, borderRadius: 7, padding: '4px 10px', cursor: 'pointer' }}>
+              {u.status === 'approved' ? 'Unapprove' : 'Approve'}
+            </button>
+          </div>
+        ))}
+      </Card>
+    </Section>
+  );
+}
 
 export default function Overview() {
   const navigate = useNavigate();
@@ -15,6 +53,8 @@ export default function Overview() {
   return (
     <>
       <StatusBanner o={o} s={s} a={a} alertCount={o.openAlerts} />
+
+      <PlatformUpdates />
 
       <Section title="At a glance — tap any tile for in-depth stats">
         <div style={grid('150px')}>

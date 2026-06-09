@@ -229,4 +229,43 @@ router.get('/api-usage/detail', async (_req, res) => {
   } catch (err) { res.status(500).json({ error: true, message: err.message }); }
 });
 
+// ─── GET /updates — platform changelog for the CEO dashboard ────────
+router.get('/updates', async (_req, res) => {
+  try {
+    if (!isDbAvailable()) return res.json({ error: false, data: [] });
+    const r = await safeQuery(`
+      SELECT id, slug, title, body, category, status, shipped_at, approved_at
+      FROM platform_updates ORDER BY shipped_at DESC LIMIT 50`);
+    res.json({ error: false, data: r?.rows || [] });
+  } catch (err) { res.status(500).json({ error: true, message: err.message }); }
+});
+
+// ─── POST /updates/:id/approve — CEO approves an update to feature it ─
+router.post('/updates/:id/approve', async (req, res) => {
+  try {
+    if (!isDbAvailable()) return res.json({ error: false, ok: false });
+    const approve = req.body?.approve !== false;
+    await safeQuery(
+      `UPDATE platform_updates SET status = $2, approved_at = $3 WHERE id = $1`,
+      [parseInt(req.params.id), approve ? 'approved' : 'shipped', approve ? new Date() : null]
+    );
+    res.json({ error: false, ok: true });
+  } catch (err) { res.status(500).json({ error: true, message: err.message }); }
+});
+
+// ─── POST /updates — log a new (incoming) update ────────────────────
+router.post('/updates', async (req, res) => {
+  try {
+    if (!isDbAvailable()) return res.json({ error: false, ok: false });
+    const { title, body, category = 'engine', slug } = req.body || {};
+    if (!title) return res.status(400).json({ error: true, message: 'title required' });
+    await safeQuery(
+      `INSERT INTO platform_updates (slug, title, body, category) VALUES ($1,$2,$3,$4)
+       ON CONFLICT (slug) DO NOTHING`,
+      [slug || null, title, body || null, category]
+    );
+    res.json({ error: false, ok: true });
+  } catch (err) { res.status(500).json({ error: true, message: err.message }); }
+});
+
 export default router;
