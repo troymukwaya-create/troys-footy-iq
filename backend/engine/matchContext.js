@@ -42,11 +42,19 @@ export function availabilityFactor(avail = {}) {
  * @param {Object} ctx - { homeRestDays, awayRestDays, homeAvailability, awayAvailability }
  * @returns {{lambdaHome:number, lambdaAway:number, factors:Object, applied:boolean}}
  */
+// Availability may be a precomputed importance-weighted multiplier (number,
+// from playerImpact) OR a {keyPlayersOut,totalOut} object (legacy count-based).
+function resolveAvailability(a) {
+  if (a == null) return 1.0;
+  if (typeof a === 'number') return clamp(a, 0.5, 1);
+  return availabilityFactor(a);
+}
+
 export function adjustExpectedGoals(lambdaHome, lambdaAway, ctx = {}) {
   const homeRest = restDayFactor(ctx.homeRestDays);
   const awayRest = restDayFactor(ctx.awayRestDays);
-  const homeAvail = availabilityFactor(ctx.homeAvailability);
-  const awayAvail = availabilityFactor(ctx.awayAvailability);
+  const homeAvail = resolveAvailability(ctx.homeAvailability);
+  const awayAvail = resolveAvailability(ctx.awayAvailability);
 
   const homeFactor = homeRest * homeAvail;
   const awayFactor = awayRest * awayAvail;

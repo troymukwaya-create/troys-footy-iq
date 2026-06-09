@@ -320,6 +320,7 @@ async function getTeamInjuries(teamId) {
   const raw = await safeFetch('injuries', { team: numId, season: SEASON });
   return (raw || [])
     .map(i => ({
+      id: i.player?.id || null,
       name: i.player?.name,
       reason: i.player?.reason || i.reason || i.type || 'Unavailable',
       type: i.player?.type || i.type || null,

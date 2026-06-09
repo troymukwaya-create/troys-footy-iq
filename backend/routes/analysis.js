@@ -28,9 +28,30 @@ import {
 import { computeExpectedGoals, generateProbabilities, analyzeMatch, computeConfidence, computeDataSufficiency } from '../services/probabilityEngine.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import { getModelMaturity } from '../engine/trustSignals.js';
+import { playerImportance, availabilityFromInjuredPlayers, keyPlayersOut } from '../engine/playerImpact.js';
 
 // Map the route's data-quality vocabulary to the confidence model's.
 const DQ_MAP = { COMPLETE: 'FULL', PARTIAL: 'PARTIAL', INSUFFICIENT: 'FALLBACK' };
+
+// Enrich each injured player with a real importance score (goals + minutes),
+// so losing a star scorer hurts far more than losing a backup. Bounded calls.
+async function enrichInjuriesWithImportance(injuries) {
+  if (!Array.isArray(injuries) || !injuries.length) return [];
+  const subset = injuries.slice(0, 6); // cap API calls per team
+  return Promise.all(subset.map(async (p) => {
+    if (!p.id) return { ...p, importance: 0.4 };
+    try {
+      const s = await api.getPlayerStats(p.id);
+      const arr = s?.statistics || [];
+      const goals = arr.reduce((sum, x) => sum + (x?.goals?.total || 0), 0);
+      const minutes = arr.reduce((sum, x) => sum + (x?.games?.minutes || 0), 0);
+      const appearances = arr.reduce((sum, x) => sum + (x?.games?.appearences || 0), 0);
+      return { ...p, goals, importance: playerImportance({ goals, minutes, appearances }) };
+    } catch {
+      return { ...p, importance: 0.4 }; // unknown → moderate
+    }
+  }));
+}
 
 // ─── Build real-world match context (rest days + injuries) for the engine ──
 function daysBetween(from, to) {
@@ -38,22 +59,17 @@ function daysBetween(from, to) {
   const d = (new Date(to) - new Date(from)) / 86400000;
   return Number.isFinite(d) ? Math.max(0, Math.round(d)) : null;
 }
-function availabilityFromInjuries(injuries) {
-  const count = Array.isArray(injuries) ? injuries.length : 0;
-  if (!count) return undefined;
-  // National-team injury lists are short and notable; treat ~half as key.
-  return { keyPlayersOut: Math.round(count * 0.5), totalOut: count };
-}
 function buildMatchContext(match, homeForm, awayForm) {
   const ctx = { homeForm, awayForm };
   const hRest = daysBetween(homeForm?.recentResults?.[0]?.date, match.date);
   const aRest = daysBetween(awayForm?.recentResults?.[0]?.date, match.date);
   if (hRest != null) ctx.homeRestDays = hRest;
   if (aRest != null) ctx.awayRestDays = aRest;
-  const hAvail = availabilityFromInjuries(homeForm?.injuries);
-  const aAvail = availabilityFromInjuries(awayForm?.injuries);
-  if (hAvail) ctx.homeAvailability = hAvail;
-  if (aAvail) ctx.awayAvailability = aAvail;
+  // Importance-weighted availability multiplier — < 1 only when key players are out.
+  const hMult = availabilityFromInjuredPlayers(homeForm?.injuries);
+  const aMult = availabilityFromInjuredPlayers(awayForm?.injuries);
+  if (hMult < 1) ctx.homeAvailability = hMult;
+  if (aMult < 1) ctx.awayAvailability = aMult;
   return ctx;
 }
 import oddsService from '../services/oddsService.js';
@@ -263,8 +279,12 @@ router.get('/:matchId', async (req, res) => {
             api.getTeamInjuries(match.homeTeam.id).catch(() => []),
             api.getTeamInjuries(match.awayTeam.id).catch(() => []),
           ]);
-          if (hForm) { homeForm = { ...hForm, squad: hSquad, injuries: hInj }; if (!rawHomeStats) rawHomeStats = hForm; }
-          if (aForm) { awayForm = { ...aForm, squad: aSquad, injuries: aInj }; if (!rawAwayStats) rawAwayStats = aForm; }
+          const [hInjImp, aInjImp] = await Promise.all([
+            enrichInjuriesWithImportance(hInj),
+            enrichInjuriesWithImportance(aInj),
+          ]);
+          if (hForm) { homeForm = { ...hForm, squad: hSquad, injuries: hInjImp }; if (!rawHomeStats) rawHomeStats = hForm; }
+          if (aForm) { awayForm = { ...aForm, squad: aSquad, injuries: aInjImp }; if (!rawAwayStats) rawAwayStats = aForm; }
         }
 
         h2hData = normalizeH2H(h2hRaw, match.homeTeam.name, match.awayTeam.name);

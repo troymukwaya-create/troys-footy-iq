@@ -17,6 +17,7 @@ import {
 import { updateElo, expectedScore, goalMultiplier } from '../engine/eloLearning.js';
 import { restDayFactor, availabilityFactor, adjustExpectedGoals } from '../engine/matchContext.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
+import { playerImportance, availabilityFromInjuredPlayers } from '../engine/playerImpact.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -145,6 +146,25 @@ check('fatigue + injuries lower the favourite win prob', tiredHurt.probabilities
 check('context factors are surfaced for transparency', !!tiredHurt.contextFactors && tiredHurt.contextFactors.homeFactor < 1,
   `homeFactor ${tiredHurt.contextFactors?.homeFactor}`);
 check('healthy/rested team has no penalty', healthy.contextFactors === null || healthy.contextFactors === undefined);
+
+// ── 11. Injuries weighted by PLAYER IMPORTANCE (player stats matter) ──
+console.log('\nPlayer-importance-weighted injuries:');
+const star = playerImportance({ goals: 10, minutes: 1200, appearances: 14 });
+const sub = playerImportance({ goals: 0, minutes: 90, appearances: 2 });
+check('a star scorer scores high importance', star > 0.8, `star ${star}`);
+check('a fringe player scores low importance', sub < 0.2, `sub ${sub}`);
+const starOut = availabilityFromInjuredPlayers([{ importance: star }]);
+const subOut = availabilityFromInjuredPlayers([{ importance: sub }]);
+check('losing a star hurts more than losing a sub', starOut < subOut, `star→${starOut} vs sub→${subOut}`);
+check('no injuries → full availability', availabilityFromInjuredPlayers([]) === 1.0);
+check('availability floors at 0.65', availabilityFromInjuredPlayers(Array(20).fill({ importance: 1 })) >= 0.65);
+// integration: a top team missing its star is weaker than at full strength
+const fullStrength = predictWorldCupMatch('France', 'Haiti', null, { homeForm: inForm, awayForm: poorForm });
+const starInjured = predictWorldCupMatch('France', 'Haiti', null, {
+  homeForm: inForm, awayForm: poorForm, homeAvailability: availabilityFromInjuredPlayers([{ importance: star }]),
+});
+check('France missing its star scores fewer / lower win prob', starInjured.probabilities.home <= fullStrength.probabilities.home,
+  `${fullStrength.probabilities.home}% → ${starInjured.probabilities.home}%`);
 
 // ── Sample report (eyeball) — evidence-based, with rich recent data ──
 console.log('\n─── SAMPLE PREDICTIONS (rich recent data, dataSufficiency = 1) ───');
