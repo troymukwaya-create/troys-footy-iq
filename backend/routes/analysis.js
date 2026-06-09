@@ -25,8 +25,12 @@ import {
   validateStatsForPrediction,
   errorResponse,
 } from '../services/normalizer.js';
-import { computeExpectedGoals, generateProbabilities, analyzeMatch } from '../services/probabilityEngine.js';
+import { computeExpectedGoals, generateProbabilities, analyzeMatch, computeConfidence } from '../services/probabilityEngine.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
+import { getModelMaturity } from '../engine/trustSignals.js';
+
+// Map the route's data-quality vocabulary to the confidence model's.
+const DQ_MAP = { COMPLETE: 'FULL', PARTIAL: 'PARTIAL', INSUFFICIENT: 'FALLBACK' };
 import oddsService from '../services/oddsService.js';
 import { impliedProbs } from '../services/sources/theOddsApi.js';
 import { buildReasoning } from '../engine/reasoning.js';
@@ -294,6 +298,26 @@ router.get('/:matchId', async (req, res) => {
       console.warn(`[analysis] ${matchId} SKIPPING prediction: ${validation.issues.join(', ')}`);
     }
 
+    // ─── HONEST CONFIDENCE (maturity-capped) ────────────────────
+    // Replace any market-derived confidence with a 1X2-spread measure, then
+    // clamp by model maturity so an unproven model can't claim high certainty.
+    // This is the fix for "why is everything 70-80% confidence?".
+    if (probabilityResult?.probabilities) {
+      try {
+        const maturity = await getModelMaturity();
+        probabilityResult.confidence = computeConfidence(probabilityResult.probabilities, {
+          maxConfidence: maturity.maxConfidence,
+          dataQuality: DQ_MAP[dataQuality] || 'FALLBACK',
+        });
+        probabilityResult.predictedOutcome = probabilityResult.confidence.predictedOutcome;
+        probabilityResult.maturity = {
+          phase: maturity.phase, label: maturity.label, maxConfidence: maturity.maxConfidence,
+        };
+      } catch (e) {
+        console.error('[analysis] confidence enforcement failed:', e.message);
+      }
+    }
+
     // Attach plain-language "why this prediction" reasoning + deep intelligence.
     if (probabilityResult) {
       probabilityResult.reasoning = buildReasoning({
@@ -356,6 +380,12 @@ router.get('/:matchId', async (req, res) => {
     // Build fallback AI if Claude unavailable / not yet cached
     if (!aiAnalysis && probabilityResult) {
       aiAnalysis = buildFallbackAI(match, probabilityResult, homeStats, awayStats, h2hData || emptyH2H());
+    }
+
+    // Never let the AI verdict report higher confidence than the model is
+    // entitled to (maturity cap). Keeps the headline number honest everywhere.
+    if (aiAnalysis && probabilityResult?.maturity && typeof aiAnalysis.confidence === 'number') {
+      aiAnalysis.confidence = Math.min(aiAnalysis.confidence, probabilityResult.maturity.maxConfidence);
     }
 
     // ─── STEP 6: Assemble response ──────────────────────────────
@@ -517,14 +547,16 @@ ${away}: Form ${awayStats?.form || 'N/A'} | Avg scored ${awayStats?.avgGoalsFor 
 H2H (last ${h2h.totalMatches} meetings):
 ${home} wins: ${h2h.homeWins} | Draws: ${h2h.draws} | ${away} wins: ${h2h.awayWins} | Avg goals: ${h2h.avgGoals}
 
-Explain concisely and be data-driven. Return ONLY this JSON (no markdown fences):
+Explain concisely and be data-driven. Be honest about uncertainty: when the
+win/draw/win spread is close, confidence MUST be low. Do NOT inflate confidence
+with near-certain markets like "Over 0.5 Goals". Return ONLY this JSON (no markdown fences):
 {
   "verdict": "2-3 sentence overall match verdict",
   "keyInsights": ["insight 1", "insight 2", "insight 3", "insight 4"],
   "tacticalExpectation": "1-2 sentences on how the match will likely play out",
   "riskReasoning": "1 sentence explaining why this risk level is appropriate",
-  "recommendedPick": "Best value market name",
-  "confidence": 75,
+  "recommendedPick": "Best value market name (avoid trivial near-certain markets)",
+  "confidence": "INTEGER 0-100 = your honest certainty in the PREDICTED RESULT from the 1X2 spread; an even match must be under 40",
   "matchPattern": "e.g. 'Low-scoring tactical battle' or 'High-tempo attacking match'"
 }`;
 
@@ -564,7 +596,9 @@ function buildFallbackAI(match, prob, homeStats, awayStats, h2h) {
       : 'A tighter, more controlled match with fewer goals is expected.',
     riskReasoning: `Max outcome probability is ${Math.max(prob.probabilities.home, prob.probabilities.draw, prob.probabilities.away)}%, classifying this as ${prob.riskLevel} risk.`,
     recommendedPick: bestPick?.name || 'N/A',
-    confidence: Math.round(bestPick?.probability || 50),
+    // Honest match confidence from the 1X2 spread — NOT the probability of a
+    // near-certain throwaway market (that was the "everything is 80%" bug).
+    confidence: Math.round(prob.confidence?.score ?? 35),
     matchPattern: prob.expectedGoals.total > 3.0 ? 'High-tempo attacking match'
       : prob.expectedGoals.total > 2.2 ? 'Balanced contest with goals expected'
       : 'Low-scoring tactical battle',
