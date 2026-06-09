@@ -15,6 +15,8 @@ import { generateModelInsights } from '../services/modelAnalyst.js';
 import { invalidateWeightCache } from '../engine/ensemble.js';
 import { runHealthCheck, checkForModelDegradation, createAlert } from '../services/monitor.js';
 import { invalidateMaturityCache } from '../engine/trustSignals.js';
+import { loadPersistedElo } from '../engine/nationalTeams.js';
+import { runEloLearningCycle } from './eloIngest.js';
 
 let previousScores = {};
 
@@ -154,8 +156,18 @@ async function updateAndBroadcastStandings(leagueCode) {
 
 export default function initJobs() {
   setInterval(livePollLoop, 60000);
-  livePollLoop();  
+  livePollLoop();
   setInterval(liveStatsPollLoop, 60000);
+
+  // ─── NATIONAL-TEAM ELO LEARNING (World Cup) ───────────────────────
+  // Load any learned ratings, then refresh from recent international results
+  // shortly after boot and every 6 hours (qualifiers/friendlies this week).
+  loadPersistedElo().then(() => runEloLearningCycle()).catch(() => {});
+  cron.schedule('15 */6 * * *', async () => {
+    console.log('[SCHEDULER] Running national-team Elo learning cycle...');
+    try { await runEloLearningCycle(); }
+    catch (err) { console.error('[SCHEDULER] Elo learning failed:', err.message); }
+  });
 
   // Daily at 08:00 — Update standings for all leagues
   cron.schedule('0 8 * * *', async () => {

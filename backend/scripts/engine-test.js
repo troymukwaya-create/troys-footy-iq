@@ -14,6 +14,8 @@ import {
   computeExpectedGoals, generateProbabilities,
   computeConfidence, selectHeadlinePick,
 } from '../services/probabilityEngine.js';
+import { updateElo, expectedScore, goalMultiplier } from '../engine/eloLearning.js';
+import { restDayFactor, availabilityFactor, adjustExpectedGoals } from '../engine/matchContext.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -89,6 +91,30 @@ const probs = generateProbabilities(lambdaHome, lambdaAway).probabilities;
 const sum = probs.home + probs.draw + probs.away;
 check('1X2 sums to ~100', Math.abs(sum - 100) < 1.0, `sum=${sum}`);
 check('stronger team favoured', probs.home > probs.away, `${probs.home} vs ${probs.away}`);
+
+// ── 7. Elo learning (learns from current games) ──
+console.log('\nElo learning:');
+const eqDraw = updateElo(1800, 1800, 1, 1, { neutral: true });
+check('draw between equals barely moves Elo', Math.abs(eqDraw.delta) <= 1, `delta ${eqDraw.delta}`);
+const upset = updateElo(1600, 2000, 2, 0, { neutral: true, importance: 'qualifier' });
+check('underdog win raises underdog, zero-sum', upset.homeElo > 1600 && upset.awayElo < 2000 && (upset.homeElo - 1600) === (2000 - upset.awayElo),
+  `home +${upset.homeElo - 1600}, away ${upset.awayElo - 2000}`);
+const bigWin = updateElo(1800, 1800, 4, 0, { neutral: true });
+const smallWin = updateElo(1800, 1800, 1, 0, { neutral: true });
+check('bigger margin → bigger Elo shift', bigWin.delta > smallWin.delta, `${bigWin.delta} > ${smallWin.delta}`);
+check('home-field raises expected score', expectedScore(1800, 1800, false) > expectedScore(1800, 1800, true));
+check('goal multiplier monotonic', goalMultiplier(1) < goalMultiplier(2) && goalMultiplier(2) < goalMultiplier(4));
+
+// ── 8. Fatigue / availability criteria ──
+console.log('\nFatigue & availability criteria:');
+check('no context → no change', restDayFactor(null) === 1.0 && availabilityFactor({}) === 1.0);
+check('back-to-back match → fatigue penalty', restDayFactor(2) < 1.0, `factor ${restDayFactor(2)}`);
+check('normal rest → no penalty', restDayFactor(6) === 1.0);
+check('key player out → lower output', availabilityFactor({ keyPlayersOut: 2 }) < availabilityFactor({ keyPlayersOut: 0 }));
+const adj = adjustExpectedGoals(1.6, 1.4, { homeRestDays: 2, homeAvailability: { keyPlayersOut: 1 } });
+check('tired/depleted home team scores less', adj.lambdaHome < 1.6 && adj.lambdaAway === 1.4, `λh ${adj.lambdaHome}`);
+const noAdj = adjustExpectedGoals(1.6, 1.4, {});
+check('empty context is a true no-op', noAdj.lambdaHome === 1.6 && noAdj.lambdaAway === 1.4 && noAdj.applied === false);
 
 // ── Sample report (eyeball) ──
 console.log('\n─── SAMPLE PREDICTIONS (cold-start cap = 45) ───');
