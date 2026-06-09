@@ -133,6 +133,19 @@ check('in-form favourite gets a higher win prob', withForm.probabilities.home >=
   `${noForm.probabilities.home}% → ${withForm.probabilities.home}%`);
 check('WC 1X2 still sums to 100', Math.abs(withForm.probabilities.home + withForm.probabilities.draw + withForm.probabilities.away - 100) < 1.0);
 
+// ── 10. Injuries + rest (fixture congestion) move the prediction ──
+console.log('\nInjuries & rest days affect the prediction:');
+const healthy = predictWorldCupMatch('Brazil', 'Haiti', null, { homeForm: inForm, awayForm: poorForm });
+const tiredHurt = predictWorldCupMatch('Brazil', 'Haiti', null, {
+  homeForm: inForm, awayForm: poorForm,
+  homeRestDays: 2, homeAvailability: { keyPlayersOut: 3, totalOut: 5 },
+});
+check('fatigue + injuries lower the favourite win prob', tiredHurt.probabilities.home < healthy.probabilities.home,
+  `${healthy.probabilities.home}% → ${tiredHurt.probabilities.home}%`);
+check('context factors are surfaced for transparency', !!tiredHurt.contextFactors && tiredHurt.contextFactors.homeFactor < 1,
+  `homeFactor ${tiredHurt.contextFactors?.homeFactor}`);
+check('healthy/rested team has no penalty', healthy.contextFactors === null || healthy.contextFactors === undefined);
+
 // ── Sample report (eyeball) — evidence-based, with rich recent data ──
 console.log('\n─── SAMPLE PREDICTIONS (rich recent data, dataSufficiency = 1) ───');
 const samples = [

@@ -312,6 +312,21 @@ async function getInjuries(leagueCode) {
   return safeFetch('injuries', { league: leagueId, season: SEASON });
 }
 
+// Current injuries / unavailable players for a single team (national or club).
+// Used by the availability criterion — missing key players lower expected goals.
+async function getTeamInjuries(teamId) {
+  if (!hasKey()) return [];
+  const numId = String(teamId).replace('apf_t_', '');
+  const raw = await safeFetch('injuries', { team: numId, season: SEASON });
+  return (raw || [])
+    .map(i => ({
+      name: i.player?.name,
+      reason: i.player?.reason || i.reason || i.type || 'Unavailable',
+      type: i.player?.type || i.type || null,
+    }))
+    .filter(p => p.name);
+}
+
 export default {
   hasKey, LEAGUES, SEASON, normalise,
   getLiveFixtures, getTodayFixtures, getUpcomingFixtures,
@@ -319,5 +334,5 @@ export default {
   getFixtureStats, getFixtureEvents, getFixtureLineups, getFixturePlayers,
   getStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures,
   getTopScorers, getPlayerStats,
-  getH2H, getPredictions, getInjuries,
+  getH2H, getPredictions, getInjuries, getTeamInjuries,
 };

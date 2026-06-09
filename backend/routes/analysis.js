@@ -31,6 +31,31 @@ import { getModelMaturity } from '../engine/trustSignals.js';
 
 // Map the route's data-quality vocabulary to the confidence model's.
 const DQ_MAP = { COMPLETE: 'FULL', PARTIAL: 'PARTIAL', INSUFFICIENT: 'FALLBACK' };
+
+// ─── Build real-world match context (rest days + injuries) for the engine ──
+function daysBetween(from, to) {
+  if (!from || !to) return null;
+  const d = (new Date(to) - new Date(from)) / 86400000;
+  return Number.isFinite(d) ? Math.max(0, Math.round(d)) : null;
+}
+function availabilityFromInjuries(injuries) {
+  const count = Array.isArray(injuries) ? injuries.length : 0;
+  if (!count) return undefined;
+  // National-team injury lists are short and notable; treat ~half as key.
+  return { keyPlayersOut: Math.round(count * 0.5), totalOut: count };
+}
+function buildMatchContext(match, homeForm, awayForm) {
+  const ctx = { homeForm, awayForm };
+  const hRest = daysBetween(homeForm?.recentResults?.[0]?.date, match.date);
+  const aRest = daysBetween(awayForm?.recentResults?.[0]?.date, match.date);
+  if (hRest != null) ctx.homeRestDays = hRest;
+  if (aRest != null) ctx.awayRestDays = aRest;
+  const hAvail = availabilityFromInjuries(homeForm?.injuries);
+  const aAvail = availabilityFromInjuries(awayForm?.injuries);
+  if (hAvail) ctx.homeAvailability = hAvail;
+  if (aAvail) ctx.awayAvailability = aAvail;
+  return ctx;
+}
 import oddsService from '../services/oddsService.js';
 import { impliedProbs } from '../services/sources/theOddsApi.js';
 import { buildReasoning } from '../engine/reasoning.js';
@@ -230,14 +255,16 @@ router.get('/:matchId', async (req, res) => {
         // from the team's last internationals (across all competitions) + squad,
         // so the Stats tab + reasoning are rich, not empty.
         if (match.league?.code === 'WC') {
-          const [hForm, aForm, hSquad, aSquad] = await Promise.all([
+          const [hForm, aForm, hSquad, aSquad, hInj, aInj] = await Promise.all([
             api.getTeamRecentForm(match.homeTeam.id).catch(() => null),
             api.getTeamRecentForm(match.awayTeam.id).catch(() => null),
             api.getSquadList(match.homeTeam.id).catch(() => []),
             api.getSquadList(match.awayTeam.id).catch(() => []),
+            api.getTeamInjuries(match.homeTeam.id).catch(() => []),
+            api.getTeamInjuries(match.awayTeam.id).catch(() => []),
           ]);
-          if (hForm) { homeForm = { ...hForm, squad: hSquad }; if (!rawHomeStats) rawHomeStats = hForm; }
-          if (aForm) { awayForm = { ...aForm, squad: aSquad }; if (!rawAwayStats) rawAwayStats = aForm; }
+          if (hForm) { homeForm = { ...hForm, squad: hSquad, injuries: hInj }; if (!rawHomeStats) rawHomeStats = hForm; }
+          if (aForm) { awayForm = { ...aForm, squad: aSquad, injuries: aInj }; if (!rawAwayStats) rawAwayStats = aForm; }
         }
 
         h2hData = normalizeH2H(h2hRaw, match.homeTeam.name, match.awayTeam.name);
@@ -281,12 +308,12 @@ router.get('/:matchId', async (req, res) => {
         const odds = await oddsService.getFixtureOdds(matchId, { home: match.homeTeam?.name, away: match.awayTeam?.name });
         marketProbs = impliedProbs(odds);
       } catch (e) { /* odds are optional */ }
-      // Pass each team's REAL recent form (qualifiers/friendlies) so the model
-      // judges matchday-1 teams from the games that led up to the tournament.
-      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, {
-        homeForm, awayForm,
-      });
-      console.log(`[analysis] ${matchId} World Cup prediction (market-blended: ${!!marketProbs}, recentForm: ${probabilityResult?.nationalStrength?.recentMatchesUsed || 0} games)`);
+      // Pass each team's REAL recent form (qualifiers/friendlies), rest days
+      // (fixture congestion) and injuries so the model judges matchday-1 teams
+      // from the games + conditions that led up to the tournament.
+      const wcCtx = buildMatchContext(match, homeForm, awayForm);
+      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, wcCtx);
+      console.log(`[analysis] ${matchId} WC prediction (market:${!!marketProbs}, form:${probabilityResult?.nationalStrength?.recentMatchesUsed || 0}g, rest:${wcCtx.homeRestDays ?? '?'}/${wcCtx.awayRestDays ?? '?'}d, inj:${homeForm?.injuries?.length || 0}/${awayForm?.injuries?.length || 0})`);
     } else if (validation.valid) {
       // Full data available — run predictions
       dataQuality = 'COMPLETE';
