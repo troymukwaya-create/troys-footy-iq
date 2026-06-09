@@ -206,12 +206,9 @@ async function getAIAnalysis(context) {
   const home = c.fixture.homeTeam.name;
   const away = c.fixture.awayTeam.name;
 
-  // Maturity cap → keep confidence honest for an unproven model.
-  const maturity = await getModelMaturity().catch(() => ({ maxConfidence: 100 }));
-  c.maturityCap = maturity.maxConfidence;
-  if (c.matchConfidence) {
-    c.matchConfidence.score = Math.min(c.matchConfidence.score, maturity.maxConfidence);
-  }
+  // The evidence-based match confidence (from the 1X2 spread) is the number we
+  // stand behind. The AI verdict may lower it but not exceed it.
+  c.modelConfidence = Math.round(c.matchConfidence?.score ?? 30);
 
   const prompt = `You are a professional football data analyst. Analyse this upcoming match and provide a detailed structured report.
 
@@ -285,11 +282,11 @@ Return ONLY this JSON (no markdown, no explanation outside JSON):
 
     const text = res.data.content[0].text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(text);
-    // Clamp the AI's self-reported confidence to the model's maturity cap.
+    // The AI may be less confident than the model but never more.
     if (typeof parsed.confidence === 'number') {
-      parsed.confidence = Math.min(parsed.confidence, c.maturityCap ?? 100);
+      parsed.confidence = Math.min(parsed.confidence, c.modelConfidence ?? 90);
     } else {
-      parsed.confidence = Math.round(c.matchConfidence?.score ?? 30);
+      parsed.confidence = c.modelConfidence ?? 30;
     }
     return parsed;
   } catch (err) {

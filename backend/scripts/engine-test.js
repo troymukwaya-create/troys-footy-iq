@@ -12,10 +12,11 @@
 
 import {
   computeExpectedGoals, generateProbabilities,
-  computeConfidence, selectHeadlinePick,
+  computeConfidence, computeDataSufficiency, selectHeadlinePick,
 } from '../services/probabilityEngine.js';
 import { updateElo, expectedScore, goalMultiplier } from '../engine/eloLearning.js';
 import { restDayFactor, availabilityFactor, adjustExpectedGoals } from '../engine/matchContext.js';
+import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -53,12 +54,16 @@ check('confidence rises with favourite strength', bigC.score > modC.score && mod
   `${evenC.score} < ${modC.score} < ${bigC.score}`);
 check('moderate favourite is not "high"', modC.score < 50, `got ${modC.score}`);
 
-// ── 3. Maturity cap is enforced ──
-console.log('\nMaturity cap:');
-const capped = computeConfidence({ home: 90, draw: 7, away: 3 }, { maxConfidence: 45 });
-check('blowout capped at cold-start 45', capped.score <= 45 && capped.capped === true, `got ${capped.score}`);
-const uncapped = computeConfidence({ home: 90, draw: 7, away: 3 }, { maxConfidence: 100 });
-check('cap lifts when mature', uncapped.score > 45, `got ${uncapped.score}`);
+// ── 3. Evidence-based confidence (data sufficiency, NOT an artificial cap) ──
+console.log('\nEvidence-based confidence:');
+const richMismatch = computeConfidence({ home: 82, draw: 12, away: 6 }, { dataSufficiency: 1 });
+check('clear mismatch + rich recent data → HIGH', richMismatch.score >= 60 && richMismatch.tier === 'HIGH', `got ${richMismatch.score}`);
+const thinMismatch = computeConfidence({ home: 82, draw: 12, away: 6 }, { dataSufficiency: 0 });
+check('same mismatch but thin data → discounted', thinMismatch.score < richMismatch.score, `${thinMismatch.score} < ${richMismatch.score}`);
+const tossFull = computeConfidence({ home: 39, draw: 33, away: 28 }, { dataSufficiency: 1 });
+check('toss-up stays LOW even with full data', tossFull.tier === 'LOW', `got ${tossFull.score}`);
+check('never claims near-certainty (≤90)', computeConfidence({ home: 97, draw: 2, away: 1 }, { dataSufficiency: 1 }).score <= 90);
+check('data sufficiency ramps 0→1', computeDataSufficiency(0, 0) === 0 && computeDataSufficiency(10, 10) === 1 && computeDataSufficiency(4, 12) === 0.5);
 
 // ── 4. Headline pick is never a near-certain throwaway ──
 console.log('\nHeadline pick:');
@@ -116,8 +121,20 @@ check('tired/depleted home team scores less', adj.lambdaHome < 1.6 && adj.lambda
 const noAdj = adjustExpectedGoals(1.6, 1.4, {});
 check('empty context is a true no-op', noAdj.lambdaHome === 1.6 && noAdj.lambdaAway === 1.4 && noAdj.applied === false);
 
-// ── Sample report (eyeball) ──
-console.log('\n─── SAMPLE PREDICTIONS (cold-start cap = 45) ───');
+// ── 9. World Cup judges teams from recent form ──
+console.log('\nWorld Cup form blending (judge matchday-1 teams from recent games):');
+const inForm = { played: 10, avgGoalsFor: 3.0, avgGoalsAgainst: 0.4 };
+const poorForm = { played: 10, avgGoalsFor: 0.7, avgGoalsAgainst: 2.6 };
+const noForm = predictWorldCupMatch('Brazil', 'Haiti', null);
+const withForm = predictWorldCupMatch('Brazil', 'Haiti', null, { homeForm: inForm, awayForm: poorForm });
+check('recent form is actually used', withForm.nationalStrength.recentMatchesUsed === 10 && withForm.nationalStrength.formWeight > 0,
+  `used ${withForm.nationalStrength.recentMatchesUsed}, w ${withForm.nationalStrength.formWeight}`);
+check('in-form favourite gets a higher win prob', withForm.probabilities.home >= noForm.probabilities.home,
+  `${noForm.probabilities.home}% → ${withForm.probabilities.home}%`);
+check('WC 1X2 still sums to 100', Math.abs(withForm.probabilities.home + withForm.probabilities.draw + withForm.probabilities.away - 100) < 1.0);
+
+// ── Sample report (eyeball) — evidence-based, with rich recent data ──
+console.log('\n─── SAMPLE PREDICTIONS (rich recent data, dataSufficiency = 1) ───');
 const samples = [
   ['Even derby', { home: 35, draw: 33, away: 32 }],
   ['Slight home edge', { home: 48, draw: 28, away: 24 }],
@@ -125,7 +142,7 @@ const samples = [
   ['Mismatch', { home: 82, draw: 12, away: 6 }],
 ];
 for (const [label, p] of samples) {
-  const c = computeConfidence(p, { maxConfidence: 45 });
+  const c = computeConfidence(p, { dataSufficiency: 1 });
   console.log(`  ${label.padEnd(18)} → ${c.predictedOutcome.padEnd(5)} | confidence ${String(c.score).padStart(4)}% (${c.tier})`);
 }
 

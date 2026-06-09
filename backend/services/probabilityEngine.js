@@ -26,16 +26,37 @@ const DATA_QUALITY_FACTOR = { FULL: 1.0, PARTIAL: 0.8, MINIMAL: 0.65, FALLBACK: 
  * @param {{home:number,draw:number,away:number}} probabilities - percentages
  * @param {{maxConfidence?:number,dataQuality?:string}} opts
  */
+// How much real evidence backs a prediction: how many recent matches we have
+// for BOTH teams (qualifiers/friendlies count). 0 → none, 1 → plenty (>= target).
+export function computeDataSufficiency(homeMatches = 0, awayMatches = 0, target = 8) {
+  const m = Math.min(Number(homeMatches) || 0, Number(awayMatches) || 0);
+  return Math.max(0, Math.min(1, m / target));
+}
+
+/**
+ * Evidence-based match confidence.
+ *
+ * confidence = certainty(1X2 spread) × dataQuality × evidence(dataSufficiency),
+ * where evidence ramps from 0.55 (no recent data) to 1.0 (rich recent form).
+ * NO artificial maturity cap — a clear mismatch backed by 10 qualifiers reads
+ * HIGH; a genuine toss-up reads LOW; thin data is discounted. Honest, not flat.
+ *
+ * @param {{home,draw,away}} probabilities - percentages
+ * @param {{dataQuality?:string, dataSufficiency?:number, ceiling?:number}} opts
+ */
 export function computeConfidence(probabilities, opts = {}) {
-  const { maxConfidence = 100, dataQuality = 'FULL' } = opts;
+  const { dataQuality = 'FULL', dataSufficiency = 1, ceiling = 90 } = opts;
   const maxP = Math.max(probabilities.home, probabilities.draw, probabilities.away) / 100;
 
-  // Certainty: 0 when the favourite is at the uniform prior, 1 when certain.
+  // Certainty: 0 at the uniform prior (coin-flip), 1 when one outcome is certain.
   const certainty = Math.max(0, (maxP - UNIFORM_1X2) / (1 - UNIFORM_1X2));
-  let base = certainty * 100;
-  base *= (DATA_QUALITY_FACTOR[dataQuality] ?? 0.5);
+  const ds = Math.max(0, Math.min(1, dataSufficiency));
+  const evidence = 0.55 + 0.45 * ds;            // thin data discounts, never zero
+  const dq = DATA_QUALITY_FACTOR[dataQuality] ?? 0.6;
 
-  const score = Math.min(base, maxConfidence);
+  let score = certainty * 100 * dq * evidence;
+  score = Math.min(score, ceiling);             // never claim near-certainty
+
   const predictedOutcome =
     probabilities.home >= probabilities.draw && probabilities.home >= probabilities.away ? 'HOME'
     : probabilities.away >= probabilities.draw ? 'AWAY' : 'DRAW';
@@ -45,9 +66,9 @@ export function computeConfidence(probabilities, opts = {}) {
     tier: score >= 60 ? 'HIGH' : score >= 35 ? 'MEDIUM' : 'LOW',
     predictedOutcome,
     outcomeProbability: parseFloat((maxP * 100).toFixed(1)),
-    basis: '1X2-spread',
-    capped: base > maxConfidence,
-    maturityCap: maxConfidence,
+    basis: '1X2-spread+form',
+    dataSufficiency: parseFloat(ds.toFixed(2)),
+    evidenceWeight: parseFloat(evidence.toFixed(2)),
   };
 }
 
@@ -368,5 +389,6 @@ export default {
   generateProbabilities,
   analyzeMatch,
   computeConfidence,
+  computeDataSufficiency,
   selectHeadlinePick,
 };

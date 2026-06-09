@@ -25,7 +25,7 @@ import {
   validateStatsForPrediction,
   errorResponse,
 } from '../services/normalizer.js';
-import { computeExpectedGoals, generateProbabilities, analyzeMatch, computeConfidence } from '../services/probabilityEngine.js';
+import { computeExpectedGoals, generateProbabilities, analyzeMatch, computeConfidence, computeDataSufficiency } from '../services/probabilityEngine.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import { getModelMaturity } from '../engine/trustSignals.js';
 
@@ -281,8 +281,12 @@ router.get('/:matchId', async (req, res) => {
         const odds = await oddsService.getFixtureOdds(matchId, { home: match.homeTeam?.name, away: match.awayTeam?.name });
         marketProbs = impliedProbs(odds);
       } catch (e) { /* odds are optional */ }
-      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs);
-      console.log(`[analysis] ${matchId} World Cup prediction (market-blended: ${!!marketProbs})`);
+      // Pass each team's REAL recent form (qualifiers/friendlies) so the model
+      // judges matchday-1 teams from the games that led up to the tournament.
+      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, {
+        homeForm, awayForm,
+      });
+      console.log(`[analysis] ${matchId} World Cup prediction (market-blended: ${!!marketProbs}, recentForm: ${probabilityResult?.nationalStrength?.recentMatchesUsed || 0} games)`);
     } else if (validation.valid) {
       // Full data available — run predictions
       dataQuality = 'COMPLETE';
@@ -305,14 +309,19 @@ router.get('/:matchId', async (req, res) => {
     if (probabilityResult?.probabilities) {
       try {
         const maturity = await getModelMaturity();
+        // Evidence = how many recent matches we actually have for both teams
+        // (qualifiers/friendlies). Rich data → confidence can be high; thin → cautious.
+        const homeMatches = homeForm?.played ?? homeStats?.played ?? 0;
+        const awayMatches = awayForm?.played ?? awayStats?.played ?? 0;
+        const ds = computeDataSufficiency(homeMatches, awayMatches);
         probabilityResult.confidence = computeConfidence(probabilityResult.probabilities, {
-          maxConfidence: maturity.maxConfidence,
           dataQuality: DQ_MAP[dataQuality] || 'FALLBACK',
+          dataSufficiency: ds,
         });
         probabilityResult.predictedOutcome = probabilityResult.confidence.predictedOutcome;
-        probabilityResult.maturity = {
-          phase: maturity.phase, label: maturity.label, maxConfidence: maturity.maxConfidence,
-        };
+        // Maturity is now a transparency LABEL — it no longer suppresses confidence.
+        probabilityResult.maturity = { phase: maturity.phase, label: maturity.label };
+        probabilityResult.evidence = { homeMatches, awayMatches, dataSufficiency: ds };
       } catch (e) {
         console.error('[analysis] confidence enforcement failed:', e.message);
       }
@@ -382,10 +391,11 @@ router.get('/:matchId', async (req, res) => {
       aiAnalysis = buildFallbackAI(match, probabilityResult, homeStats, awayStats, h2hData || emptyH2H());
     }
 
-    // Never let the AI verdict report higher confidence than the model is
-    // entitled to (maturity cap). Keeps the headline number honest everywhere.
-    if (aiAnalysis && probabilityResult?.maturity && typeof aiAnalysis.confidence === 'number') {
-      aiAnalysis.confidence = Math.min(aiAnalysis.confidence, probabilityResult.maturity.maxConfidence);
+    // The AI verdict can be LESS confident than the model (e.g. it flags a key
+    // injury) but never MORE — the model's evidence-based number is the one we
+    // stand behind. Keeps the headline number honest everywhere.
+    if (aiAnalysis && probabilityResult?.confidence && typeof aiAnalysis.confidence === 'number') {
+      aiAnalysis.confidence = Math.min(aiAnalysis.confidence, Math.round(probabilityResult.confidence.score));
     }
 
     // ─── STEP 6: Assemble response ──────────────────────────────

@@ -106,8 +106,24 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
   const homeAdv = isHost(homeName) ? HOST_ELO_BOOST : 0;   // neutral unless host nation
   const dr = (homeElo + homeAdv) - awayElo;
 
-  const baseLh = clamp(WC_AVG_GOALS * Math.exp(dr / GOAL_SCALE), 0.25, 4.5);
-  const baseLa = clamp(WC_AVG_GOALS * Math.exp(-dr / GOAL_SCALE), 0.25, 4.5);
+  let baseLh = clamp(WC_AVG_GOALS * Math.exp(dr / GOAL_SCALE), 0.25, 4.5);
+  let baseLa = clamp(WC_AVG_GOALS * Math.exp(-dr / GOAL_SCALE), 0.25, 4.5);
+
+  // Blend in REAL recent form (qualifiers/friendlies from the paid API): a
+  // team's recent attack vs the opponent's recent defence. Weight grows with
+  // how many recent matches we have (up to 50% at 8+ games each side). This is
+  // how matchday-1 teams are judged from the games that led up to the tournament.
+  const hf = ctx.homeForm, af = ctx.awayForm;
+  let formWeight = 0, matchesUsed = 0;
+  if (hf?.played && af?.played && hf.avgGoalsFor != null && af.avgGoalsFor != null) {
+    matchesUsed = Math.min(hf.played, af.played);
+    const formLh = (Number(hf.avgGoalsFor) + Number(af.avgGoalsAgainst)) / 2;
+    const formLa = (Number(af.avgGoalsFor) + Number(hf.avgGoalsAgainst)) / 2;
+    formWeight = Math.min(0.5, matchesUsed / 16);
+    baseLh = clamp((1 - formWeight) * baseLh + formWeight * formLh, 0.25, 4.5);
+    baseLa = clamp((1 - formWeight) * baseLa + formWeight * formLa, 0.25, 4.5);
+  }
+
   // Fatigue / availability adjustments (no-op unless ctx supplies real data).
   const adj = adjustExpectedGoals(baseLh, baseLa, ctx);
   const lambdaHome = adj.lambdaHome;
@@ -153,6 +169,8 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
       lambdaHome: round(lambdaHome),
       lambdaAway: round(lambdaAway),
       learned: ELO_OVERRIDES.has(norm(homeName)) || ELO_OVERRIDES.has(norm(awayName)),
+      recentMatchesUsed: matchesUsed,
+      formWeight: round(formWeight),
     },
     contextFactors: adj.applied ? adj.factors : null,
   };
