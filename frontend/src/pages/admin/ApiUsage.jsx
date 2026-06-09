@@ -3,7 +3,7 @@ import React from 'react';
 import { useAdmin, Card, Section, Bar, Row, PanelTitle, MiniChart, Empty, grid, timeAgo, C } from '../../components/admin/ui.jsx';
 
 const LIMITS = { apisports: 100, footballdata: null, anthropic: null };
-const LABEL = { apisports: 'API-Football', footballdata: 'football-data.org', anthropic: 'Anthropic (Claude)' };
+const LABEL = { apisports: 'API-Football (Pro)', theodds: 'The Odds API', footballdata: 'football-data.org', anthropic: 'Anthropic (Claude)' };
 
 export default function ApiUsage() {
   const d = useAdmin('/api-usage/detail', 60000).data || {};
@@ -21,20 +21,29 @@ export default function ApiUsage() {
 
   return (
     <>
-      <Section title="API connections">
-        <div style={grid('220px')}>
-          {['apisports', 'footballdata', 'anthropic'].map((k) => {
-            const c = conn[k];
-            const wired = c?.wired;
+      <Section title="API connections — paid plans & live activity">
+        <div style={grid('240px')}>
+          {['apisports', 'theodds', 'footballdata', 'anthropic'].map((k) => {
+            const c = conn[k] || {};
+            const status = c.status || (c.wired ? 'CONNECTED' : 'NOT_CONFIGURED');
+            const color = status === 'ACTIVE' ? C.ok : status === 'CONNECTED' ? C.warn : C.bad;
+            const label = status === 'ACTIVE' ? 'Active — pulling live data'
+              : status === 'CONNECTED' ? 'Connected (no calls yet)' : 'Not configured';
             return (
               <Card key={k}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: wired ? C.ok : C.bad, boxShadow: wired ? `0 0 6px ${C.ok}` : 'none', flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{c?.label || LABEL[k] || k}</div>
-                    <div style={{ fontSize: 11, color: wired ? C.ok : C.bad }}>{wired ? 'Wired & active' : 'Not configured'}</div>
+                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: color, boxShadow: status === 'ACTIVE' ? `0 0 6px ${color}` : 'none', flexShrink: 0 }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{c.label || LABEL[k] || k}</div>
+                    <div style={{ fontSize: 11, color }}>{label}{c.plan ? ` · ${c.plan}` : ''}</div>
                   </div>
                 </div>
+                {c.wired && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, fontSize: 11, color: C.t3, fontFamily: C.mono }}>
+                    <span>{c.callsToday || 0} calls today</span>
+                    <span>{c.lastCall ? `last ${timeAgo(c.lastCall)}` : '—'}</span>
+                  </div>
+                )}
               </Card>
             );
           })}

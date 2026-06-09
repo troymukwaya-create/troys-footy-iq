@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { recordApiCall } from './monitor.js';
 
 export const client = axios.create({
   baseURL: 'https://api.football-data.org/v4/',
@@ -8,8 +9,15 @@ export const client = axios.create({
 // Inject token dynamically at request time (avoids dotenv ES-module race)
 client.interceptors.request.use(config => {
   config.headers['X-Auth-Token'] = process.env.FOOTBALLDATA_TOKEN || '';
+  config.metadata = { start: Date.now() };
   return config;
 });
+
+// Record every call for the CEO dashboard usage panel.
+client.interceptors.response.use(
+  (res) => { recordApiCall('footballdata', true, Date.now() - (res.config?.metadata?.start || Date.now())); return res; },
+  (err) => { recordApiCall('footballdata', false, Date.now() - (err.config?.metadata?.start || Date.now())); return Promise.reject(err); }
+);
 
 // Delay helper to avoid hitting 10 req/min rate limit
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));

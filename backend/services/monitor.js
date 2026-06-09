@@ -20,6 +20,7 @@ const THRESHOLDS = {
 const apiHealth = {
   footballdata: { calls: 0, failures: 0, lastResponseTime: 0, lastCallAt: null },
   apisports: { calls: 0, failures: 0, lastResponseTime: 0, lastCallAt: null },
+  theodds: { calls: 0, failures: 0, lastResponseTime: 0, lastCallAt: null },
 };
 
 /**

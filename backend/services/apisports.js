@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
+import { recordApiCall } from './monitor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,10 +72,13 @@ function isTracked(f) {
 
 // Core fetch with error handling
 async function safeFetch(endpoint, params) {
+  const t0 = Date.now();
   try {
     const r = await call(endpoint, params);
+    recordApiCall('apisports', true, Date.now() - t0, endpoint);
     return r.data.response || [];
   } catch (err) {
+    recordApiCall('apisports', false, Date.now() - t0, endpoint);
     const s = err.response?.status;
     const m = err.response?.data?.message || err.message;
     console.error('[apisports]', endpoint, s, m);

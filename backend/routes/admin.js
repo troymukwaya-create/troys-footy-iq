@@ -208,12 +208,26 @@ function keyWired(key, minLen = 10) {
 router.get('/api-health', async (_req, res) => {
   try {
     const [usage, cost] = await Promise.all([getApiUsageStats(), getApiCostStats()]);
-    // Explicit wired/configured status so the CEO can see each paid API is live,
-    // independent of how many calls have been logged yet.
+    // Per-API connection status WITH real activity evidence (calls today, last
+    // call) so the CEO can see each paid API is not just wired but ACTIVE.
+    const sources = usage.sources || {};
+    const now = Date.now();
+    const conn = (wired, label, plan, usageKey, todayOverride) => {
+      const u = sources[usageKey] || {};
+      const callsToday = todayOverride != null ? todayOverride : (u.today || 0);
+      const lastCall = u.lastCall || null;
+      const recent = lastCall && (now - new Date(lastCall).getTime()) < 7 * 86400000;
+      const active = !!(wired && (callsToday > 0 || recent));
+      return {
+        wired, label, plan, callsToday, callsMonth: u.month || 0, lastCall,
+        active, status: !wired ? 'NOT_CONFIGURED' : active ? 'ACTIVE' : 'CONNECTED',
+      };
+    };
     const connections = {
-      apisports:    { wired: keyWired(process.env.APISPORTS_KEY),         label: 'API-Football (api-sports.io)' },
-      footballdata: { wired: keyWired(process.env.FOOTBALLDATA_TOKEN),    label: 'football-data.org' },
-      anthropic:    { wired: keyWired(process.env.ANTHROPIC_API_KEY, 20), label: 'Anthropic (Claude)' },
+      apisports:    conn(keyWired(process.env.APISPORTS_KEY),         'API-Football (Pro)',  'Paid',          'apisports'),
+      theodds:      conn(keyWired(process.env.THE_ODDS_API_KEY),      'The Odds API (20k)',  'Paid',          'theodds'),
+      footballdata: conn(keyWired(process.env.FOOTBALLDATA_TOKEN),    'football-data.org',   'Free tier',     'footballdata'),
+      anthropic:    conn(keyWired(process.env.ANTHROPIC_API_KEY, 20), 'Anthropic (Claude)',  'Pay-as-you-go', 'anthropic', cost?.callsToday),
     };
     res.json({ error: false, data: {
       usage: usage.sources || {},
