@@ -9,6 +9,9 @@
 // strength is what matters; values are refined as tournament results arrive.
 
 import { generateProbabilities } from './poissonCore.js';
+import { updateElo } from './eloLearning.js';
+import { adjustExpectedGoals } from './matchContext.js';
+import { safeQuery, isDbAvailable } from '../db/index.js';
 
 // World Football Elo snapshot (eloratings.net, ~2026) — all 48 qualified
 // nations + a few likely qualifiers. Anchored to real Elo where available,
@@ -40,14 +43,55 @@ const norm = (s) => String(s || '').toLowerCase()
 const STRENGTH_NORM = {};
 for (const [k, v] of Object.entries(STRENGTH)) STRENGTH_NORM[norm(k)] = v;
 
+// Learned Elo overrides — populated from the national_elo table as qualifier /
+// friendly results arrive. A team that's been winning this week outranks its
+// static snapshot. Loaded at startup via loadPersistedElo().
+const ELO_OVERRIDES = new Map(); // norm(name) -> elo
+
 export function getElo(name) {
   const n = norm(name);
   if (!n) return DEFAULT_ELO;
+  if (ELO_OVERRIDES.has(n)) return ELO_OVERRIDES.get(n);   // learned value wins
   if (STRENGTH_NORM[n] != null) return STRENGTH_NORM[n];
   for (const [k, v] of Object.entries(STRENGTH_NORM)) {
     if (k && (k.includes(n) || n.includes(k))) return v;
   }
   return DEFAULT_ELO;
+}
+
+/** Load learned Elo ratings from the DB into memory (call once at startup). */
+export async function loadPersistedElo() {
+  if (!isDbAvailable()) return 0;
+  try {
+    const r = await safeQuery('SELECT team_norm, elo FROM national_elo');
+    let n = 0;
+    for (const row of r?.rows || []) { ELO_OVERRIDES.set(row.team_norm, Number(row.elo)); n++; }
+    if (n) console.log(`[nationalTeams] Loaded ${n} learned Elo ratings`);
+    return n;
+  } catch { return 0; }
+}
+
+/**
+ * Learn from a finished international match — updates both teams' Elo and
+ * persists it. This is how the engine "learns from the games going on right now"
+ * (qualifiers & friendlies) to be sharper for the World Cup.
+ */
+export async function applyResult({ homeName, awayName, homeGoals, awayGoals, neutral = true, importance = 'qualifier' }) {
+  if (homeGoals == null || awayGoals == null) return null;
+  const hNorm = norm(homeName), aNorm = norm(awayName);
+  const upd = updateElo(getElo(homeName), getElo(awayName), homeGoals, awayGoals, { neutral, importance });
+  ELO_OVERRIDES.set(hNorm, upd.homeElo);
+  ELO_OVERRIDES.set(aNorm, upd.awayElo);
+  if (isDbAvailable()) {
+    const sql = `INSERT INTO national_elo (team_norm, team_name, elo, played, last_updated)
+      VALUES ($1, $2, $3, 1, NOW())
+      ON CONFLICT (team_norm) DO UPDATE SET
+        elo = EXCLUDED.elo, team_name = EXCLUDED.team_name,
+        played = national_elo.played + 1, last_updated = NOW()`;
+    await safeQuery(sql, [hNorm, homeName, upd.homeElo]).catch(() => {});
+    await safeQuery(sql, [aNorm, awayName, upd.awayElo]).catch(() => {});
+  }
+  return { home: { name: homeName, elo: upd.homeElo }, away: { name: awayName, elo: upd.awayElo }, delta: upd.delta };
 }
 
 const isHost = (name) => HOSTS.has(String(name || '').toLowerCase().trim());
@@ -56,14 +100,18 @@ const isHost = (name) => HOSTS.has(String(name || '').toLowerCase().trim());
  * Full pre-match prediction for a World Cup match, from national-team Elo.
  * Returns the same shape as the Poisson core, enriched with strength metadata.
  */
-export function predictWorldCupMatch(homeName, awayName, marketProbs = null) {
+export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx = {}) {
   const homeElo = getElo(homeName);
   const awayElo = getElo(awayName);
   const homeAdv = isHost(homeName) ? HOST_ELO_BOOST : 0;   // neutral unless host nation
   const dr = (homeElo + homeAdv) - awayElo;
 
-  const lambdaHome = clamp(WC_AVG_GOALS * Math.exp(dr / GOAL_SCALE), 0.25, 4.5);
-  const lambdaAway = clamp(WC_AVG_GOALS * Math.exp(-dr / GOAL_SCALE), 0.25, 4.5);
+  const baseLh = clamp(WC_AVG_GOALS * Math.exp(dr / GOAL_SCALE), 0.25, 4.5);
+  const baseLa = clamp(WC_AVG_GOALS * Math.exp(-dr / GOAL_SCALE), 0.25, 4.5);
+  // Fatigue / availability adjustments (no-op unless ctx supplies real data).
+  const adj = adjustExpectedGoals(baseLh, baseLa, ctx);
+  const lambdaHome = adj.lambdaHome;
+  const lambdaAway = adj.lambdaAway;
 
   const result = generateProbabilities(lambdaHome, lambdaAway, -0.08);
   const modelProbs = { ...result.probabilities };
@@ -104,7 +152,9 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null) {
       neutral: homeAdv === 0,
       lambdaHome: round(lambdaHome),
       lambdaAway: round(lambdaAway),
+      learned: ELO_OVERRIDES.has(norm(homeName)) || ELO_OVERRIDES.has(norm(awayName)),
     },
+    contextFactors: adj.applied ? adj.factors : null,
   };
 }
 
@@ -112,4 +162,4 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function round(v) { return Math.round(v * 100) / 100; }
 function r1(v) { return parseFloat(Number(v).toFixed(1)); }
 
-export default { getElo, predictWorldCupMatch };
+export default { getElo, predictWorldCupMatch, loadPersistedElo, applyResult };

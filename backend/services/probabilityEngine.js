@@ -8,6 +8,61 @@ import { ensemblePredict, applyMLCorrection, oddsToImpliedProbs } from '../engin
 const HOME_ADVANTAGE = 1.12; // Historical home advantage multiplier (~12% boost)
 const LEAGUE_AVG_GOALS = 1.35; // Average goals per team per match across top leagues
 
+// Markets that are near-certain by construction and must NEVER be used as the
+// headline "confidence" or featured pick (this was the root cause of every
+// card showing ~95%). "Over 0.5 Goals" ≈ at least one goal all match ≈ 95%.
+const TRIVIAL_MARKETS = new Set(['Over 0.5 Goals']);
+const UNIFORM_1X2 = 1 / 3;
+const DATA_QUALITY_FACTOR = { FULL: 1.0, PARTIAL: 0.8, MINIMAL: 0.65, FALLBACK: 0.5 };
+
+/**
+ * Honest match confidence — how sure the model is of the RESULT, derived from
+ * the 1X2 spread (NOT from a near-certain throwaway market).
+ *
+ * 0 at a coin-flip (uniform 33/33/33), rising as one outcome dominates, then
+ * penalised for weak data and capped by model maturity (see trustSignals.js).
+ * A genuinely close match now reads LOW — which is the honest answer.
+ *
+ * @param {{home:number,draw:number,away:number}} probabilities - percentages
+ * @param {{maxConfidence?:number,dataQuality?:string}} opts
+ */
+export function computeConfidence(probabilities, opts = {}) {
+  const { maxConfidence = 100, dataQuality = 'FULL' } = opts;
+  const maxP = Math.max(probabilities.home, probabilities.draw, probabilities.away) / 100;
+
+  // Certainty: 0 when the favourite is at the uniform prior, 1 when certain.
+  const certainty = Math.max(0, (maxP - UNIFORM_1X2) / (1 - UNIFORM_1X2));
+  let base = certainty * 100;
+  base *= (DATA_QUALITY_FACTOR[dataQuality] ?? 0.5);
+
+  const score = Math.min(base, maxConfidence);
+  const predictedOutcome =
+    probabilities.home >= probabilities.draw && probabilities.home >= probabilities.away ? 'HOME'
+    : probabilities.away >= probabilities.draw ? 'AWAY' : 'DRAW';
+
+  return {
+    score: parseFloat(score.toFixed(1)),
+    tier: score >= 60 ? 'HIGH' : score >= 35 ? 'MEDIUM' : 'LOW',
+    predictedOutcome,
+    outcomeProbability: parseFloat((maxP * 100).toFixed(1)),
+    basis: '1X2-spread',
+    capped: base > maxConfidence,
+    maturityCap: maxConfidence,
+  };
+}
+
+/**
+ * Pick the featured/suggested market — the most likely MEANINGFUL market,
+ * excluding near-certain throwaways. This is a betting suggestion, shown
+ * separately from match confidence.
+ */
+export function selectHeadlinePick(markets) {
+  const meaningful = (markets || []).filter(
+    m => !TRIVIAL_MARKETS.has(m.name) && m.probability <= 90
+  );
+  return meaningful[0] || (markets || [])[0] || null;
+}
+
 /**
  * Factorial with memoization for performance.
  */
@@ -95,7 +150,7 @@ export function computeExpectedGoals(homeStats, awayStats) {
  * @returns {Object} Full probability breakdown
  */
 export function generateProbabilities(lambdaHome, lambdaAway) {
-  const MAX_GOALS = 6; // 0-5 goals (index 0-5)
+  const MAX_GOALS = 8; // 0-7 goals each side — captures the Poisson tail (was 0-5, which dropped ~6% mass)
 
   // Build the scoreline matrix
   const matrix = [];
@@ -144,10 +199,14 @@ export function generateProbabilities(lambdaHome, lambdaAway) {
     probability: s.probability,
   }));
 
+  // Normalise 1X2 over the grid mass so home+draw+away = 100 exactly.
+  // (Any probability beyond the scoreline grid is otherwise silently lost,
+  //  leaving the displayed percentages adding up to ~94% — a credibility bug.)
+  const outcomeMass = (homeWinProb + drawProb + awayWinProb) || 1;
   const probabilities = {
-    home: parseFloat((homeWinProb * 100).toFixed(1)),
-    draw: parseFloat((drawProb * 100).toFixed(1)),
-    away: parseFloat((awayWinProb * 100).toFixed(1)),
+    home: parseFloat((homeWinProb / outcomeMass * 100).toFixed(1)),
+    draw: parseFloat((drawProb / outcomeMass * 100).toFixed(1)),
+    away: parseFloat((awayWinProb / outcomeMass * 100).toFixed(1)),
   };
 
   const overUnder = {
@@ -247,10 +306,23 @@ export async function analyzeMatch(homeStats, awayStats, context = {}) {
   // Build ranked market list with risk tags
   const markets = buildMarketList(result);
 
+  // Honest match confidence from the 1X2 spread (capped by data quality).
+  // The maturity cap is applied later by callers that have DB access.
+  const confidence = computeConfidence(finalProbs, {
+    dataQuality: context.dataQuality || (result.expectedGoals?.usingDefaults ? 'FALLBACK' : 'FULL'),
+  });
+
+  // Featured bet = most likely MEANINGFUL market (never a near-certain throwaway).
+  const headlinePick = selectHeadlinePick(markets);
+
   return {
     ...result,
     markets,
-    bestPick: markets[0] || null,
+    confidence,                 // honest, 1X2-derived match confidence
+    predictedOutcome: confidence.predictedOutcome,
+    headlinePick,               // suggested bet (separate from confidence)
+    bestPick: headlinePick,     // back-compat: now points at the meaningful pick
+    rawTopMarket: markets[0] || null,  // the old behaviour, kept for transparency/debug
     lowRiskMarkets: markets.filter(m => m.risk === 'LOW'),
     mediumRiskMarkets: markets.filter(m => m.risk === 'MEDIUM'),
     highRiskMarkets: markets.filter(m => m.risk === 'HIGH'),
@@ -286,6 +358,7 @@ function buildMarketList(probResult) {
       ...m,
       risk: m.probability >= 65 ? 'LOW' : m.probability >= 45 ? 'MEDIUM' : 'HIGH',
       riskColor: m.probability >= 65 ? '#22C55E' : m.probability >= 45 ? '#F59E0B' : '#EF4444',
+      trivial: TRIVIAL_MARKETS.has(m.name) || m.probability > 90, // near-certain, not a real signal
     }))
     .sort((a, b) => b.probability - a.probability);
 }
@@ -294,4 +367,6 @@ export default {
   computeExpectedGoals,
   generateProbabilities,
   analyzeMatch,
+  computeConfidence,
+  selectHeadlinePick,
 };

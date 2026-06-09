@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../.env') });
 import axios from 'axios';
+import { computeConfidence } from './probabilityEngine.js';
+import { getModelMaturity } from '../engine/trustSignals.js';
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 
@@ -97,7 +99,7 @@ function buildRiskedMarkets(markets) {
   ];
 
   return all
-    .map(m => ({ ...m, risk: classifyRisk(m.prob) }))
+    .map(m => ({ ...m, risk: classifyRisk(m.prob), trivial: m.name === 'Over 0.5 Goals' || m.prob > 90 }))
     .sort((a, b) => b.prob - a.prob);
 }
 
@@ -156,7 +158,12 @@ function assembleContext(fixture, teamStats, h2h, predictions, injuries) {
   const markets = calculateMarkets(lambdaHome, lambdaAway);
   const riskedMarkets = buildRiskedMarkets(markets);
   const lowRiskMarkets  = riskedMarkets.filter(m => m.risk.level === 'LOW');
-  const bestPick        = riskedMarkets[0];
+  // Featured pick = most likely MEANINGFUL market (never a near-certain throwaway).
+  const bestPick        = riskedMarkets.find(m => !m.trivial) || riskedMarkets[0];
+  // Honest match confidence from the 1X2 spread (cap applied by caller).
+  const matchConfidence = computeConfidence({
+    home: markets.result.homeWin, draw: markets.result.draw, away: markets.result.awayWin,
+  });
 
   // H2H summary
   const h2hMatches  = h2h || [];
@@ -172,7 +179,7 @@ function assembleContext(fixture, teamStats, h2h, predictions, injuries) {
   const awayInjuries = (injuries?.away || []).map(p => p.player?.name).join(', ') || 'None reported';
 
   return {
-    fixture, markets, riskedMarkets, lowRiskMarkets, bestPick,
+    fixture, markets, riskedMarkets, lowRiskMarkets, bestPick, matchConfidence,
     lambdaHome: lambdaHome.toFixed(2),
     lambdaAway: lambdaAway.toFixed(2),
     homeStats: { form: homeForm, avgFor: hAvgFor.toFixed(2), avgAg: hAvgAg.toFixed(2) },
@@ -198,6 +205,13 @@ async function getAIAnalysis(context) {
   const c = context;
   const home = c.fixture.homeTeam.name;
   const away = c.fixture.awayTeam.name;
+
+  // Maturity cap → keep confidence honest for an unproven model.
+  const maturity = await getModelMaturity().catch(() => ({ maxConfidence: 100 }));
+  c.maturityCap = maturity.maxConfidence;
+  if (c.matchConfidence) {
+    c.matchConfidence.score = Math.min(c.matchConfidence.score, maturity.maxConfidence);
+  }
 
   const prompt = `You are a professional football data analyst. Analyse this upcoming match and provide a detailed structured report.
 
@@ -229,7 +243,8 @@ ${away}: ${c.injuries.away}
 LOW RISK OPPORTUNITIES (probability >= 70%):
 ${c.lowRiskMarkets.map(m => m.name + ' (' + m.prob + '%)').join(', ') || 'None above 70% threshold'}
 
-BEST STATISTICAL PICK: ${c.bestPick?.name} (${c.bestPick?.prob}% probability)
+BEST STATISTICAL PICK (excluding near-certain throwaways): ${c.bestPick?.name} (${c.bestPick?.prob}% probability)
+MODEL CONFIDENCE IN RESULT (1X2 spread, maturity-capped): ${c.matchConfidence?.score ?? 'N/A'}%
 
 Write a detailed analytical report. Be specific, data-driven, and honest about uncertainty.
 Use a professional tone like a top sports analyst writing for a serious audience.
@@ -244,8 +259,8 @@ Return ONLY this JSON (no markdown, no explanation outside JSON):
   "injuryAnalysis": "Impact of specific missing players on the tactical setup",
   "keyFactors": ["factor 1", "factor 2", "factor 3", "factor 4", "factor 5"],
   "recommendation": "Final data-backed conclusion",
-  "recommendedMarket": "Specific market name",
-  "confidence": 75,
+  "recommendedMarket": "Specific market name (avoid trivial near-certain markets like Over 0.5)",
+  "confidence": "INTEGER 0-100 = honest certainty in the predicted RESULT from the 1X2 spread; a close match must be under 40",
   "analystRating": "8.5/10",
   "riskNote": "What is the primary variable that could invalidate this analysis?",
   "lowRiskBets": [{"market": "Market Name", "reason": "Data-driven reason"}],
@@ -269,7 +284,14 @@ Return ONLY this JSON (no markdown, no explanation outside JSON):
     });
 
     const text = res.data.content[0].text.replace(/```json|```/g, '').trim();
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    // Clamp the AI's self-reported confidence to the model's maturity cap.
+    if (typeof parsed.confidence === 'number') {
+      parsed.confidence = Math.min(parsed.confidence, c.maturityCap ?? 100);
+    } else {
+      parsed.confidence = Math.round(c.matchConfidence?.score ?? 30);
+    }
+    return parsed;
   } catch (err) {
     console.error('[analyst] Claude error:', err.message);
     return {
@@ -282,7 +304,7 @@ Return ONLY this JSON (no markdown, no explanation outside JSON):
       keyFactors: ['Home advantage', 'Recent form', 'H2H record', 'Goal-scoring rates', 'Injury impact'],
       recommendation: c.bestPick ? `${c.bestPick.name} at ${c.bestPick.prob}% probability` : 'Insufficient data',
       recommendedMarket: c.bestPick?.name || 'N/A',
-      confidence: Math.round(c.bestPick?.prob || 50),
+      confidence: Math.round(c.matchConfidence?.score ?? 30),
       analystRating: '6/10',
       riskNote: 'Statistical models cannot account for in-game variables.',
     };
@@ -317,7 +339,7 @@ Return ONLY this JSON:
     "fixture": "Home vs Away",
     "market": "e.g. Over 1.5 Goals",
     "reasoning": "2 sentences why this is the standout low-risk opportunity today",
-    "confidence": 78
+    "confidence": "INTEGER 0-100 = honest certainty; do not inflate"
   },
   "gameOfTheDay": {
     "fixture": "Home vs Away",

@@ -113,7 +113,9 @@ router.post('/analyze/:fixtureId', async (req, res) => {
     const demo = DEMO_ANALYSES[fixtureId];
     if (demo) {
       console.log(`[ai] Serving Static Demo Analysis for ${fixtureId}`);
-      return res.json({ ai: demo, generatedAt: new Date().toISOString(), source: 'demo' });
+      // Keep even demo content credible — never show 100%/inflated confidence.
+      const safe = { ...demo, confidence: Math.min(demo.confidence ?? 50, 60) };
+      return res.json({ ai: safe, generatedAt: new Date().toISOString(), source: 'demo' });
     }
   }
 

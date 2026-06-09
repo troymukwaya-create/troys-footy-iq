@@ -518,3 +518,14 @@ CREATE TABLE IF NOT EXISTS saved_slips (
 CREATE INDEX IF NOT EXISTS idx_login_tokens_email ON login_tokens(email, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_slips_user ON saved_slips(user_id, created_at DESC);
+
+-- ─── LEARNED NATIONAL-TEAM ELO (World Cup engine) ──────────────────
+-- National-team strength that LEARNS from qualifier/friendly results.
+-- getElo() prefers these learned values over the static snapshot.
+CREATE TABLE IF NOT EXISTS national_elo (
+  team_norm    VARCHAR(60) PRIMARY KEY,   -- normalised team name
+  team_name    VARCHAR(80),               -- last-seen display name
+  elo          INT NOT NULL,
+  played       INT NOT NULL DEFAULT 0,    -- results learned from
+  last_updated TIMESTAMPTZ DEFAULT NOW()
+);
