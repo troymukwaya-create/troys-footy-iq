@@ -5,9 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
 import { initAnalytics } from './lib/analytics.js'
+import { Analytics } from '@vercel/analytics/react'
 
 // First-party visitor tracking (feeds the CEO command center at /admin).
 // Never blocks render; fails silent if the backend is unreachable.
+// Vercel Analytics (<Analytics /> below) runs alongside it: edge-measured
+// traffic counts that work even when the Render backend is cold — the CEO
+// dashboard stays the product-engagement source of truth.
 try { initAnalytics() } catch { /* ignore */ }
 
 const queryClient = new QueryClient({
@@ -82,5 +86,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <App />
       </QueryClientProvider>
     </BrowserRouter>
+    <Analytics />
   </ErrorBoundary>
 )
