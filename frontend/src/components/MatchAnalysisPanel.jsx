@@ -4,7 +4,9 @@ import { ChevronLeft } from 'lucide-react';
 import { MarketsPanel } from './MarketsPanel.jsx';
 import { ShareCallButton } from './ShareCallButton.jsx';
 import { EmailCapture } from './EmailCapture.jsx';
+import { MatchEvidence } from './MatchEvidence.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
+import { flagGradient } from '../constants/nationColors.js';
 
 /**
  * MatchAnalysisPanel — Center panel for match analysis.
@@ -48,7 +50,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
       style={{ padding: 'clamp(12px, 4vw, 24px)' }}
     >
       {/* ─── Sticky compact header — back + match identity while scrolling ─── */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', marginBottom: 8, background: 'rgba(11,11,13,0.82)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 12 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', marginBottom: 8, background: flagGradient(home, away, 'rgba(11,11,13,0.82)', '26'), backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 12 }}>
         {onBack && (
           <button onClick={onBack} aria-label="Back" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 10, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0 }}>
             <ChevronLeft size={18} />
@@ -59,8 +61,8 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
         <ShareCallButton fixture={fixture} prob={prob} />
       </div>
 
-      {/* ─── Match Header ─────────────────────────────────── */}
-      <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+      {/* ─── Match Header — carries each team's colours, like the home cards ─── */}
+      <div className="card" style={{ padding: 24, marginBottom: 16, background: flagGradient(home, away, 'var(--bg-surface)'), border: '1px solid var(--border-subtle)' }}>
         {/* League */}
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{league}</span>
@@ -74,7 +76,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
           {/* Home */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
             {homeCrest && <img src={homeCrest} alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
-            <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3 }}>{home}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3, color: homeColor }}>{home}</span>
             {homeStats?.form && homeStats.form !== 'N/A' && <FormStrip form={homeStats.form} />}
           </div>
 
@@ -104,7 +106,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
           {/* Away */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
             {awayCrest && <img src={awayCrest} alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
-            <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3 }}>{away}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3, color: awayColor }}>{away}</span>
             {awayStats?.form && awayStats.form !== 'N/A' && <FormStrip form={awayStats.form} />}
           </div>
         </div>
@@ -237,6 +239,19 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
               {prob ? (
                 <>
                   {prob.reasoning && <WhyPanel reasoning={prob.reasoning} homeColor={homeColor} awayColor={awayColor} />}
+
+                  {/* The proof behind the bullets — model vs market, Elo,
+                      form, H2H, blend disclosure. The persuasion layer. */}
+                  <MatchEvidence
+                    prob={prob}
+                    h2h={h2h}
+                    home={home}
+                    away={away}
+                    homeColor={homeColor}
+                    awayColor={awayColor}
+                    homeStats={homeStats}
+                    awayStats={awayStats}
+                  />
                   {/* Expected Goals */}
                   <div className="card" style={{ padding: 16 }}>
                     <div className="section-title" style={{ marginBottom: 12 }}>Expected Goals</div>
