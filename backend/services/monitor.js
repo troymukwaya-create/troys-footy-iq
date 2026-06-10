@@ -11,10 +11,23 @@ const THRESHOLDS = {
   accuracy: { warning: 38, critical: 30 },      // Rolling accuracy %
   brierScore: { warning: 0.20, critical: 0.25 }, // Brier score
   calibrationError: { warning: 0.12, critical: 0.18 },
-  apiResponseTime: { warning: 5000, critical: 10000 },  // ms
+  apiResponseTime: { warning: 5000, critical: 10000 },  // ms (default)
   dataFreshness: { warning: 24 * 60, critical: 48 * 60 }, // minutes
   predictionVolume: { warning: 0 }, // 0 predictions in 48h
 };
+
+// Per-source response-time thresholds. football-data.org's free tier
+// routinely takes 5-8s on multi-competition queries — that's its normal,
+// not an incident. Alerting at 5s generated a steady drip of WARNING
+// noise on the CEO dashboard (one every result-ingestion cycle).
+const API_TIME_THRESHOLDS = {
+  footballdata: { warning: 10000, critical: 20000 },
+  default: THRESHOLDS.apiResponseTime,
+};
+
+// API_SLOW is a slow-burn signal, not an incident — don't re-alert for
+// the same source within 6h (createAlert's generic dedup is 1h).
+const API_SLOW_DEDUP_HOURS = 6;
 
 // ─── In-memory API health counters ──────────────────────────────────
 const apiHealth = {
@@ -45,15 +58,20 @@ export function recordApiCall(source, success, responseTimeMs, endpoint = null) 
   tracker.lastResponseTime = responseTimeMs;
   if (!success) tracker.failures++;
 
-  // Alert on slow responses
-  if (responseTimeMs > THRESHOLDS.apiResponseTime.critical) {
-    createAlert('API_SLOW', 'CRITICAL', `${source} response time: ${responseTimeMs}ms`, { source, responseTimeMs });
-  } else if (responseTimeMs > THRESHOLDS.apiResponseTime.warning) {
-    createAlert('API_SLOW', 'WARNING', `${source} response time: ${responseTimeMs}ms`, { source, responseTimeMs });
+  // Alert on slow responses (per-source thresholds, 6h dedup)
+  const t = API_TIME_THRESHOLDS[source] || API_TIME_THRESHOLDS.default;
+  if (responseTimeMs > t.critical) {
+    createAlert('API_SLOW', 'CRITICAL', `${source} response time: ${responseTimeMs}ms`,
+      { source, responseTimeMs }, 'monitor', API_SLOW_DEDUP_HOURS);
+  } else if (responseTimeMs > t.warning) {
+    createAlert('API_SLOW', 'WARNING', `${source} response time: ${responseTimeMs}ms`,
+      { source, responseTimeMs }, 'monitor', API_SLOW_DEDUP_HOURS);
   }
 
-  // Alert on high failure rate (>30% in window)
-  if (tracker.calls >= 10 && (tracker.failures / tracker.calls) > 0.30) {
+  // Alert on high failure rate (>30% in window). Sample of 20+ so a brief
+  // deploy-restart blip (a handful of failed calls during instance
+  // switchover) can't fire a CRITICAL — that's what flagged 2026-06-10.
+  if (tracker.calls >= 20 && (tracker.failures / tracker.calls) > 0.30) {
     createAlert('API_FAILURE_RATE', 'CRITICAL',
       `${source} failure rate: ${((tracker.failures / tracker.calls) * 100).toFixed(0)}% (${tracker.failures}/${tracker.calls})`,
       { source, failures: tracker.failures, total: tracker.calls }
@@ -131,18 +149,21 @@ export async function acknowledgeAlert(alertId) {
 
 /**
  * Create a system alert (persisted to database).
+ * @param {number} dedupHours - suppress identical (type, severity) alerts
+ *   created within this many hours (default 1).
  */
-export async function createAlert(type, severity, message, context = null, source = 'monitor') {
+export async function createAlert(type, severity, message, context = null, source = 'monitor', dedupHours = 1) {
   console.log(`[MONITOR] ${severity}: ${message}`);
 
   if (!isDbAvailable()) return;
 
-  // Dedup: don't create identical alerts within 1 hour
+  // Dedup: don't create identical alerts within the dedup window
+  const hours = Math.max(1, Number(dedupHours) || 1);
   const existing = await safeQuery(
     `SELECT id FROM system_alerts
-     WHERE alert_type = $1 AND severity = $2 AND created_at > NOW() - INTERVAL '1 hour'
+     WHERE alert_type = $1 AND severity = $2 AND created_at > NOW() - ($3 || ' hours')::interval
      LIMIT 1`,
-    [type, severity]
+    [type, severity, hours]
   );
 
   if (existing?.rows?.length > 0) return; // Already alerted

@@ -149,8 +149,16 @@ function StatusBanner({ o, s, a, alertCount }) {
     const ageH = (Date.now() - new Date(s.lastPredictionRun).getTime()) / 3600000;
     if (ageH > 26) issues.push({ sev: 'warning', text: `No new prediction in ${Math.round(ageH)}h — check the scheduler` });
   }
+  // Flag API-Football on failure RATE, not raw count — at ~1,500 calls/day a
+  // handful of network blips (≈1%) is normal operation; flagging any failure
+  // meant the banner could never read green.
   const apf = a.usage?.apisports;
-  if (apf && apf.failuresToday > 0) issues.push({ sev: 'warning', text: `${apf.failuresToday} API-Football request${apf.failuresToday > 1 ? 's' : ''} failed today` });
+  if (apf && apf.failuresToday >= 5 && apf.today > 0) {
+    const ratePct = (apf.failuresToday / apf.today) * 100;
+    if (ratePct > 5) {
+      issues.push({ sev: 'warning', text: `${ratePct.toFixed(1)}% of API-Football requests failed today (${apf.failuresToday}/${apf.today})` });
+    }
+  }
   if ((alertCount || 0) > 0) issues.push({ sev: 'warning', text: `${alertCount} unacknowledged alert${alertCount > 1 ? 's' : ''}` });
 
   const critical = issues.some(i => i.sev === 'critical');

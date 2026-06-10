@@ -258,9 +258,13 @@ router.get('/system', async (_req, res) => {
     if (isDbAvailable()) {
       const last = await safeQuery(`SELECT MAX(created_at) AS t FROM predictions`);
       data.lastPredictionRun = last?.rows?.[0]?.t || null;
+      // Only UNACKNOWLEDGED criticals count — once the CEO has reviewed and
+      // acknowledged a transient spike (e.g. a deploy-window blip), the
+      // banner must go green, not stay red for a fixed 24 hours.
       const errs = await safeQuery(
         `SELECT COUNT(*)::int AS n FROM system_alerts
-         WHERE severity = 'CRITICAL' AND created_at >= NOW() - INTERVAL '24 hours'`
+         WHERE severity = 'CRITICAL' AND acknowledged = false
+           AND created_at >= NOW() - INTERVAL '24 hours'`
       );
       data.errorsLast24h = errs?.rows?.[0]?.n || 0;
     }

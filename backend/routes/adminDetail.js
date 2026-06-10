@@ -221,10 +221,23 @@ router.get('/api-usage/detail', async (_req, res) => {
              MAX(called_at) AS last_call
       FROM api_usage_log GROUP BY source ORDER BY total DESC
     `);
+    // Which endpoints are actually failing (last 48h) — turns "16 requests
+    // failed today" from an undiagnosable banner number into a root cause.
+    const failingEndpoints = await safeQuery(`
+      SELECT source, COALESCE(endpoint, '(unknown)') AS endpoint,
+             COUNT(*)::int AS failures,
+             MAX(called_at) AS last_failure
+      FROM api_usage_log
+      WHERE NOT success AND called_at >= NOW() - INTERVAL '48 hours'
+      GROUP BY source, endpoint
+      ORDER BY failures DESC
+      LIMIT 20
+    `);
     res.json({ error: false, data: {
       available: true,
       daily: daily?.rows || [],
       bySource: bySource?.rows || [],
+      failingEndpoints: failingEndpoints?.rows || [],
     }});
   } catch (err) { res.status(500).json({ error: true, message: err.message }); }
 });
