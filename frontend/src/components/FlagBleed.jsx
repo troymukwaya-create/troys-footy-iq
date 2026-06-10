@@ -38,20 +38,21 @@ export default function FlagBleed({ home, away, opacity = 0.55 }) {
     width: '68%',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    // Blur + desaturate: the flag should feel like light through smoke,
-    // not a sticker. Slight scale hides the blur's soft edges.
-    filter: 'blur(7px) saturate(0.95) brightness(0.85)',
+    // Light blur only — the flag should be recognisable at a glance, just
+    // soft enough not to read as a sticker. Slight scale hides soft edges.
+    filter: 'blur(4px) saturate(1.05) brightness(1.0)',
     transform: 'scale(1.15)',
     pointerEvents: 'none',
   };
 
-  // The two masks overlap between 30% and 70% of the card width — that
-  // overlap is the "bleed": both flags are semi-present, dissolving into
-  // each other rather than meeting at a hard seam.
+  // The two masks overlap through the middle of the card — that overlap is
+  // the "bleed": both flags semi-present, dissolving into each other.
+  // The fade runs at a slight diagonal so the meeting line feels organic,
+  // not a straight vertical seam.
   const maskHome =
-    'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 100%)';
+    'linear-gradient(99deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 28%, rgba(0,0,0,0.35) 62%, rgba(0,0,0,0) 96%)';
   const maskAway =
-    'linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0) 100%)';
+    'linear-gradient(279deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 28%, rgba(0,0,0,0.35) 62%, rgba(0,0,0,0) 96%)';
 
   return (
     <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, opacity, overflow: 'hidden', borderRadius: 'inherit' }}>
@@ -80,7 +81,7 @@ export default function FlagBleed({ home, away, opacity = 0.55 }) {
           position: 'absolute',
           inset: 0,
           background:
-            'linear-gradient(180deg, rgba(11,11,13,0.36) 0%, rgba(11,11,13,0.55) 55%, rgba(11,11,13,0.78) 100%)',
+            'linear-gradient(180deg, rgba(11,11,13,0.28) 0%, rgba(11,11,13,0.46) 55%, rgba(11,11,13,0.68) 100%)',
         }}
       />
     </div>
