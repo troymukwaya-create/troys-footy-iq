@@ -17,6 +17,9 @@ import { runHealthCheck, checkForModelDegradation, createAlert } from '../servic
 import { invalidateMaturityCache } from '../engine/trustSignals.js';
 import { loadPersistedElo } from '../engine/nationalTeams.js';
 import { runEloLearningCycle } from './eloIngest.js';
+import { runWcPredictionLock } from './wcPredictionLock.js';
+import { refreshWcTeamForms } from '../services/wcForm.js';
+import { refreshWcMarketWeight, optimizeWcMarketWeight } from '../engine/marketWeight.js';
 
 let previousScores = {};
 
@@ -169,6 +172,38 @@ export default function initJobs() {
     catch (err) { console.error('[SCHEDULER] Elo learning failed:', err.message); }
   });
 
+  // ─── WORLD CUP PREDICTION LOCK (Brier integrity) ──────────────────
+  // Every 10 min: lock/refresh the official wc-elo-market-v1 prediction for
+  // fixtures kicking off within 75 min + snapshot odds for closing-line value.
+  // The LAST upsert before kickoff is what the public Brier scores.
+  cron.schedule('*/10 * * * *', async () => {
+    try { await runWcPredictionLock(); }
+    catch (err) { console.error('[SCHEDULER] WC prediction lock failed:', err.message); }
+  });
+  setTimeout(() => runWcPredictionLock().catch(() => {}), 30_000); // catch-up on boot
+
+  // ─── WC TEAM FORM CACHE ────────────────────────────────────────────
+  // Refresh national-team form + injuries every 6h; the fixtures feed and
+  // the lock job read only this cache — same context on every surface.
+  cron.schedule('40 */6 * * *', async () => {
+    console.log('[SCHEDULER] Refreshing WC team form cache...');
+    try { await refreshWcTeamForms(); }
+    catch (err) { console.error('[SCHEDULER] WC form refresh failed:', err.message); }
+  });
+  setTimeout(() => refreshWcTeamForms().catch(() => {}), 60_000); // warm on boot
+
+  // ─── LEARNED MARKET WEIGHT ─────────────────────────────────────────
+  // Load the learned WC market-blend weight at boot; re-optimize daily at
+  // 05:15 from our own scored WC matches (grid search minimizing Brier).
+  setTimeout(() => refreshWcMarketWeight().catch(() => {}), 20_000);
+  cron.schedule('15 5 * * *', async () => {
+    console.log('[SCHEDULER] Optimizing WC market weight...');
+    try {
+      const r = await optimizeWcMarketWeight();
+      console.log('[SCHEDULER] Market weight:', JSON.stringify(r));
+    } catch (err) { console.error('[SCHEDULER] Market weight optimization failed:', err.message); }
+  });
+
   // Daily at 08:00 — Update standings for all leagues
   cron.schedule('0 8 * * *', async () => {
     for (const code of Object.keys(FD_LEAGUES)) {
@@ -188,8 +223,10 @@ export default function initJobs() {
     }
   });
 
-  // Every 4 hours — Fetch results for finished matches + feedback loop
-  cron.schedule('0 */4 * * *', async () => {
+  // Every 2 hours — Fetch results for finished matches + feedback loop.
+  // (Was 4h; during the World Cup the public Brier should update within
+  // a couple of hours of the final whistle.)
+  cron.schedule('0 */2 * * *', async () => {
     console.log('[SCHEDULER] Running result ingestion + feedback loop...');
     try {
       const result = await ingestResults(3);

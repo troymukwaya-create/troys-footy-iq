@@ -310,4 +310,23 @@ router.post('/reset-analytics', async (_req, res) => {
   }
 });
 
+
+// ─── POST /elo-bootstrap ────────────────────────────────────────────
+// Replay the full international-results history through our Elo updater.
+//   { action: 'dry-run' }  → comparison table vs the static snapshot (no writes)
+//   { action: 'apply' }    → persist re-centered ratings to national_elo
+//   { action: 'reset' }    → drop all learned overrides (back to snapshot)
+// Takes ~30-60s (downloads + replays ~50k matches).
+router.post('/elo-bootstrap', async (req, res) => {
+  const action = (req.body?.action || 'dry-run').toLowerCase();
+  try {
+    const { runEloBootstrap, resetEloBootstrap } = await import('../services/eloBootstrap.js');
+    if (action === 'reset') return res.json({ error: false, ...(await resetEloBootstrap()) });
+    const result = await runEloBootstrap({ apply: action === 'apply' });
+    res.json({ error: false, ...result });
+  } catch (err) {
+    res.status(500).json({ error: true, message: err.message });
+  }
+});
+
 export default router;

@@ -77,6 +77,14 @@ export function normalise(m) {
       home: htHome,
       away: htAway,
     },
+    // 90-minute score for honest market scoring: fullTime INCLUDES extra time
+    // on knockout matches; regularTime (present when duration != REGULAR) is
+    // the score at the end of the regular 90.
+    duration: m.score?.duration || 'REGULAR',
+    fullTime: {
+      home: m.score?.regularTime?.home ?? homeScore,
+      away: m.score?.regularTime?.away ?? awayScore,
+    },
     winner:   m.score?.winner || null,  // 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null
     minute:   m.minute ?? null,
     status:   statusMap[m.status] || m.status,

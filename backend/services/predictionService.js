@@ -22,6 +22,9 @@ const MODEL_VERSION = 'hybrid-dc-v2';
  * @param {Object} params.valueEdges       - Array from oddsService.computeValueEdges() (optional)
  * @param {Object} params.features         - From preMatchFeatures (optional)
  * @param {string} params.leagueCode       - League code for feedback aggregation (optional)
+ * @param {string} params.modelVersion     - Model that produced this prediction (default 'hybrid-dc-v2')
+ * @param {boolean} params.upsert          - Replace an existing unevaluated row for the same
+ *                                           (fixture, model) — used by the WC prediction-lock job
  * @returns {number|null} prediction ID
  */
 export async function storePrediction({
@@ -33,6 +36,8 @@ export async function storePrediction({
   valueEdges = null,
   features = null,
   leagueCode = null,
+  modelVersion = MODEL_VERSION,
+  upsert = false,
 }) {
   if (!isDbAvailable()) return null;
   if (!matchExternalId || !prediction?.probabilities) return null;
@@ -50,7 +55,24 @@ export async function storePrediction({
       edgeAway = findEdge('Away');
     }
 
-    // 3. Store prediction
+    // 3. Store prediction. Uniqueness is enforced per (fixture_id, model_version):
+    //    - default: first stored prediction wins (insert-only)
+    //    - upsert:  REPLACE the row as long as it hasn't been evaluated yet —
+    //      this is how the T-60min lock job overrides any earlier snapshot,
+    //      so the scored prediction is always the final pre-kickoff one.
+    const conflictClause = upsert
+      ? `ON CONFLICT (fixture_id, model_version) DO UPDATE SET
+           prob_home = EXCLUDED.prob_home, prob_draw = EXCLUDED.prob_draw, prob_away = EXCLUDED.prob_away,
+           lambda_home = EXCLUDED.lambda_home, lambda_away = EXCLUDED.lambda_away,
+           risk_level = EXCLUDED.risk_level, confidence = EXCLUDED.confidence,
+           features = EXCLUDED.features,
+           odds_home = EXCLUDED.odds_home, odds_draw = EXCLUDED.odds_draw, odds_away = EXCLUDED.odds_away,
+           value_edge_home = EXCLUDED.value_edge_home, value_edge_draw = EXCLUDED.value_edge_draw,
+           value_edge_away = EXCLUDED.value_edge_away,
+           created_at = NOW()
+         WHERE predictions.actual_result IS NULL`
+      : 'ON CONFLICT DO NOTHING';
+
     const result = await safeQuery(
       `INSERT INTO predictions (
         fixture_id, model_version, match_external_id, home_team, away_team,
@@ -61,11 +83,11 @@ export async function storePrediction({
         value_edge_home, value_edge_draw, value_edge_away,
         league_code
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-      ON CONFLICT DO NOTHING
+      ${conflictClause}
       RETURNING id`,
       [
         fixtureId,
-        MODEL_VERSION,
+        modelVersion,
         matchExternalId,
         homeTeam || 'Unknown',
         awayTeam || 'Unknown',
@@ -75,7 +97,11 @@ export async function storePrediction({
         prediction.expectedGoals?.home || null,
         prediction.expectedGoals?.away || null,
         prediction.riskLevel || null,
-        prediction.confidence || null,
+        // confidence column is FLOAT; computeConfidence() returns an object —
+        // passing it raw made the whole INSERT fail silently. Extract the score.
+        (typeof prediction.confidence === 'object'
+          ? prediction.confidence?.score
+          : prediction.confidence) ?? null,
         features ? JSON.stringify(features) : null,
         odds?.home || null,
         odds?.draw || null,
@@ -212,7 +238,9 @@ async function storeMarketPredictions(predictionId, prediction, odds) {
   await safeQuery(
     `INSERT INTO market_predictions (prediction_id, market_type, predicted_prob)
      VALUES ${values.join(', ')}
-     ON CONFLICT DO NOTHING`,
+     ON CONFLICT (prediction_id, market_type) DO UPDATE
+       SET predicted_prob = EXCLUDED.predicted_prob
+       WHERE market_predictions.actual_hit IS NULL`,
     params
   );
 }

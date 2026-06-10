@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+// Derive the API base robustly. VITE_API_URL may be unset (dev → '/api' via
+// the Vite proxy) or a bare host in prod; normalise so it always ends in /api
+// (same as adminClient). Without this, prod requests hit e.g. host/performance
+// → 404 and the Brier hero stayed stuck on its fallback numbers forever.
+const RAW = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = RAW.endsWith('/api') ? RAW : `${RAW.replace(/\/+$/, '')}/api`;
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE,
   // Long enough to survive a slow mobile network or a backend cold-start,
   // short enough that a genuinely dead call falls back without a long hang.
   timeout: 8000,

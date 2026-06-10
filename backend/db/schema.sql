@@ -554,3 +554,96 @@ INSERT INTO platform_updates (slug, title, body, category, status, shipped_at) V
  ('player-importance','Injuries weighted by player importance','Losing a star scorer now hurts far more than losing a backup, using real player goal/minutes data.','engine','shipped','2026-06-09 12:55:00+00'),
  ('apf-second-opinion','API-Football second opinion','Predictions now blend API-Football''s own win-probability model as an independent second opinion.','engine','shipped','2026-06-09 13:10:00+00')
 ON CONFLICT (slug) DO NOTHING;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- ENGINE CREDIBILITY MIGRATIONS (2026-06-10)
+-- Everything below is idempotent — this file runs on every boot.
+-- ═══════════════════════════════════════════════════════════════════
+
+-- 90-minute (regular time) scores. fixtures.home_goals stays the FINAL
+-- (display) score; ft_* hold the 90-minute score so 1X2 / O-U / BTTS
+-- predictions are scored against the market they were made for.
+-- Knockout matches decided in extra time were previously mis-scored.
+ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS ft_home_goals INT;
+ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS ft_away_goals INT;
+
+-- Learned national-team Elo. Written by engine/nationalTeams.applyResult
+-- since launch, but the table was never in the schema — every persist was
+-- silently swallowed by .catch(). This makes Elo learning survive restarts.
+CREATE TABLE IF NOT EXISTS national_elo (
+  team_norm    TEXT PRIMARY KEY,
+  team_name    TEXT,
+  elo          FLOAT NOT NULL,
+  played       INT DEFAULT 0,
+  last_updated TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Elo learning dedup — a finished match must shift ratings exactly ONCE.
+-- (The 6-hourly learning cycle re-fetches a 7-day window, so without this
+-- each result was re-applied ~28 times, massively over-weighting it.)
+CREATE TABLE IF NOT EXISTS elo_processed_matches (
+  match_id     TEXT PRIMARY KEY,
+  processed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Key-value engine settings (learned WC market weight, etc.)
+CREATE TABLE IF NOT EXISTS engine_settings (
+  key        TEXT PRIMARY KEY,
+  value      JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Cached national-team recent form + injuries (refreshed by scheduler,
+-- read by the fixtures feed and the prediction-lock job — no API calls
+-- on the request path).
+CREATE TABLE IF NOT EXISTS wc_team_form (
+  team_id    TEXT PRIMARY KEY,        -- 'apf_t_<id>'
+  team_name  TEXT,
+  form       JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- The World Cup league row must exist for WC fixture upserts.
+INSERT INTO leagues (code, name, country, source)
+VALUES ('WC', 'FIFA World Cup', 'World', 'apisports')
+ON CONFLICT (code) DO NOTHING;
+
+-- ─── Predictions integrity ──────────────────────────────────────────
+-- 1) Dedupe: keep the NEWEST prediction per (fixture, model), delete the
+--    rest (and their dependent rows) so each fixture is scored once.
+DELETE FROM market_predictions WHERE prediction_id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY fixture_id, model_version
+                                  ORDER BY created_at DESC, id DESC) AS rn
+    FROM predictions WHERE fixture_id IS NOT NULL
+  ) d WHERE d.rn > 1
+);
+DELETE FROM model_performance WHERE prediction_id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY fixture_id, model_version
+                                  ORDER BY created_at DESC, id DESC) AS rn
+    FROM predictions WHERE fixture_id IS NOT NULL
+  ) d WHERE d.rn > 1
+);
+DELETE FROM predictions WHERE id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY fixture_id, model_version
+                                  ORDER BY created_at DESC, id DESC) AS rn
+    FROM predictions WHERE fixture_id IS NOT NULL
+  ) d WHERE d.rn > 1
+);
+-- 2) Enforce: one prediction per fixture per model from now on.
+--    (NULL fixture_id rows are unconstrained — Postgres treats NULLs as distinct.)
+CREATE UNIQUE INDEX IF NOT EXISTS uq_predictions_fixture_model
+  ON predictions (fixture_id, model_version);
+
+-- Market predictions: one row per (prediction, market). Dedupe then enforce.
+DELETE FROM market_predictions WHERE id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY prediction_id, market_type
+                                  ORDER BY id DESC) AS rn
+    FROM market_predictions
+  ) d WHERE d.rn > 1
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_market_pred_market
+  ON market_predictions (prediction_id, market_type);

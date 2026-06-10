@@ -73,7 +73,10 @@ function normalizeEvent(ev) {
       else if (mk.key === 'totals') addOutcomes(markets, 'OU25', 'Over/Under 2.5', bk.title, mk.outcomes, ev, 2.5);
     }
   }
-  for (const m of Object.values(markets)) {
+  for (const [key, m] of Object.entries(markets)) {
+    // Consensus is computed over ALL books (before the display slice):
+    // best-of-book prices are outliers and made a terrible market signal.
+    if (key === '1X2') m.consensusProbs = consensus1X2(m.bookmakers);
     m.bookmakers = m.bookmakers.slice(0, 5);
     m.bestOdds = bestOdds(m.bookmakers);
   }
@@ -117,10 +120,61 @@ function outcomeName(o, key, ev) {
   return null;
 }
 
+// ─── Market consensus ───────────────────────────────────────────────
+// The market SIGNAL for the model blend. Per bookmaker: de-vig that book's
+// own 1X2 trio (normalize to 100%), then take the MEDIAN per outcome across
+// books and renormalize. Pinnacle — the sharpest book — is used directly
+// when present. Best-of-book odds remain for the *displayed* value prices,
+// but never as the probability signal.
+function median(arr) {
+  const s = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+function devigBook(bk) {
+  const get = (n) => bk.outcomes.find(o => o.name === n)?.odd;
+  const h = get('Home'), d = get('Draw'), a = get('Away');
+  if (!(h > 1 && d > 1 && a > 1)) return null;
+  const rh = 1 / h, rd = 1 / d, ra = 1 / a;
+  const s = rh + rd + ra;
+  return { home: rh / s, draw: rd / s, away: ra / s };
+}
+
+function consensus1X2(bookmakers = []) {
+  const pinnacle = bookmakers.find(b => /pinnacle/i.test(b.name));
+  if (pinnacle) {
+    const p = devigBook(pinnacle);
+    if (p) return toPct(p, 'pinnacle', 1);
+  }
+  const devigged = bookmakers.map(devigBook).filter(Boolean);
+  if (!devigged.length) return null;
+  const m = {
+    home: median(devigged.map(p => p.home)),
+    draw: median(devigged.map(p => p.draw)),
+    away: median(devigged.map(p => p.away)),
+  };
+  const s = m.home + m.draw + m.away;
+  return toPct({ home: m.home / s, draw: m.draw / s, away: m.away / s }, 'median', devigged.length);
+}
+
+function toPct(p, source, books) {
+  return {
+    home: parseFloat((p.home * 100).toFixed(1)),
+    draw: parseFloat((p.draw * 100).toFixed(1)),
+    away: parseFloat((p.away * 100).toFixed(1)),
+    source, books,
+  };
+}
+
 // De-margined 1X2 market probabilities {home, draw, away} (percent) from a
-// normalized odds object, or null if unavailable. Works on any odds object
-// in oddsService's normalized shape (markets['1X2'].bestOdds).
+// normalized odds object, or null if unavailable. Prefers the cross-book
+// consensus; falls back to de-vigged best odds for odds objects from other
+// sources (API-Sports path) that carry no consensus.
 export function impliedProbs(odds) {
+  const consensus = odds?.markets?.['1X2']?.consensusProbs;
+  if (consensus) return consensus;
+
   const best = odds?.markets?.['1X2']?.bestOdds;
   if (!best || !best.Home || !best.Draw || !best.Away) return null;
   const raw = {
@@ -134,6 +188,7 @@ export function impliedProbs(odds) {
     home: parseFloat((raw.home / s * 100).toFixed(1)),
     draw: parseFloat((raw.draw / s * 100).toFixed(1)),
     away: parseFloat((raw.away / s * 100).toFixed(1)),
+    source: 'best-odds-fallback',
   };
 }
 

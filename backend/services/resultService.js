@@ -68,18 +68,27 @@ export async function ingestResults(lookbackDays = 3) {
   console.log(`[RESULTS] Found ${finishedMatches.length} finished matches.`);
 
   // ─── Step 2: Update fixtures with final scores ────────────────
+  // home_goals/away_goals = FINAL score (display: includes extra time).
+  // ft_home_goals/ft_away_goals = 90-MINUTE score — what 1X2 / O-U / BTTS
+  // markets settle on. Both sources expose it as match.fullTime; matches
+  // decided in extra time were previously scored against the wrong market.
   let updated = 0;
   for (const match of finishedMatches) {
     if (match.score?.home == null || match.score?.away == null) continue;
+
+    const ft90Home = match.fullTime?.home ?? match.score.home;
+    const ft90Away = match.fullTime?.away ?? match.score.away;
 
     const result = await safeQuery(
       `UPDATE fixtures SET
         status = 'FINISHED',
         home_goals = $1,
-        away_goals = $2
-      WHERE external_id = $3 AND (status != 'FINISHED' OR home_goals IS NULL)
+        away_goals = $2,
+        ft_home_goals = $3,
+        ft_away_goals = $4
+      WHERE external_id = $5 AND (status != 'FINISHED' OR home_goals IS NULL OR ft_home_goals IS NULL)
       RETURNING id`,
-      [match.score.home, match.score.away, match.id]
+      [match.score.home, match.score.away, ft90Home, ft90Away, match.id]
     );
 
     if (result?.rows?.[0]) updated++;
@@ -87,12 +96,14 @@ export async function ingestResults(lookbackDays = 3) {
   console.log(`[RESULTS] Updated ${updated} fixture scores.`);
 
   // ─── Step 3: Fill predictions.actual_result ───────────────────
+  // Scored on the 90-minute result (ft_*), falling back to the final score
+  // for fixtures ingested before the ft columns existed.
   const evalResult = await safeQuery(`
     UPDATE predictions p
     SET actual_result = CASE
-      WHEN f.home_goals > f.away_goals THEN 'HOME'
-      WHEN f.home_goals = f.away_goals THEN 'DRAW'
-      WHEN f.home_goals < f.away_goals THEN 'AWAY'
+      WHEN COALESCE(f.ft_home_goals, f.home_goals) > COALESCE(f.ft_away_goals, f.away_goals) THEN 'HOME'
+      WHEN COALESCE(f.ft_home_goals, f.home_goals) = COALESCE(f.ft_away_goals, f.away_goals) THEN 'DRAW'
+      ELSE 'AWAY'
     END,
     evaluated_at = NOW()
     FROM fixtures f
@@ -279,8 +290,8 @@ async function evaluateMarketPredictions() {
         mp_m.id as market_pred_id,
         mp_m.market_type,
         mp_m.predicted_prob,
-        f.home_goals,
-        f.away_goals
+        COALESCE(f.ft_home_goals, f.home_goals) as home_goals,
+        COALESCE(f.ft_away_goals, f.away_goals) as away_goals
       FROM market_predictions mp_m
       JOIN predictions p ON mp_m.prediction_id = p.id
       JOIN fixtures f ON p.fixture_id = f.id
