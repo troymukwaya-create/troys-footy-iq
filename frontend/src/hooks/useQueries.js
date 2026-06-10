@@ -6,9 +6,10 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api';
+// Normalise like client.js/adminClient: VITE_API_URL may be a bare host or
+// already end in /api — both must work (blindly appending broke one form).
+const RAW_API = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = RAW_API.endsWith('/api') ? RAW_API : `${RAW_API.replace(/\/+$/, '')}/api`;
 
 const api = axios.create({
   baseURL: API_BASE,

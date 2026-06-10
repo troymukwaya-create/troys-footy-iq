@@ -1,5 +1,6 @@
 import React from 'react';
 import { flagGradient } from '../constants/nationColors.js';
+import FlagBleed, { hasFlags } from './FlagBleed.jsx';
 
 /**
  * FixtureCard — Compact sidebar match card.
@@ -49,6 +50,9 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '';
 
+  // EXPERIMENT: real flags bleeding across the row (subtle, sidebar dose).
+  const useFlagBleed = !isSelected && hasFlags(home, away);
+
   return (
     <div
       onClick={onClick}
@@ -59,9 +63,15 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
         border: `1px solid ${isSelected ? 'rgba(168,52,74,0.30)' : 'var(--border-subtle)'}`,
         padding: '10px 12px',
         marginBottom: 4,
-        background: isSelected ? 'var(--accent-muted)' : flagGradient(home, away, null, '30'),
+        background: isSelected ? 'var(--accent-muted)'
+          : useFlagBleed ? '#101114'
+          : flagGradient(home, away, null, '30'),
+        position: 'relative',
+        overflow: 'hidden',
+        isolation: 'isolate',
       }}
     >
+      {useFlagBleed && <FlagBleed home={home} away={away} opacity={0.45} />}
       {/* League + Status */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontSize: 10, color: 'var(--text-muted)', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

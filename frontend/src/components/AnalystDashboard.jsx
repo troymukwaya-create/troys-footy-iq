@@ -4,6 +4,7 @@ import BrierScoreHero from './BrierScoreHero.jsx';
 import { EmailCapture } from './EmailCapture.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient, getMatchColor } from '../constants/nationColors.js';
+import FlagBleed, { hasFlags } from './FlagBleed.jsx';
 import { motion } from 'motion/react';
 
 // ─── CONFIDENCE CONFIG ───────────────────────────────────────────────────────
@@ -76,11 +77,17 @@ function InsightCard({ fixture, onSelect, featured, index }) {
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '';
 
+  // EXPERIMENT: real flags bleeding into each other instead of colour
+  // gradients. Falls back to the colour gradient when a flag is unknown.
+  const useFlagBleed = hasFlags(fixture.homeTeam?.name, fixture.awayTeam?.name);
+
   return (
     <div
       onClick={() => onSelect?.(fixture)}
       style={{
-        background: flagGradient(fixture.homeTeam?.name, fixture.awayTeam?.name, featured ? 'linear-gradient(135deg, rgba(168,52,74,0.10) 0%, #0B0B0D 60%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)'),
+        background: useFlagBleed
+          ? (featured ? 'linear-gradient(135deg, rgba(168,52,74,0.10) 0%, #0B0B0D 60%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)')
+          : flagGradient(fixture.homeTeam?.name, fixture.awayTeam?.name, featured ? 'linear-gradient(135deg, rgba(168,52,74,0.10) 0%, #0B0B0D 60%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)'),
         border: `1px solid ${featured ? 'rgba(168,52,74,0.25)' : 'var(--border-subtle)'}`,
         borderRadius: 16,
         padding: 'clamp(14px, 4vw, 20px) clamp(14px, 4vw, 24px)',
@@ -89,6 +96,9 @@ function InsightCard({ fixture, onSelect, featured, index }) {
         display: 'flex',
         flexDirection: 'column',
         gap: 16,
+        position: 'relative',
+        overflow: 'hidden',
+        isolation: 'isolate',
       }}
       onMouseEnter={e => {
         e.currentTarget.style.borderColor = featured ? 'rgba(168,52,74,0.45)' : 'var(--border-default)';
@@ -101,6 +111,13 @@ function InsightCard({ fixture, onSelect, featured, index }) {
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
+      {useFlagBleed && (
+        <FlagBleed
+          home={fixture.homeTeam?.name}
+          away={fixture.awayTeam?.name}
+          opacity={featured ? 0.75 : 0.65}
+        />
+      )}
       {/* Top Row: Competition + Status */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
