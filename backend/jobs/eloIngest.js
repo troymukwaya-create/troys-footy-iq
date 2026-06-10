@@ -2,14 +2,28 @@
 // Feeds finished national-team results (qualifiers, friendlies, finals) into
 // the Elo learner so the World Cup model sharpens from the games happening now.
 //
-// ingestInternationalEloResults(results) is the testable core: give it an
-// array of finished matches and it updates + persists every team's rating.
-// fetchRecentInternationalResults() is a best-effort source via football-data.org.
+// Sources:
+//   - API-Football (paid): World Cup finals + international friendlies —
+//     the June warm-up games football-data.org's free tier doesn't carry.
+//   - football-data.org (free): WC/EC competitions, best-effort backup.
+//
+// DEDUP: the learning cycle runs every 6 hours over a 7-day window, so the
+// same finished match used to be re-applied ~28 times — each pass dragging
+// ratings further toward fully absorbing a single result. Every match id is
+// now recorded in elo_processed_matches and applied exactly ONCE.
+//
+// NEUTRALITY: 2026 is a hosted World Cup — USA/Canada/Mexico home matches
+// are NOT neutral (the prediction side already gives hosts an Elo edge; the
+// learning side must price it too or host wins get over-credited).
 
 import { applyResult } from '../engine/nationalTeams.js';
+import api from '../services/apisports.js';
+import { safeQuery, isDbAvailable } from '../db/index.js';
 
 // football-data.org competition codes that are national-team football.
 const INTL_COMPETITIONS = 'WC,EC';   // World Cup + Euros (free-tier coverage)
+
+const HOST_NATIONS = /^(usa|united states|canada|mexico)$/i;
 
 function hasFdToken() {
   const t = process.env.FOOTBALLDATA_TOKEN || '';
@@ -26,29 +40,77 @@ function importanceOf(competitionName = '') {
   return 'qualifier';
 }
 
-/**
- * Core learner — apply a batch of finished international results to Elo.
- * @param {Array<{homeName,awayName,homeGoals,awayGoals,neutral,importance}>} results
- */
-export async function ingestInternationalEloResults(results = []) {
-  let learned = 0;
-  const deltas = [];
-  for (const r of results) {
-    if (r?.homeGoals == null || r?.awayGoals == null) continue;
-    const out = await applyResult({
-      homeName: r.homeName, awayName: r.awayName,
-      homeGoals: r.homeGoals, awayGoals: r.awayGoals,
-      neutral: r.neutral !== false,                 // internationals are usually neutral
-      importance: r.importance || 'qualifier',
-    });
-    if (out) { learned++; deltas.push({ home: out.home.name, away: out.away.name, delta: out.delta }); }
-  }
-  return { learned, deltas };
+// A World Cup finals match is only neutral when the "home" team isn't a host.
+function isNeutral(homeName, importance) {
+  if (importance === 'friendly') return false;            // home side usually hosts
+  if (importance === 'world_cup' && HOST_NATIONS.test(String(homeName || '').trim())) return false;
+  return true;
+}
+
+// ─── Dedup helpers ──────────────────────────────────────────────────
+async function alreadyProcessed(matchId) {
+  if (!matchId || !isDbAvailable()) return false;   // no DB → learn (in-memory only anyway)
+  const r = await safeQuery(`SELECT 1 FROM elo_processed_matches WHERE match_id = $1`, [matchId]);
+  return !!r?.rows?.length;
+}
+
+async function markProcessed(matchId) {
+  if (!matchId || !isDbAvailable()) return;
+  await safeQuery(
+    `INSERT INTO elo_processed_matches (match_id) VALUES ($1) ON CONFLICT DO NOTHING`,
+    [matchId]
+  );
 }
 
 /**
- * Best-effort fetch of recent finished international matches (last `days`).
- * Returns [] when no token / no data — the caller no-ops safely.
+ * Core learner — apply a batch of finished international results to Elo.
+ * Each match (by id) shifts ratings exactly once, ever.
+ * @param {Array<{id,homeName,awayName,homeGoals,awayGoals,neutral,importance}>} results
+ */
+export async function ingestInternationalEloResults(results = []) {
+  let learned = 0, skipped = 0;
+  const deltas = [];
+  for (const r of results) {
+    if (r?.homeGoals == null || r?.awayGoals == null) continue;
+    if (await alreadyProcessed(r.id)) { skipped++; continue; }
+    const out = await applyResult({
+      homeName: r.homeName, awayName: r.awayName,
+      homeGoals: r.homeGoals, awayGoals: r.awayGoals,
+      neutral: r.neutral !== false,
+      importance: r.importance || 'qualifier',
+    });
+    if (out) {
+      await markProcessed(r.id);
+      learned++;
+      deltas.push({ home: out.home.name, away: out.away.name, delta: out.delta });
+    }
+  }
+  return { learned, skipped, deltas };
+}
+
+/**
+ * API-Football: finished WC finals + friendlies in the last `days`.
+ */
+export async function fetchInternationalResultsApiFootball(days = 7) {
+  try {
+    const matches = await api.getInternationalResults(days);
+    return matches.map(m => ({
+      id: m.id,                                        // 'apf_<fixtureId>'
+      homeName: m.homeTeam?.name,
+      awayName: m.awayTeam?.name,
+      homeGoals: m.score.home,
+      awayGoals: m.score.away,
+      neutral: isNeutral(m.homeTeam?.name, m.eloImportance),
+      importance: m.eloImportance,
+    }));
+  } catch (e) {
+    console.warn('[eloIngest] API-Football fetch failed (non-fatal):', e.message);
+    return [];
+  }
+}
+
+/**
+ * football-data.org: best-effort backup source (WC/EC codes).
  */
 export async function fetchRecentInternationalResults(days = 7) {
   if (!hasFdToken()) return [];
@@ -63,27 +125,49 @@ export async function fetchRecentInternationalResults(days = 7) {
     });
     return (r.data?.matches || [])
       .filter(m => m.score?.fullTime?.home != null)
-      .map(m => ({
-        homeName: m.homeTeam?.name,
-        awayName: m.awayTeam?.name,
-        homeGoals: m.score.fullTime.home,
-        awayGoals: m.score.fullTime.away,
-        neutral: true,
-        importance: importanceOf(m.competition?.name),
-      }));
+      .map(m => {
+        const importance = importanceOf(m.competition?.name);
+        return {
+          id: 'fd_' + m.id,
+          homeName: m.homeTeam?.name,
+          awayName: m.awayTeam?.name,
+          homeGoals: m.score.fullTime.home,
+          awayGoals: m.score.fullTime.away,
+          neutral: isNeutral(m.homeTeam?.name, importance),
+          importance,
+        };
+      });
   } catch (e) {
     console.warn('[eloIngest] fetch failed (non-fatal):', e.message);
     return [];
   }
 }
 
-/** Full cycle: fetch recent international results and learn from them. */
+/** Full cycle: fetch recent international results from both sources and learn. */
 export async function runEloLearningCycle() {
-  const results = await fetchRecentInternationalResults(7);
+  const [apf, fd] = await Promise.all([
+    fetchInternationalResultsApiFootball(7),
+    fetchRecentInternationalResults(7),
+  ]);
+  // API-Football first (richer coverage); FD entries for the same real-world
+  // match have different ids, so dedupe across sources by team-pair + scoreline.
+  const seen = new Set(apf.map(r => pairKey(r)));
+  const results = [...apf, ...fd.filter(r => !seen.has(pairKey(r)))];
+
   if (!results.length) { console.log('[eloIngest] No new international results to learn from'); return { learned: 0 }; }
   const out = await ingestInternationalEloResults(results);
-  console.log(`[eloIngest] Learned from ${out.learned} international results`);
+  console.log(`[eloIngest] Learned from ${out.learned} international results (${out.skipped} already processed)`);
   return out;
 }
 
-export default { ingestInternationalEloResults, fetchRecentInternationalResults, runEloLearningCycle };
+function pairKey(r) {
+  const n = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
+  return `${n(r.homeName)}|${n(r.awayName)}|${r.homeGoals}-${r.awayGoals}`;
+}
+
+export default {
+  ingestInternationalEloResults,
+  fetchRecentInternationalResults,
+  fetchInternationalResultsApiFootball,
+  runEloLearningCycle,
+};

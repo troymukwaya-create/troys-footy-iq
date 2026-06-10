@@ -112,12 +112,18 @@ export async function generateDailyPredictions() {
       aws.form as away_form, aws.played as away_played,
       aws.wins as away_wins, aws.draws as away_draws
     FROM fixtures f
+    JOIN leagues l ON f.league_id = l.id
     JOIN teams ht ON f.home_team_id = ht.id
     JOIN teams at ON f.away_team_id = at.id
     LEFT JOIN team_season_stats hs ON hs.team_id = f.home_team_id AND hs.league_id = f.league_id
     LEFT JOIN team_season_stats aws ON aws.team_id = f.away_team_id AND aws.league_id = f.league_id
     LEFT JOIN predictions p ON p.fixture_id = f.id
     WHERE f.status IN ('SCHEDULED', 'NS', 'TIMED')
+      AND l.code != 'WC'
+      -- World Cup predictions are locked by jobs/wcPredictionLock.js using the
+      -- WC Elo+market model. The club model has no national-team stats and was
+      -- silently storing league-average defaults for WC fixtures — those
+      -- defaults would have been what the public Brier scored.
       AND f.match_date > NOW()
       AND f.match_date < NOW() + INTERVAL '3 days'
       AND p.id IS NULL

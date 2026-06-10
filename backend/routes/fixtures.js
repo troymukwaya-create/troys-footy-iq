@@ -12,6 +12,7 @@ import cacheService from '../services/cache.js';
 import { predictStatic } from '../engine/inferenceEngine.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import * as toa from '../services/sources/theOddsApi.js';
+import { getWcTeamForm, buildWcContext, isKnockoutRound } from '../services/wcForm.js';
 import { validateFixtureBatch, getValidationLog } from '../engine/fixtureValidator.js';
 import { LOCKED_DEMO_FIXTURES } from '../config/lockedDemoFixtures.js';
 
@@ -84,19 +85,34 @@ async function getAllFixturesData() {
     wcFixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Attach predictions, blending bookmaker odds (The Odds API) where available.
+    // Context (cached form, rest days, availability, venue, knockout) comes from
+    // the same wcForm cache the prediction-lock job uses, so the card, the
+    // analysis page, and the SCORED prediction all show the same numbers.
     let wcOdds = [];
     try { if (toa.hasKey()) wcOdds = await toa.getEvents(); } catch (e) { console.warn('[fixtures] WC odds fetch failed:', e.message); }
     for (const f of wcFixtures) {
       attachPrediction(f); // cache-attaches any AI verdict + base probability
       const ev = wcOdds.length ? toa.matchEvent(wcOdds, f.homeTeam?.name, f.awayTeam?.name) : null;
       const market = ev ? toa.impliedProbs(ev) : null;
-      const pred = predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name, market);
+      let ctx = {};
+      try {
+        const [hf, af] = await Promise.all([
+          getWcTeamForm(f.homeTeam?.id),
+          getWcTeamForm(f.awayTeam?.id),
+        ]);
+        ctx = buildWcContext(f.date, hf, af, {
+          venueCity: f.city || f.venue || '',
+          knockout: isKnockoutRound(f.league?.round || f.matchday),
+        });
+      } catch { /* context is optional — prediction still runs */ }
+      const pred = predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name, market, ctx);
       f.probability = {
         riskLevel: pred.riskLevel,
         probabilities: pred.probabilities,
         topScorelines: (pred.topScorelines || []).slice(0, 2),
         model: pred.model,
         valueEdges: pred.valueEdges,
+        advance: pred.advance || undefined,   // knockout: P(advance) incl. ET/pens
       };
     }
     console.log(`[fixtures] 🏆 World Cup section: ${wcFixtures.length} fixtures merged into the feed`);

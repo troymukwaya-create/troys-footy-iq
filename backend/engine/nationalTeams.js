@@ -9,8 +9,9 @@
 // strength is what matters; values are refined as tournament results arrive.
 
 import { generateProbabilities } from './poissonCore.js';
-import { updateElo } from './eloLearning.js';
+import { updateElo, expectedScore } from './eloLearning.js';
 import { adjustExpectedGoals } from './matchContext.js';
+import { getWcMarketWeight } from './marketWeight.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 
 // World Football Elo snapshot (eloratings.net, ~2026) — all 48 qualified
@@ -34,7 +35,9 @@ const DEFAULT_ELO    = 1640;   // unknown / weakest qualifiers
 const WC_AVG_GOALS   = 1.35;   // goals per team per match (recent WCs ≈ 2.7 total)
 const GOAL_SCALE     = 700;    // Elo→goals sensitivity (higher = flatter)
 const HOST_ELO_BOOST = 60;     // host nations get a modest home edge
-const MARKET_WEIGHT  = 0.35;   // how much bookmaker odds nudge the Elo model
+const HOST_ELO_BOOST_ALTITUDE = 85; // Mexico at altitude (Azteca 2240m, Guadalajara 1566m)
+const ALTITUDE_VENUE_RE = /mexico city|ciudad de m|guadalajara|zapopan|monterrey|azteca|akron|bbva/i;
+// Market blend weight is LEARNED daily from scored WC matches (marketWeight.js).
 const HOSTS = new Set(['usa', 'united states', 'canada', 'mexico']);
 
 const norm = (s) => String(s || '').toLowerCase()
@@ -58,6 +61,9 @@ export function getElo(name) {
   }
   return DEFAULT_ELO;
 }
+
+/** Drop all learned overrides (admin reset) — back to the static snapshot. */
+export function resetEloOverrides() { ELO_OVERRIDES.clear(); }
 
 /** Load learned Elo ratings from the DB into memory (call once at startup). */
 export async function loadPersistedElo() {
@@ -97,29 +103,59 @@ export async function applyResult({ homeName, awayName, homeGoals, awayGoals, ne
 const isHost = (name) => HOSTS.has(String(name || '').toLowerCase().trim());
 
 /**
+ * Opponent-strength factor for a team's recent-form goals.
+ * Raw goals-for over qualifiers are inflated by farming weak opposition
+ * (most of the 48 qualified through seeded groups). Scale by the average
+ * Elo of the opponents actually faced, relative to a WC-average opponent
+ * (~1800): goals vs minnows count less, goals vs elite count more.
+ */
+function opponentStrengthFactor(formObj) {
+  const opps = (formObj?.recentResults || [])
+    .map(r => getElo(r.opponent))
+    .filter(e => Number.isFinite(e));
+  if (!opps.length) return 1;
+  const avg = opps.reduce((a, b) => a + b, 0) / opps.length;
+  return clamp(Math.pow(10, (avg - 1800) / 1200), 0.7, 1.3);
+}
+
+/**
  * Full pre-match prediction for a World Cup match, from national-team Elo.
  * Returns the same shape as the Poisson core, enriched with strength metadata.
+ *
+ * ctx extras (all optional): homeForm/awayForm, homeRestDays/awayRestDays,
+ * homeAvailability/awayAvailability, venueCity, knockout.
  */
 export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx = {}) {
   const homeElo = getElo(homeName);
   const awayElo = getElo(awayName);
-  const homeAdv = isHost(homeName) ? HOST_ELO_BOOST : 0;   // neutral unless host nation
+  // Neutral unless host nation. Mexico's edge at altitude venues is real
+  // physiology (acclimatized squad at 1500-2240m), not just crowd — boost more.
+  let homeAdv = isHost(homeName) ? HOST_ELO_BOOST : 0;
+  if (homeAdv && norm(homeName) === 'mexico' && ALTITUDE_VENUE_RE.test(String(ctx.venueCity || ''))) {
+    homeAdv = HOST_ELO_BOOST_ALTITUDE;
+  }
   const dr = (homeElo + homeAdv) - awayElo;
 
   let baseLh = clamp(WC_AVG_GOALS * Math.exp(dr / GOAL_SCALE), 0.25, 4.5);
   let baseLa = clamp(WC_AVG_GOALS * Math.exp(-dr / GOAL_SCALE), 0.25, 4.5);
 
   // Blend in REAL recent form (qualifiers/friendlies from the paid API): a
-  // team's recent attack vs the opponent's recent defence. Weight grows with
-  // how many recent matches we have (up to 50% at 8+ games each side). This is
-  // how matchday-1 teams are judged from the games that led up to the tournament.
+  // team's recent attack vs the opponent's recent defence, each adjusted by
+  // the strength of opposition faced. Weight grows with sample size, capped
+  // at 35% — Elo (opponent-adjusted by construction) stays the backbone.
   const hf = ctx.homeForm, af = ctx.awayForm;
   let formWeight = 0, matchesUsed = 0;
   if (hf?.played && af?.played && hf.avgGoalsFor != null && af.avgGoalsFor != null) {
     matchesUsed = Math.min(hf.played, af.played);
-    const formLh = (Number(hf.avgGoalsFor) + Number(af.avgGoalsAgainst)) / 2;
-    const formLa = (Number(af.avgGoalsFor) + Number(hf.avgGoalsAgainst)) / 2;
-    formWeight = Math.min(0.5, matchesUsed / 16);
+    const hOpp = opponentStrengthFactor(hf);
+    const aOpp = opponentStrengthFactor(af);
+    // Goals scored vs weak opposition discounted; goals conceded vs weak
+    // opposition flag a worse defence than the raw number suggests.
+    const hGF = Number(hf.avgGoalsFor) * hOpp, hGA = Number(hf.avgGoalsAgainst) / hOpp;
+    const aGF = Number(af.avgGoalsFor) * aOpp, aGA = Number(af.avgGoalsAgainst) / aOpp;
+    const formLh = (hGF + aGA) / 2;
+    const formLa = (aGF + hGA) / 2;
+    formWeight = Math.min(0.35, matchesUsed / 20);
     baseLh = clamp((1 - formWeight) * baseLh + formWeight * formLh, 0.25, 4.5);
     baseLa = clamp((1 - formWeight) * baseLa + formWeight * formLa, 0.25, 4.5);
   }
@@ -132,12 +168,13 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
   const result = generateProbabilities(lambdaHome, lambdaAway, -0.08);
   const modelProbs = { ...result.probabilities };
 
-  // Blend a modest, sharp market signal (great for low-data international football)
-  // and surface the model-vs-market value edge — the core product feature.
+  // Blend the sharp market consensus (markets reliably beat ratings models
+  // for internationals) and surface the model-vs-market value edge — the
+  // core product feature. The weight is learned daily from scored matches.
   let probabilities = modelProbs;
   let valueEdges = null;
+  const W = getWcMarketWeight();
   if (marketProbs && Number.isFinite(marketProbs.home)) {
-    const W = MARKET_WEIGHT;
     let h = (1 - W) * modelProbs.home + W * marketProbs.home;
     let d = (1 - W) * modelProbs.draw + W * marketProbs.draw;
     let a = (1 - W) * modelProbs.away + W * marketProbs.away;
@@ -155,6 +192,19 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
     : (away >= draw) ? { name: `${awayName} win`, probability: away }
     : { name: 'Draw', probability: draw };
 
+  // Knockout: probability of ADVANCING. The 1X2 is the 90-minute market;
+  // a drawn 90 goes to extra time + penalties, where the Elo edge still
+  // counts but is shrunk hard toward a coin flip (pens are near-random).
+  let advance = null;
+  if (ctx.knockout) {
+    const exp = expectedScore(homeElo + homeAdv, awayElo, true); // 0..1
+    const pHomeInExtra = clamp(0.5 + (exp - 0.5) * 0.5, 0.35, 0.65);
+    advance = {
+      home: r1(home + draw * pHomeInExtra),
+      away: r1(away + draw * (1 - pHomeInExtra)),
+    };
+  }
+
   return {
     ...result,
     probabilities,
@@ -163,6 +213,8 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
     modelProbs,
     marketProbs: marketProbs || null,
     valueEdges,
+    advance,
+    marketWeight: marketProbs ? W : null,
     nationalStrength: {
       homeElo, awayElo,
       neutral: homeAdv === 0,
@@ -180,4 +232,4 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function round(v) { return Math.round(v * 100) / 100; }
 function r1(v) { return parseFloat(Number(v).toFixed(1)); }
 
-export default { getElo, predictWorldCupMatch, loadPersistedElo, applyResult };
+export default { getElo, predictWorldCupMatch, loadPersistedElo, applyResult, resetEloOverrides };

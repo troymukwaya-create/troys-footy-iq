@@ -74,6 +74,7 @@ function buildMatchContext(match, homeForm, awayForm) {
 }
 import oddsService from '../services/oddsService.js';
 import { impliedProbs } from '../services/sources/theOddsApi.js';
+import { isKnockoutRound } from '../services/wcForm.js';
 import { buildReasoning } from '../engine/reasoning.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
@@ -347,6 +348,8 @@ router.get('/:matchId', async (req, res) => {
       // (fixture congestion) and injuries so the model judges matchday-1 teams
       // from the games + conditions that led up to the tournament.
       const wcCtx = buildMatchContext(match, homeForm, awayForm);
+      wcCtx.venueCity = match.city || match.venue || '';
+      wcCtx.knockout = isKnockoutRound(match.league?.round || match.matchday);
       probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, wcCtx);
       console.log(`[analysis] ${matchId} WC prediction (market:${!!marketProbs}, form:${probabilityResult?.nationalStrength?.recentMatchesUsed || 0}g, rest:${wcCtx.homeRestDays ?? '?'}/${wcCtx.awayRestDays ?? '?'}d, inj:${homeForm?.injuries?.length || 0}/${awayForm?.injuries?.length || 0})`);
     } else if (validation.valid) {
@@ -408,7 +411,11 @@ router.get('/:matchId', async (req, res) => {
         const features = computePreMatchFeatures(homeStats, awayStats, {
           h2h: h2hData || emptyH2H(),
         });
-        // Fire-and-forget — don't block the response, but log errors
+        // Fire-and-forget — don't block the response, but log errors.
+        // WC predictions go under the canonical wc-elo-market-v1 version so
+        // the T-60min lock job (jobs/wcPredictionLock.js) upserts OVER this
+        // snapshot — one scored row per fixture, always the displayed model.
+        const isWc = typeof probabilityResult.model === 'string' && probabilityResult.model.startsWith('wc-');
         storePrediction({
           matchExternalId: matchId,
           homeTeam: match.homeTeam?.name,
@@ -417,6 +424,8 @@ router.get('/:matchId', async (req, res) => {
           odds: null,
           valueEdges: null,
           features,
+          leagueCode: match.league?.code || null,
+          modelVersion: isWc ? 'wc-elo-market-v1' : undefined,
         }).catch(err => {
           console.error(`[analysis] Prediction storage failed for ${matchId}:`, err.message);
         });

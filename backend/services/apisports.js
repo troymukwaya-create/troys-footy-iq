@@ -316,6 +316,30 @@ async function getInjuries(leagueCode) {
   return safeFetch('injuries', { league: leagueId, season: SEASON });
 }
 
+// Finished international matches (for Elo learning): World Cup finals
+// (league 1) + international friendlies (league 10) — the June warm-up
+// games are the freshest pre-tournament signal and football-data.org's
+// free tier doesn't carry them. Season for both is the tournament year.
+const INTL_ELO_LEAGUES = [
+  { id: 1, season: 2026, importance: 'world_cup' },
+  { id: 10, season: 2026, importance: 'friendly' },
+];
+async function getInternationalResults(days = 7) {
+  if (!hasKey()) return [];
+  const from = new Date(Date.now() - days * 86400000).toISOString().split('T')[0];
+  const to = new Date().toISOString().split('T')[0];
+  const out = [];
+  for (const lg of INTL_ELO_LEAGUES) {
+    const raw = await safeFetch('fixtures', { league: lg.id, season: lg.season, from, to });
+    for (const f of raw || []) {
+      const n = normalise(f);
+      if (n.status !== 'FINISHED' || n.score.home == null) continue;
+      out.push({ ...n, eloImportance: lg.importance });
+    }
+  }
+  return out;
+}
+
 // Current injuries / unavailable players for a single team (national or club).
 // Used by the availability criterion — missing key players lower expected goals.
 async function getTeamInjuries(teamId) {
@@ -340,4 +364,5 @@ export default {
   getStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures,
   getTopScorers, getPlayerStats,
   getH2H, getPredictions, getInjuries, getTeamInjuries,
+  getInternationalResults,
 };
