@@ -4,6 +4,7 @@
 
 import { Router } from 'express';
 import { getFixtureOdds, getTodayOdds, computeValueEdges, computeParlay } from '../services/oddsService.js';
+import { getUnifiedModelProbs } from '../services/wcDisplayPrediction.js';
 import { predictStatic } from '../engine/inferenceEngine.js';
 import cache from '../services/cache.js';
 
@@ -26,18 +27,22 @@ router.get('/:fixtureId/markets', async (req, res) => {
     let odds = await getFixtureOdds(fixtureId);
     if (!odds) odds = generateDemoOdds(fixtureId);
 
-    // Get model probabilities for value edges
+    // Model probabilities for value edges — the SAME numbers the Analysis tab
+    // and the fixture card show (locked row → cached analysis → shared WC
+    // prediction). If no real model output exists we show market odds with no
+    // model column: a fabricated default here once recommended a 38%-model
+    // "value pick" on an outcome the headline model priced at 16%.
     let modelProbs = null;
     try {
-      const pred = predictStatic({}, {});
-      modelProbs = pred?.probabilities || null;
-    } catch { /* ignore */ }
+      modelProbs = await getUnifiedModelProbs(fixtureId);
+    } catch { /* ignore — markets render without a model column */ }
 
     // Transform from bookmaker-grouped → outcome-grouped
     const markets = transformToOutcomeGrouped(odds, modelProbs);
 
-    // Cache for 15 min
-    cache.set(cacheKey, markets, 900);
+    // Cache for 10 min — matches the shared WC prediction cadence, so the
+    // Markets tab can never lag the Analysis tab by more than one cycle.
+    cache.set(cacheKey, markets, 600);
 
     res.json({ error: false, data: markets, source: 'live' });
   } catch (err) {
@@ -194,19 +199,40 @@ router.get('/:fixtureId/value', async (req, res) => {
     let odds = await getFixtureOdds(fixtureId);
     if (!odds) odds = generateDemoOdds(fixtureId);
 
-    const homeStats = req.query.homeStats ? JSON.parse(req.query.homeStats) : {};
-    const awayStats = req.query.awayStats ? JSON.parse(req.query.awayStats) : {};
-    const prediction = predictStatic(homeStats, awayStats);
+    // Prefer the unified model (the numbers the rest of the site shows).
+    // Only fall back to the stats-driven static model when the caller
+    // supplied real team stats; bare defaults are never served as "value".
+    const unified = await getUnifiedModelProbs(fixtureId).catch(() => null);
+    let probabilities = null;
+    let riskLevel = null;
+    if (unified) {
+      probabilities = { home: unified.home, draw: unified.draw, away: unified.away };
+      const maxP = Math.max(unified.home, unified.draw, unified.away);
+      riskLevel = maxP > 65 ? 'LOW' : maxP >= 45 ? 'MEDIUM' : 'HIGH';
+    } else if (req.query.homeStats || req.query.awayStats) {
+      const homeStats = req.query.homeStats ? JSON.parse(req.query.homeStats) : {};
+      const awayStats = req.query.awayStats ? JSON.parse(req.query.awayStats) : {};
+      const prediction = predictStatic(homeStats, awayStats);
+      probabilities = prediction.probabilities;
+      riskLevel = prediction.riskLevel;
+    }
 
-    const edges = computeValueEdges(odds, prediction.probabilities);
+    if (!probabilities) {
+      return res.json({
+        error: false,
+        data: { fixtureId, edges: [], modelProbabilities: null, riskLevel: null, bestPicks: [] },
+      });
+    }
+
+    const edges = computeValueEdges(odds, probabilities);
 
     res.json({
       error: false,
       data: {
         fixtureId,
         edges,
-        modelProbabilities: prediction.probabilities,
-        riskLevel: prediction.riskLevel,
+        modelProbabilities: probabilities,
+        riskLevel,
         bestPicks: edges.filter(e => e.hasValue),
       },
     });

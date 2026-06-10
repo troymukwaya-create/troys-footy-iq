@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronLeft } from 'lucide-react';
 import { MarketsPanel } from './MarketsPanel.jsx';
+import { ShareCallButton } from './ShareCallButton.jsx';
+import { EmailCapture } from './EmailCapture.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 
 /**
@@ -54,6 +56,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
         )}
         <span style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>{home} v {away}</span>
         <span style={{ fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: 'var(--text-secondary)', flexShrink: 0 }}>{fixture?.score?.home ?? '–'}:{fixture?.score?.away ?? '–'}</span>
+        <ShareCallButton fixture={fixture} prob={prob} />
       </div>
 
       {/* ─── Match Header ─────────────────────────────────── */}
@@ -393,6 +396,19 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Email capture — the reader just consumed a full analysis;
+            this is the moment they're most likely to want tomorrow's. ── */}
+      {!isLoading && (
+        <div style={{ marginTop: 20, padding: 'clamp(16px, 4vw, 24px)', borderRadius: 16, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+          <EmailCapture
+            source="match"
+            headline="Want the next call before kickoff?"
+            sub="The day’s best value picks in your inbox every World Cup morning — who wins, why, and where the bookies are wrong."
+            hideIfSubscribed
+          />
+        </div>
       )}
     </motion.div>
   );

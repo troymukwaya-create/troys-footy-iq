@@ -18,8 +18,7 @@
 
 import api from '../services/apisports.js';
 import * as toa from '../services/sources/theOddsApi.js';
-import { predictWorldCupMatch } from '../engine/nationalTeams.js';
-import { getWcTeamForm, buildWcContext, isKnockoutRound } from '../services/wcForm.js';
+import { computeWcPrediction } from '../services/wcDisplayPrediction.js';
 import { storePrediction } from '../services/predictionService.js';
 import { upsertFixture } from '../db/upsert.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
@@ -74,23 +73,10 @@ export async function runWcPredictionLock() {
         catch (e) { console.warn(`[wcLock] fixture upsert failed for ${match.id}:`, e.message); }
       }
 
-      // 2. Context — identical inputs to the analysis page, from cache only.
-      const [homeForm, awayForm] = await Promise.all([
-        getWcTeamForm(match.homeTeam?.id),
-        getWcTeamForm(match.awayTeam?.id),
-      ]);
-      const ctx = buildWcContext(match.date, homeForm, awayForm, {
-        venueCity: match.city || match.venue || '',
-        knockout: isKnockoutRound(match.league?.round),
-      });
-
-      const ev = oddsEvents.length
-        ? toa.matchEvent(oddsEvents, match.homeTeam?.name, match.awayTeam?.name)
-        : null;
-      const marketProbs = ev ? toa.impliedProbs(ev) : null;
-
-      // 3. Predict + lock.
-      const pred = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, ctx);
+      // 2+3. Predict via the SHARED code path (services/wcDisplayPrediction):
+      // the locked row is computed by literally the same function the cards
+      // and the analysis page use, so display and scoring can never diverge.
+      const { pred, ev, marketProbs, ctx } = await computeWcPrediction(match, { oddsEvents });
 
       const best = ev?.markets?.['1X2']?.bestOdds || null;
       const odds = best?.Home && best?.Draw && best?.Away
@@ -118,6 +104,9 @@ export async function runWcPredictionLock() {
           nationalStrength: pred.nationalStrength,
           contextFactors: pred.contextFactors,
           knockout: !!ctx.knockout,
+          // advance is stored so locked knockout rows can still display
+          // P(advance) — it is rehydrated by wcDisplayPrediction.
+          advance: pred.advance || null,
           lockedAt: new Date().toISOString(),
         },
         leagueCode: 'WC',

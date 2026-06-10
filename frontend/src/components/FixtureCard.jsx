@@ -110,15 +110,10 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
             </div>
           </div>
         </div>
-      ) : (
-        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
-          <div className="skeleton" style={{ height: 10, marginBottom: 8 }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div className="skeleton" style={{ height: 10, width: 48 }} />
-            <div className="skeleton" style={{ height: 16, width: 60, borderRadius: 'var(--radius-sm)' }} />
-          </div>
-        </div>
-      )}
+      ) : null}
+      {/* No probability → no strip. A skeleton here pulsed FOREVER on live/
+          finished matches whose endpoint never sends a prediction — a loading
+          state must only promise data that is actually on its way. */}
     </div>
   );
 }

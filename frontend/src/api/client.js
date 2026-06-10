@@ -9,33 +9,22 @@ const API_BASE = RAW.endsWith('/api') ? RAW : `${RAW.replace(/\/+$/, '')}/api`;
 
 const client = axios.create({
   baseURL: API_BASE,
-  // Long enough to survive a slow mobile network or a backend cold-start,
-  // short enough that a genuinely dead call falls back without a long hang.
-  timeout: 8000,
+  // Long enough to survive a Render cold start (~15-30s on the free tier).
+  // The UI shows skeletons while React Query waits + retries; an honest slow
+  // load beats a fast lie.
+  timeout: 25000,
 });
 
-// Fast fallback interceptor: If request fails or times out, immediately return fallback data
+// Errors REJECT. The old interceptor resolved every failure as a fake-200
+// empty payload, which (a) stopped React Query from ever retrying, and
+// (b) cached "no fixtures" as if it were truth — a cold start rendered an
+// empty dashboard until a hard reload. Every consumer already has its own
+// catch/fallback; the transport layer must not invent data.
 client.interceptors.response.use(
   response => response,
-  async error => {
-    console.warn('[net] API call failed/timed out; returning empty payload so the UI degrades gracefully.', error?.code || '');
-    
-    // Minimal fallback payload to ensure UI renders instantly
-    const fallbackData = {
-      status: 'ok',
-      source: 'demo_fallback',
-      fixtures: [], // Will be overridden by demo engine data
-      data: [],
-      dashboard: { 
-        model: { status: 'LIVE DEMO', version: 'v1.0 (Cached)' },
-        performance: { accuracy: null, brierScore: null },
-        calibration: { status: null, ece: null },
-        system: { demoMode: true }
-      }
-    };
-    
-    // Resolve the promise instead of rejecting so the UI doesn't crash
-    return Promise.resolve({ data: fallbackData, status: 200, statusText: 'OK', config: error.config, headers: {} });
+  error => {
+    console.warn('[net] API call failed:', error?.config?.url, error?.code || error?.message || '');
+    return Promise.reject(error);
   }
 );
 

@@ -100,7 +100,10 @@ export function useAnalysis(matchId) {
     staleTime: (query) => {
       // Dynamic staleTime based on data quality
       const quality = query?.state?.data?.dataQuality;
-      if (quality === 'COMPLETE') return 24 * 60 * 60 * 1000; // 24h
+      const isWc = query?.state?.data?.match?.league?.code === 'WC';
+      // WC analyses track moving odds until the pre-kickoff lock — pinning
+      // them for 24h made the page contradict the (fresher) fixture cards.
+      if (quality === 'COMPLETE') return isWc ? 10 * 60 * 1000 : 24 * 60 * 60 * 1000;
       if (quality === 'PARTIAL') return 5 * 60 * 1000; // 5 min — retry soon
       return 60 * 1000; // 1 min for insufficient — retry aggressively
     },

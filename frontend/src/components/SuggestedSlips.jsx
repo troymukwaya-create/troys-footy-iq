@@ -1,7 +1,15 @@
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, Trophy, Gem, Shield, Rocket } from 'lucide-react';
 import { useStore } from '../store/useStore.js';
+
+// ─── SANITY RAILS ────────────────────────────────────────────────────
+// A slip is a recommendation; a recommendation with a six-figure multiplier
+// is a credibility bug, not a bet. Legs and slips outside these bounds are
+// DROPPED, never displayed: garbage-in must not become a headline number.
+const MAX_LEG_ODDS = 15;      // no single 1X2 leg above 15.00
+const MAX_SLIP_ODDS = 250;    // no acca above 250.00
+const MAX_SLIP_EV_PCT = 100;  // an EV above +100% means the inputs are wrong
 
 // Build a single 1X2 leg for a fixture + outcome, recovering the bookmaker's
 // implied odds from the model probability and the published value edge so the
@@ -12,7 +20,10 @@ function outcomeLeg(f, outcome) {
   const mp = (probs[outcome] ?? 0) / 100;
   if (mp <= 0) return null;
   const edge = (edges[outcome] ?? 0) / 100;
-  const marketImplied = Math.min(0.99, Math.max(0.02, mp - edge));
+  const marketImplied = Math.min(0.99, mp - edge);
+  // Reconstructed odds beyond the rail mean the edge data is broken for this
+  // fixture (a clamped market prob once produced a "631250× Value Acca").
+  if (!(marketImplied > 0) || 1 / marketImplied > MAX_LEG_ODDS) return null;
   const odds = 1 / marketImplied;
   const label = outcome === 'home' ? `${f.homeTeam?.name} win`
     : outcome === 'away' ? `${f.awayTeam?.name} win` : 'Draw';
@@ -56,7 +67,7 @@ function buildSlips(fixtures) {
     .filter(Boolean)
     .sort((a, b) => b._edge - a._edge)
     .slice(0, 4);
-  if (valueLegs.length >= 2) slips.push({ id: 'value', emoji: '💎', title: 'Value Acca', subtitle: 'Where the model most disagrees with the bookies', legs: valueLegs });
+  if (valueLegs.length >= 2) slips.push({ id: 'value', icon: Gem, title: 'Value Acca', subtitle: 'Where the model most disagrees with the bookies', legs: valueLegs });
 
   // 🛡️ Banker Treble — highest-confidence favourites
   const bankerLegs = pool
@@ -64,7 +75,7 @@ function buildSlips(fixtures) {
     .filter(Boolean)
     .sort((a, b) => b._mp - a._mp)
     .slice(0, 3);
-  if (bankerLegs.length >= 2) slips.push({ id: 'banker', emoji: '🛡️', title: 'Banker Treble', subtitle: 'Our three highest-confidence picks', legs: bankerLegs });
+  if (bankerLegs.length >= 2) slips.push({ id: 'banker', icon: Shield, title: 'Banker Treble', subtitle: 'Our three highest-confidence picks', legs: bankerLegs });
 
   // 🚀 Long-shot — higher-odds favourites stacked for a big return
   const longLegs = pool
@@ -73,7 +84,7 @@ function buildSlips(fixtures) {
     .filter(l => l._mp < 0.5)
     .sort((a, b) => b.odds - a.odds)
     .slice(0, 4);
-  if (longLegs.length >= 3) slips.push({ id: 'longshot', emoji: '🚀', title: 'Long-shot', subtitle: 'High odds, high reward — edge shown honestly', legs: longLegs });
+  if (longLegs.length >= 3) slips.push({ id: 'longshot', icon: Rocket, title: 'Long-shot', subtitle: 'High odds, high reward — edge shown honestly', legs: longLegs });
 
   // 🏆 World Cup Special — tournament-only acca, pinned to the top
   const wc = pool.filter(f => f.league?.code === 'WC' || /world cup/i.test(f.league?.name || ''));
@@ -82,9 +93,14 @@ function buildSlips(fixtures) {
     .filter(Boolean)
     .sort((a, b) => b._mp - a._mp)
     .slice(0, 4);
-  if (wcLegs.length >= 2) slips.unshift({ id: 'wc', emoji: '🏆', title: 'World Cup Special', subtitle: 'A tournament acca for the big kickoff', legs: wcLegs, highlight: true });
+  if (wcLegs.length >= 2) slips.unshift({ id: 'wc', icon: Trophy, title: 'World Cup Special', subtitle: 'A tournament acca for the big kickoff', legs: wcLegs, highlight: true });
 
-  return slips;
+  // Final rail: any slip whose combined numbers are outside the believable
+  // range is dropped entirely — we'd rather show fewer slips than one absurd one.
+  return slips.filter(s => {
+    const m = slipMetrics(s.legs);
+    return m.odds <= MAX_SLIP_ODDS && m.evPct <= MAX_SLIP_EV_PCT;
+  });
 }
 
 function slipMetrics(legs) {
@@ -133,7 +149,7 @@ export function SuggestedSlips({ fixtures }) {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>{s.emoji} {s.title}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}><s.icon size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} /> {s.title}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>{m.odds.toFixed(2)}×</span>
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3, lineHeight: 1.4 }}>{s.subtitle}</div>

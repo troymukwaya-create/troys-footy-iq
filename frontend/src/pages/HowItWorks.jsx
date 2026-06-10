@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useReducedMotion, useMotionValue, animate } from 'motion/react';
-import { ArrowRight, ChevronDown } from 'lucide-react';
+import { ArrowRight, ChevronDown, Activity, MessageSquareText, Gem } from 'lucide-react';
 import { flagGradient } from '../constants/nationColors.js';
 import { EmailCapture } from '../components/EmailCapture.jsx';
 
@@ -14,14 +14,14 @@ const ease = [0.16, 1, 0.3, 1];
 const reveal = {
   initial: { opacity: 0, y: 28 },
   whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-60px' },
-  transition: { duration: 0.6, ease },
+  viewport: { once: true, margin: '0px' },
+  transition: { duration: 0.3, ease },
 };
 
 const PILLARS = [
-  { emoji: '🔮', title: 'A call on every game', body: 'From the World Cup final to a quiet midweek fixture, you’ll know who we fancy, the likely score, and how the goals might fall — before a ball is kicked.' },
-  { emoji: '💡', title: 'The story, not just the score', body: 'Anyone can fire off a tip. We tell you why — the form, the history, the home crowd, who’s injured — so the call stays yours to make.' },
-  { emoji: '💎', title: 'Where the bookies slip up', body: 'We hold our numbers up next to the bookmakers’ odds and point you to the bets actually worth backing — not just the favourites everyone’s already on.' },
+  { icon: Activity, title: 'A call on every game', body: 'From the World Cup final to a quiet midweek fixture, you’ll know who we fancy, the likely score, and how the goals might fall — before a ball is kicked.' },
+  { icon: MessageSquareText, title: 'The story, not just the score', body: 'Anyone can fire off a tip. We tell you why — the form, the history, the home crowd, who’s injured — so the call stays yours to make.' },
+  { icon: Gem, title: 'Where the bookies slip up', body: 'We hold our numbers up next to the bookmakers’ odds and point you to the bets actually worth backing — not just the favourites everyone’s already on.' },
 ];
 
 const STEPS = [
@@ -62,7 +62,7 @@ function PredictionCard() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 14, gap: 11 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 12, fontWeight: 800 }}><span style={{ color: 'var(--accent)' }}>Odd</span><span style={{ color: '#fff' }}>yessa</span></span>
-        <span style={{ fontSize: 8.5, fontWeight: 800, color: '#fff', background: 'var(--accent)', padding: '3px 8px', borderRadius: 99, letterSpacing: '0.04em' }}>🏆 WORLD CUP</span>
+        <span style={{ fontSize: 8.5, fontWeight: 800, color: '#fff', background: 'var(--accent)', padding: '3px 8px', borderRadius: 99, letterSpacing: '0.04em' }}>WORLD CUP</span>
       </div>
 
       <div style={{ borderRadius: 14, padding: 13, background: flagGradient('Spain', 'Brazil', 'linear-gradient(155deg,#14161B,#0B0B0D)'), border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -187,7 +187,7 @@ export default function HowItWorks() {
       <section ref={heroRef} style={{ position: 'relative', zIndex: 1, minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px 40px' }}>
         <div className="lp-hero">
           <motion.div className="lp-text" style={{ y: textY, opacity: textOpacity }}>
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease }} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 18 }}>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease }} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 18 }}>
               <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)' }}>O</span>
               </div>
@@ -195,12 +195,12 @@ export default function HowItWorks() {
             </motion.div>
             <motion.h1
               className="lp-h1"
-              initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.05, ease }}
+              initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.05, ease }}
               style={{ fontWeight: 900, letterSpacing: '-0.045em', lineHeight: 0.95, margin: 0, background: 'linear-gradient(180deg, #fff 30%, #b8889a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
             >
               Read the game.
             </motion.h1>
-            <motion.p className="lp-sub" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15, ease }} style={{ color: 'rgba(255,255,255,0.66)', lineHeight: 1.55 }}>
+            <motion.p className="lp-sub" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.12, ease }} style={{ color: 'rgba(255,255,255,0.66)', lineHeight: 1.55 }}>
               Who’s going to win, and why — worked out for every match before kickoff. Plus the bets where the bookmakers have got it wrong.
             </motion.p>
             <motion.div className="lp-cta-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
@@ -231,11 +231,11 @@ export default function HowItWorks() {
               initial={{ opacity: 0, y: 26 }}
               whileInView={{ opacity: 1, y: 0 }}
               whileHover={{ y: -6 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.55, delay: i * 0.1, ease }}
+              viewport={{ once: true, margin: '0px' }}
+              transition={{ duration: 0.35, delay: i * 0.05, ease }}
               style={{ padding: 24, borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
-              <div style={{ fontSize: 36, marginBottom: 14 }}>{p.emoji}</div>
+              <div style={{ marginBottom: 14 }}><p.icon size={30} style={{ color: 'var(--accent)' }} strokeWidth={1.75} /></div>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{p.title}</h3>
               <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{p.body}</p>
             </motion.div>
@@ -253,8 +253,8 @@ export default function HowItWorks() {
               key={s.n}
               initial={{ opacity: 0, x: -22 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, delay: i * 0.06, ease }}
+              viewport={{ once: true, margin: '0px' }}
+              transition={{ duration: 0.3, delay: i * 0.04, ease }}
               style={{ display: 'flex', gap: 18, alignItems: 'flex-start', padding: '18px 20px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
             >
               <div style={{ flexShrink: 0, width: 40, height: 40, borderRadius: '50%', background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 800, color: 'var(--accent)' }}>{s.n}</div>

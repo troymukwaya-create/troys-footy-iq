@@ -11,8 +11,7 @@ import * as fd from '../services/footballdata.js';
 import cacheService from '../services/cache.js';
 import { predictStatic } from '../engine/inferenceEngine.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
-import * as toa from '../services/sources/theOddsApi.js';
-import { getWcTeamForm, buildWcContext, isKnockoutRound } from '../services/wcForm.js';
+import { getWcDisplayPrediction, getLockedWcPredictionsMap, getSharedOddsEvents } from '../services/wcDisplayPrediction.js';
 import { validateFixtureBatch, getValidationLog } from '../engine/fixtureValidator.js';
 import { LOCKED_DEMO_FIXTURES } from '../config/lockedDemoFixtures.js';
 
@@ -34,7 +33,9 @@ const integrityState = {
 
 // Helper to attach cached predictions to a fixture
 function attachPrediction(f) {
-  const cached = cacheService.get('full_analysis_' + f.id);
+  // NOTE: analysis.js writes under 'full_analysis_v2_' — the old un-versioned
+  // key silently never hit, so cards could not reuse the page's numbers.
+  const cached = cacheService.get('full_analysis_v2_' + f.id);
   if (cached) {
     if (cached.ai) {
       f.ai_risk = cached.ai.risk_level || (cached.ai.confidence >= 70 ? 'LOW' : cached.ai.confidence >= 55 ? 'MEDIUM' : 'HIGH');
@@ -84,28 +85,16 @@ async function getAllFixturesData() {
     for (const f of valid) { if (!seenWc.has(f.id)) { seenWc.add(f.id); wcFixtures.push(f); } }
     wcFixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Attach predictions, blending bookmaker odds (The Odds API) where available.
-    // Context (cached form, rest days, availability, venue, knockout) comes from
-    // the same wcForm cache the prediction-lock job uses, so the card, the
-    // analysis page, and the SCORED prediction all show the same numbers.
-    let wcOdds = [];
-    try { if (toa.hasKey()) wcOdds = await toa.getEvents(); } catch (e) { console.warn('[fixtures] WC odds fetch failed:', e.message); }
+    // Attach predictions through the ONE shared source (wcDisplayPrediction):
+    // locked rows once the lock job has run, otherwise a shared 10-min-cached
+    // compute — so the card, the analysis page, the Markets tab and the SCORED
+    // prediction all show literally the same numbers.
+    const wcOdds = await getSharedOddsEvents();
+    const lockedMap = await getLockedWcPredictionsMap(wcFixtures.map(f => String(f.id)));
     for (const f of wcFixtures) {
       attachPrediction(f); // cache-attaches any AI verdict + base probability
-      const ev = wcOdds.length ? toa.matchEvent(wcOdds, f.homeTeam?.name, f.awayTeam?.name) : null;
-      const market = ev ? toa.impliedProbs(ev) : null;
-      let ctx = {};
-      try {
-        const [hf, af] = await Promise.all([
-          getWcTeamForm(f.homeTeam?.id),
-          getWcTeamForm(f.awayTeam?.id),
-        ]);
-        ctx = buildWcContext(f.date, hf, af, {
-          venueCity: f.city || f.venue || '',
-          knockout: isKnockoutRound(f.league?.round || f.matchday),
-        });
-      } catch { /* context is optional — prediction still runs */ }
-      const pred = predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name, market, ctx);
+      const pred = lockedMap.get(String(f.id))
+        || await getWcDisplayPrediction(f, { oddsEvents: wcOdds, skipLocked: true });
       f.probability = {
         riskLevel: pred.riskLevel,
         probabilities: pred.probabilities,
@@ -113,6 +102,7 @@ async function getAllFixturesData() {
         model: pred.model,
         valueEdges: pred.valueEdges,
         advance: pred.advance || undefined,   // knockout: P(advance) incl. ET/pens
+        locked: pred.locked || undefined,     // true once the scored row is frozen
       };
     }
     console.log(`[fixtures] 🏆 World Cup section: ${wcFixtures.length} fixtures merged into the feed`);
@@ -279,6 +269,24 @@ router.get('/finished', async (req, res) => {
 router.get('/live', async (req, res) => {
   try {
     const live = api.hasKey() ? await api.getLiveFixtures() : [];
+    // Attach the locked pre-kickoff prediction to live WC matches — the card
+    // can then show "we called it X% before kickoff" while the game runs.
+    // Club live matches carry no prediction; the frontend renders them without
+    // a probability strip instead of waiting on one that never arrives.
+    try {
+      const lockedMap = await getLockedWcPredictionsMap(live.map(f => String(f.id)));
+      for (const f of live) {
+        const pred = lockedMap.get(String(f.id));
+        if (pred) {
+          f.probability = {
+            riskLevel: pred.riskLevel,
+            probabilities: pred.probabilities,
+            model: pred.model,
+            locked: true,
+          };
+        }
+      }
+    } catch { /* probability attachment is optional for live */ }
     res.json(live);
   } catch (err) { res.json([]); }
 });

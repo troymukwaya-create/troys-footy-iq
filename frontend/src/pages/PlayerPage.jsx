@@ -8,7 +8,7 @@ export default function PlayerPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get(`/players/${id}`).then(res => setData(res.data)).finally(() => setLoading(false));
+    api.get(`/players/${id}`).then(res => setData(res.data)).catch(() => setData(null)).finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return <div className="p-8 text-gray-400 animate-pulse text-lg flex justify-center mt-20">Loading player bio...</div>;

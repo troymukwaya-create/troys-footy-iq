@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { CalendarX } from 'lucide-react';
 import BrierScoreHero from './BrierScoreHero.jsx';
+import { EmailCapture } from './EmailCapture.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient, getMatchColor } from '../constants/nationColors.js';
 import { motion } from 'motion/react';
@@ -356,6 +357,12 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
           Why trust these calls — our public track record
         </div>
         <BrierScoreHero />
+      </div>
+
+      {/* ── EMAIL CAPTURE (the WC asset is the list; the landing page
+            was the only place asking — returning users never saw it) ── */}
+      <div style={{ marginTop: 24, padding: 'clamp(16px, 4vw, 24px)', borderRadius: 16, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+        <EmailCapture source="dashboard" hideIfSubscribed />
       </div>
 
       {/* ── MORE FIXTURES HINT ────────────────────────────────────── */}

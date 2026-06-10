@@ -8,9 +8,16 @@ const API_BASE = RAW_BASE.endsWith('/api') ? RAW_BASE : `${RAW_BASE.replace(/\/+
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 function visitorId() { try { return localStorage.getItem('fiq_visitor') || null; } catch { return null; } }
 
-export function EmailCapture({ source = 'site', headline, sub }) {
+function alreadySubscribed() { try { return !!localStorage.getItem('oddyessa_subscribed'); } catch { return false; } }
+function rememberSubscribed() { try { localStorage.setItem('oddyessa_subscribed', '1'); } catch { /* private mode */ } }
+
+export function EmailCapture({ source = 'site', headline, sub, hideIfSubscribed = false }) {
   const [email, setEmail] = useState('');
   const [state, setState] = useState('idle'); // idle | loading | done | error
+
+  // In-app placements vanish for subscribers instead of nagging; the landing
+  // page keeps showing its "you're in" confirmation.
+  if (hideIfSubscribed && alreadySubscribed()) return null;
 
   const submit = async (e) => {
     e?.preventDefault?.();
@@ -23,6 +30,7 @@ export function EmailCapture({ source = 'site', headline, sub }) {
         body: JSON.stringify({ email: email.trim(), source, visitorId: visitorId(), prefs: { worldCup: true } }),
       });
       if (!res.ok) throw new Error('bad');
+      rememberSubscribed();
       setState('done');
     } catch { setState('error'); }
   };
@@ -30,7 +38,7 @@ export function EmailCapture({ source = 'site', headline, sub }) {
   if (state === 'done') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#22c55e', fontWeight: 600, fontSize: 15 }}>
-        <Check size={20} /> You’re in — the first picks land in your inbox soon. ⚽
+        <Check size={20} /> You’re in — the first picks land in your inbox soon.
       </div>
     );
   }

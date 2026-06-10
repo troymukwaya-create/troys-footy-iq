@@ -26,9 +26,8 @@ import {
   errorResponse,
 } from '../services/normalizer.js';
 import { computeExpectedGoals, generateProbabilities, analyzeMatch, computeConfidence, computeDataSufficiency } from '../services/probabilityEngine.js';
-import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import { getModelMaturity } from '../engine/trustSignals.js';
-import { playerImportance, availabilityFromInjuredPlayers, keyPlayersOut } from '../engine/playerImpact.js';
+import { playerImportance } from '../engine/playerImpact.js';
 
 // Map the route's data-quality vocabulary to the confidence model's.
 const DQ_MAP = { COMPLETE: 'FULL', PARTIAL: 'PARTIAL', INSUFFICIENT: 'FALLBACK' };
@@ -53,28 +52,10 @@ async function enrichInjuriesWithImportance(injuries) {
   }));
 }
 
-// ─── Build real-world match context (rest days + injuries) for the engine ──
-function daysBetween(from, to) {
-  if (!from || !to) return null;
-  const d = (new Date(to) - new Date(from)) / 86400000;
-  return Number.isFinite(d) ? Math.max(0, Math.round(d)) : null;
-}
-function buildMatchContext(match, homeForm, awayForm) {
-  const ctx = { homeForm, awayForm };
-  const hRest = daysBetween(homeForm?.recentResults?.[0]?.date, match.date);
-  const aRest = daysBetween(awayForm?.recentResults?.[0]?.date, match.date);
-  if (hRest != null) ctx.homeRestDays = hRest;
-  if (aRest != null) ctx.awayRestDays = aRest;
-  // Importance-weighted availability multiplier — < 1 only when key players are out.
-  const hMult = availabilityFromInjuredPlayers(homeForm?.injuries);
-  const aMult = availabilityFromInjuredPlayers(awayForm?.injuries);
-  if (hMult < 1) ctx.homeAvailability = hMult;
-  if (aMult < 1) ctx.awayAvailability = aMult;
-  return ctx;
-}
-import oddsService from '../services/oddsService.js';
-import { impliedProbs } from '../services/sources/theOddsApi.js';
-import { isKnockoutRound } from '../services/wcForm.js';
+// WC match context (rest days, availability, market signal) is now built
+// inside services/wcDisplayPrediction.js — the single shared path for every
+// surface that shows a WC probability. No per-route context builders.
+import { getWcDisplayPrediction } from '../services/wcDisplayPrediction.js';
 import { buildReasoning } from '../engine/reasoning.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
@@ -321,37 +302,20 @@ router.get('/:matchId', async (req, res) => {
     let probabilityResult = null;
 
     if (match.league?.code === 'WC') {
-      // World Cup: national teams have no league stats — predict from Elo strength,
-      // blended with bookmaker odds (The Odds API) where available.
+      // World Cup: ONE source of truth. getWcDisplayPrediction is the same
+      // function the fixture cards, the Markets tab and the T-75min lock job
+      // use — after lock it returns the stored row, i.e. the exact numbers
+      // the public Brier score will judge.
+      //
+      // The page previously layered its own extras on the headline number
+      // (an API-Football 60/40 blend + deeper injury context) — independently
+      // useful, but it made the page disagree with the card and with the
+      // scored model (78% / 64% on the same fixture, at the same time).
+      // The deep form + injuries still power the Stats tab and reasoning
+      // below; any new signal goes into the SHARED path or not at all.
       dataQuality = 'COMPLETE';
-      let marketProbs = null;
-      try {
-        const odds = await oddsService.getFixtureOdds(matchId, { home: match.homeTeam?.name, away: match.awayTeam?.name });
-        marketProbs = impliedProbs(odds);
-      } catch (e) { /* odds are optional */ }
-      // Second opinion: blend API-Football's own win-probability model (a sharp,
-      // independent signal — especially valuable for low-data international football).
-      try {
-        const apf = await api.getPredictions(matchId).catch(() => null);
-        const p = apf?.percent;
-        const s = p ? (p.home || 0) + (p.draw || 0) + (p.away || 0) : 0;
-        if (s > 0) {
-          const apfProbs = { home: p.home / s * 100, draw: p.draw / s * 100, away: p.away / s * 100 };
-          marketProbs = marketProbs
-            ? { home: 0.6 * marketProbs.home + 0.4 * apfProbs.home,
-                draw: 0.6 * marketProbs.draw + 0.4 * apfProbs.draw,
-                away: 0.6 * marketProbs.away + 0.4 * apfProbs.away }
-            : apfProbs;
-        }
-      } catch (e) { /* api-football prediction is optional */ }
-      // Pass each team's REAL recent form (qualifiers/friendlies), rest days
-      // (fixture congestion) and injuries so the model judges matchday-1 teams
-      // from the games + conditions that led up to the tournament.
-      const wcCtx = buildMatchContext(match, homeForm, awayForm);
-      wcCtx.venueCity = match.city || match.venue || '';
-      wcCtx.knockout = isKnockoutRound(match.league?.round || match.matchday);
-      probabilityResult = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, wcCtx);
-      console.log(`[analysis] ${matchId} WC prediction (market:${!!marketProbs}, form:${probabilityResult?.nationalStrength?.recentMatchesUsed || 0}g, rest:${wcCtx.homeRestDays ?? '?'}/${wcCtx.awayRestDays ?? '?'}d, inj:${homeForm?.injuries?.length || 0}/${awayForm?.injuries?.length || 0})`);
+      probabilityResult = await getWcDisplayPrediction(match);
+      console.log(`[analysis] ${matchId} WC prediction (${probabilityResult?.model}${probabilityResult?.locked ? ', LOCKED' : ''}, form:${probabilityResult?.nationalStrength?.recentMatchesUsed || 0}g)`);
     } else if (validation.valid) {
       // Full data available — run predictions
       dataQuality = 'COMPLETE';
@@ -494,8 +458,12 @@ router.get('/:matchId', async (req, res) => {
     };
 
     // ─── STEP 7: Cache ONLY complete/partial analyses ───────────
+    // WC analyses cache for 10 min (the shared-prediction cadence): a 24h
+    // page cache served day-old numbers while the cards recomputed fresh —
+    // the exact card-vs-page contradiction this route was blamed for.
     if (dataQuality === 'COMPLETE') {
-      cacheService.set(cacheKey, result, 86400); // 24h
+      const ttl = match.league?.code === 'WC' ? 600 : 86400;
+      cacheService.set(cacheKey, result, ttl);
     } else if (dataQuality === 'PARTIAL') {
       cacheService.set(cacheKey, result, 1800); // 30 min — allow retry
     }

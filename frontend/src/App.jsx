@@ -15,6 +15,7 @@ import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
 import { SuggestedSlips } from './components/SuggestedSlips.jsx';
+import { ComplianceFooter } from './components/ComplianceFooter.jsx';
 import { AuthModal } from './components/AuthModal.jsx';
 import { SavedSlipsModal } from './components/SavedSlipsModal.jsx';
 import { useAuth } from './hooks/useAuth.js';
@@ -115,7 +116,6 @@ function MainApp() {
   // Replaces CSS display-none toggling — now the browser back button works on mobile.
   const [searchParams, setSearchParams] = useSearchParams();
   const mobileTab = searchParams.get('tab') ?? 'home';
-  const setMobileTab = useCallback((tab) => setSearchParams({ tab }), [setSearchParams]);
 
   // ─── Fixture filtering ─────────────────────────────────────────
   const allFixtures = useMemo(() => {
@@ -149,10 +149,12 @@ function MainApp() {
   }, [filteredFixtures]);
 
   // ─── Handlers ─────────────────────────────────────────────────
+  // Match selection lives in the URL (?match=<id>): links to a specific
+  // call are shareable, the browser back button closes the match, and a
+  // refresh restores it. The store is synced FROM the URL below.
   const handleSelectFixture = useCallback((fixture) => {
     if (!fixture?.id) return;
-    setSelectedFixture(fixture);
-    setMobileTab('home');   // mobile: detail opens over the Home stack (with a back arrow)
+    setSearchParams({ tab: 'home', match: String(fixture.id) });
     // CEO dashboard engagement signal
     track('prediction_viewed', {
       fixture_id: fixture.id,
@@ -160,19 +162,34 @@ function MainApp() {
       away_team: fixture.away?.name || fixture.awayTeam?.name || fixture.away_team,
       league_code: fixture.league?.code,
     });
-  }, [setSelectedFixture, setMobileTab]);
+  }, [setSearchParams]);
 
   const handleDeselectFixture = useCallback(() => {
-    setSelectedFixture(null);
-    setMobileTab('home'); // mobile: return to the Home best-bets feed
-  }, [setSelectedFixture, setMobileTab]);
+    setSearchParams({ tab: 'home' }); // drop ?match= → feed shows
+  }, [setSearchParams]);
 
   // Mobile bottom-nav handler — tapping "Home" clears any open match so the
-  // best-bets feed shows (not a stale match analysis).
+  // best-bets feed shows (not a stale match analysis). Other tabs keep the
+  // open match in the URL so returning to Home-with-back still works.
   const onMobileTab = useCallback((tab) => {
-    if (tab === 'home') setSelectedFixture(null);
-    setMobileTab(tab);
-  }, [setSelectedFixture, setMobileTab]);
+    setSearchParams(prev => {
+      const match = prev.get('match');
+      return tab !== 'home' && match ? { tab, match } : { tab };
+    });
+  }, [setSearchParams]);
+
+  // URL → store sync. Re-runs as fixtures stream in, so a deep link selects
+  // its match as soon as the feed contains it.
+  useEffect(() => {
+    const matchParam = searchParams.get('match');
+    if (!matchParam) {
+      if (selectedFixture) setSelectedFixture(null);
+      return;
+    }
+    if (String(selectedFixture?.id) === matchParam) return;
+    const f = allFixtures.find(x => String(x.id) === matchParam);
+    if (f) setSelectedFixture(f);
+  }, [searchParams, allFixtures, selectedFixture, setSelectedFixture]);
 
   // Pull-to-refresh (mobile) — re-fetch fixtures + live data on a downward pull
   const handleRefresh = useCallback(async () => {
@@ -200,9 +217,11 @@ function MainApp() {
     return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
   };
 
-  // First-visit gate: new visitors pass through the cinematic intro once.
+  // First-visit gate: new visitors pass through the cinematic intro once —
+  // but NEVER when they followed a link to a specific match. Someone who
+  // clicked a shared call must land on that call, not on a marketing page.
   const firstVisit = (() => { try { return !localStorage.getItem('oddyessa_welcomed'); } catch { return false; } })();
-  if (firstVisit) return <Navigate to="/how-it-works" replace />;
+  if (firstVisit && !searchParams.get('match')) return <Navigate to="/how-it-works" replace />;
 
   return (
     <div className="flex flex-col app-shell overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
@@ -310,6 +329,7 @@ function MainApp() {
             ) : (
               <AnalystDashboard fixtures={filteredFixtures} onSelect={handleSelectFixture} activeLeague={activeLeague} />
             )}
+            <ComplianceFooter />
           </div>
         </main>
 
