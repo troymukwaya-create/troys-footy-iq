@@ -56,6 +56,7 @@ async function enrichInjuriesWithImportance(injuries) {
 // inside services/wcDisplayPrediction.js — the single shared path for every
 // surface that shows a WC probability. No per-route context builders.
 import { getWcDisplayPrediction, INTL_MODEL_VERSION } from '../services/wcDisplayPrediction.js';
+import { buildPostMatchReport } from '../services/postMatchReport.js';
 import { buildReasoning } from '../engine/reasoning.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
@@ -171,10 +172,12 @@ router.get('/:matchId', async (req, res) => {
       if (match) {
         // Lifecycle State Check
         if (match.status === 'FINISHED' || match.status === 'FT') {
-          return res.json({
-            status: 'FINISHED',
-            result: { home: match.score?.home, away: match.score?.away }
-          });
+          // The receipt: locked pre-match call vs what happened + real
+          // match stats. Cached 30 min — the Brier ledger row and late
+          // provider stats fill in across the first couple of refreshes.
+          const report = await buildPostMatchReport(match, matchId);
+          cacheService.set(cacheKey, report, 1800);
+          return res.json(report);
         }
         if (match.status === 'IN_PLAY' || match.status === 'PAUSED' || match.status === 'LIVE') {
           const liveStats = await api.getFixtureStats(matchId).catch(err => {

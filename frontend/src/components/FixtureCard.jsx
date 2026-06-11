@@ -106,18 +106,25 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
             <ProbValue label="A" value={prob.probabilities.away} />
           </div>
 
-          {/* Risk + Scorelines */}
+          {/* Risk (upcoming) or verdict (settled) + Scorelines */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <RiskBadge level={prob.riskLevel} />
+            {isFinished && scoreHome != null && scoreAway != null
+              ? <VerdictBadge prob={prob} scoreHome={scoreHome} scoreAway={scoreAway} />
+              : <RiskBadge level={prob.riskLevel} />}
             <div style={{ display: 'flex', gap: 4 }}>
-              {prob.topScorelines?.slice(0, 2).map((sl, i) => (
-                <span key={i} style={{
-                  fontSize: 10, fontWeight: 600, padding: '2px 6px',
-                  borderRadius: 'var(--radius-sm)', background: 'var(--bg-raised)',
-                  border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>{sl.score}</span>
-              ))}
+              {prob.topScorelines?.slice(0, 2).map((sl, i) => {
+                const slHit = isFinished && sl.score === `${scoreHome}-${scoreAway}`;
+                return (
+                  <span key={i} style={{
+                    fontSize: 10, fontWeight: slHit ? 700 : 600, padding: '2px 6px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: slHit ? 'var(--success-muted)' : 'var(--bg-raised)',
+                    border: `1px solid ${slHit ? 'var(--success)' : 'var(--border-subtle)'}`,
+                    color: slHit ? 'var(--success)' : 'var(--text-secondary)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>{sl.score}{slHit ? ' ✓' : ''}</span>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -154,6 +161,26 @@ function ProbValue({ label, value }) {
   return (
     <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
       {label} <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value == null ? '–' : Math.round(value)}%</span>
+    </span>
+  );
+}
+
+// Settled fixture: did the locked call's most likely outcome happen?
+// Both verdicts render — every ✓ on the feed is backed by visible ✗s.
+function VerdictBadge({ prob, scoreHome, scoreAway }) {
+  const { home = 0, draw = 0, away = 0 } = prob?.probabilities || {};
+  const predicted = home >= draw && home >= away ? 'HOME' : draw >= home && draw >= away ? 'DRAW' : 'AWAY';
+  const actual = scoreHome > scoreAway ? 'HOME' : scoreHome < scoreAway ? 'AWAY' : 'DRAW';
+  const hit = predicted === actual;
+  const color = hit ? 'var(--success)' : 'var(--danger)';
+  return (
+    <span style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      fontSize: 10, fontWeight: 700, color,
+      padding: '2px 8px', borderRadius: 10,
+      background: hit ? 'var(--success-muted)' : 'var(--danger-muted)',
+    }}>
+      {hit ? '✓ Called it' : '✗ Missed'}
     </span>
   );
 }

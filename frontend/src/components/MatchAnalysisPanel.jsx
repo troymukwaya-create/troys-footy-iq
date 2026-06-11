@@ -5,6 +5,7 @@ import { MarketsPanel } from './MarketsPanel.jsx';
 import { ShareCallButton } from './ShareCallButton.jsx';
 import { EmailCapture } from './EmailCapture.jsx';
 import { MatchEvidence } from './MatchEvidence.jsx';
+import { MatchVerdict } from './MatchVerdict.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient } from '../constants/nationColors.js';
 import FlagBleed, { hasFlags } from './FlagBleed.jsx';
@@ -118,6 +119,11 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
         {/* Win Probability Bar — only show with valid data */}
         {prob && dataQuality !== 'INSUFFICIENT' && (
           <div style={{ marginTop: 24 }}>
+            {status === 'FINISHED' && (
+              <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8 }}>
+                OUR PRE-MATCH PROBABILITIES — AS LOCKED
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: homeColor }}>{prob.probabilities?.home || 0}%</span>
               <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-tertiary)' }}>{prob.probabilities?.draw || 0}%</span>
@@ -240,7 +246,34 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
           {/* Analysis Tab */}
           {activeTab === 'analysis' && (
             <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {prob ? (
+              {analysis?.verdict && prob ? (
+                <>
+                  {/* Settled match: the receipt first — locked call vs result —
+                      then the same evidence the pre-match page showed. */}
+                  <MatchVerdict
+                    verdict={analysis.verdict}
+                    prob={prob}
+                    home={home}
+                    away={away}
+                    homeColor={homeColor}
+                    awayColor={awayColor}
+                  />
+                  <MatchEvidence
+                    prob={prob}
+                    h2h={h2h}
+                    home={home}
+                    away={away}
+                    homeColor={homeColor}
+                    awayColor={awayColor}
+                    homeStats={homeStats}
+                    awayStats={awayStats}
+                  />
+                  <ScorelineGrid
+                    topScorelines={prob.topScorelines}
+                    actualScore={analysis.verdict?.scoreline?.actual}
+                  />
+                </>
+              ) : prob ? (
                 <>
                   {prob.reasoning && <WhyPanel reasoning={prob.reasoning} homeColor={homeColor} awayColor={awayColor} />}
 
@@ -313,7 +346,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
                     {analysis.result?.home ?? '?'} — {analysis.result?.away ?? '?'}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Final score · Predictions are not available for finished matches
+                    We didn't lock a public call for this match — and we never add predictions after the result.
                   </div>
                 </div>
               ) : (
@@ -333,6 +366,34 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
           {/* Stats Tab */}
           {activeTab === 'stats' && (
             <div className="card animate-fade-in" style={{ padding: 16 }}>
+              {/* Settled match: the real match stats + our numbers vs reality */}
+              {analysis?.matchStats && (
+                <div style={{ marginBottom: (homeStats || awayStats) ? 20 : 0 }}>
+                  <div className="section-title" style={{ marginBottom: 16 }}>Match Statistics — Full Time</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {Object.keys(analysis.matchStats[Object.keys(analysis.matchStats)[0]] || {}).map((statType, idx) => {
+                      const teamNames = Object.keys(analysis.matchStats);
+                      const hVal = analysis.matchStats[teamNames[0]]?.[statType] ?? 0;
+                      const aVal = analysis.matchStats[teamNames[1]]?.[statType] ?? 0;
+                      return (
+                        <StatRow
+                          key={idx}
+                          label={statType}
+                          home={hVal}
+                          away={aVal}
+                          inverted={statType.toLowerCase().includes('fouls') || statType.toLowerCase().includes('cards') || statType.toLowerCase().includes('offsides')}
+                        />
+                      );
+                    })}
+                  </div>
+                  {analysis?.verdict && prob?.expectedGoals && analysis?.ftResult && (
+                    <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                      <strong style={{ color: 'var(--text-primary)' }}>Our pre-match numbers vs reality:</strong>{' '}
+                      we expected {home} to score <strong style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)' }}>{prob.expectedGoals.home}</strong> (actual {analysis.ftResult.home}) and {away} <strong style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)' }}>{prob.expectedGoals.away}</strong> (actual {analysis.ftResult.away}).
+                    </div>
+                  )}
+                </div>
+              )}
               {homeStats || awayStats ? (
                 <>
                   <div className="section-title" style={{ marginBottom: 16 }}>Team Comparison</div>
@@ -347,11 +408,11 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
                     <StatRow label="Goals Against" home={homeStats?.goalsAgainst} away={awayStats?.goalsAgainst} inverted />
                   </div>
                 </>
-              ) : (
+              ) : !analysis?.matchStats ? (
                 <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 12 }}>
                   Team statistics are not available for this fixture.
                 </div>
-              )}
+              ) : null}
               {prob?.intelligence && <RecentForm intel={prob.intelligence} home={home} away={away} />}
             </div>
           )}
@@ -505,22 +566,28 @@ function WhyPanel({ reasoning, homeColor, awayColor }) {
   );
 }
 
-function ScorelineGrid({ topScorelines }) {
+function ScorelineGrid({ topScorelines, actualScore = null }) {
   if (!topScorelines || topScorelines.length === 0) return null;
   return (
     <div className="card" style={{ padding: 16 }}>
-      <div className="section-title" style={{ marginBottom: 12 }}>Top Scorelines</div>
+      <div className="section-title" style={{ marginBottom: 12 }}>
+        {actualScore ? 'Scorelines we priced — final score marked' : 'Top Scorelines'}
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: 8 }}>
         {topScorelines.map((s, i) => {
           const intensity = Math.min(s.probability / 15, 1);
+          const isActual = actualScore != null && s.score === actualScore;
           return (
             <div key={i} className="matrix-cell" style={{
-              flexDirection: 'column', height: 52,
-              background: `rgba(168,52,74, ${0.04 + intensity * 0.12})`,
-              border: `1px solid rgba(168,52,74, ${0.08 + intensity * 0.15})`,
+              flexDirection: 'column', height: 52, position: 'relative',
+              background: isActual ? 'var(--success-muted)' : `rgba(168,52,74, ${0.04 + intensity * 0.12})`,
+              border: isActual ? '1px solid var(--success)' : `1px solid rgba(168,52,74, ${0.08 + intensity * 0.15})`,
             }}>
-              <span style={{ fontSize: 15, fontWeight: 800 }}>{s.score}</span>
-              <span style={{ fontSize: 9, color: 'var(--accent)', opacity: 0.7 }}>{s.probability}%</span>
+              {isActual && (
+                <span style={{ position: 'absolute', top: 3, right: 5, fontSize: 8, fontWeight: 800, color: 'var(--success)' }}>FT</span>
+              )}
+              <span style={{ fontSize: 15, fontWeight: 800, color: isActual ? 'var(--success)' : undefined }}>{s.score}</span>
+              <span style={{ fontSize: 9, color: isActual ? 'var(--success)' : 'var(--accent)', opacity: 0.8 }}>{s.probability}%</span>
             </div>
           );
         })}

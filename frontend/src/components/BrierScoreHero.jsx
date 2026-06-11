@@ -95,15 +95,20 @@ export default function BrierScoreHero() {
   const beatsSharpMarket = data.brier < BENCHMARKS.sharpMarket.value;
 
   const isBacktest = data.source !== 'live';
+  // n is tiny in the tournament's first days — a hot Brier on 1–19
+  // matches is luck-compatible, and saying so is the whole brand.
+  const smallSample = !isBacktest && data.sampleSize < 20;
   const headline = isBacktest
     ? 'Backtested — live World Cup record starts at kick-off'
-    : beatsSharpMarket
-      ? 'Beating the sharp market'
-      : beatsTipster
-        ? 'Beating the average analyst'
-        : beatsRandom
-          ? 'Beating random chance'
-          : 'Calibrating';
+    : smallSample
+      ? `Live scoring has started — early days (${data.sampleSize} ${data.sampleSize === 1 ? 'match' : 'matches'})`
+      : beatsSharpMarket
+        ? 'Beating the sharp market'
+        : beatsTipster
+          ? 'Beating the average analyst'
+          : beatsRandom
+            ? 'Beating random chance'
+            : 'Calibrating';
 
   return (
     <motion.section

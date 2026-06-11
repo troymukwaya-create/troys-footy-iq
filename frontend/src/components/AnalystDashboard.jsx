@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { CalendarX } from 'lucide-react';
 import BrierScoreHero from './BrierScoreHero.jsx';
+import TrackRecord from './TrackRecord.jsx';
 import { EmailCapture } from './EmailCapture.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient, getMatchColor } from '../constants/nationColors.js';
@@ -417,6 +418,9 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
           Why trust these calls — our public track record
         </div>
         <BrierScoreHero />
+        {/* Match-by-match receipts under the aggregate — every settled
+            call, hit or miss, linking to its full post-match analysis. */}
+        <TrackRecord onSelect={onSelect} />
       </div>
 
       {/* ── EMAIL CAPTURE (the WC asset is the list; the landing page

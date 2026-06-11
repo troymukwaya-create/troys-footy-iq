@@ -225,8 +225,9 @@ export async function getRecentResults(limit = 20) {
       mp.prob_home, mp.prob_draw, mp.prob_away,
       mp.odds_home, mp.odds_draw, mp.odds_away,
       mp.value_edge_home, mp.value_edge_draw, mp.value_edge_away,
-      p.home_team, p.away_team, p.risk_level,
-      f.home_goals, f.away_goals, f.match_date
+      p.home_team, p.away_team, p.risk_level, p.model_version,
+      f.home_goals, f.away_goals, f.ft_home_goals, f.ft_away_goals,
+      f.match_date
     FROM model_performance mp
     JOIN predictions p ON mp.prediction_id = p.id
     LEFT JOIN fixtures f ON mp.fixture_id = f.id

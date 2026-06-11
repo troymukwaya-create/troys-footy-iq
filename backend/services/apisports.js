@@ -111,10 +111,23 @@ async function getUpcomingFixtures(days = 7) {
 
 async function getRecentFixtures(days = 3) {
   if (!hasKey()) return [];
-  const from = new Date(Date.now() - days * 86400000).toISOString().split('T')[0];
-  const to   = new Date().toISOString().split('T')[0];
-  const raw  = await safeFetch('fixtures', { from, to, timezone: 'UTC' });
-  return raw.filter(isTracked).map(normalise).filter(f => f.status === 'FINISHED');
+  // API-Football rejects bare from/to (they require league+season) and returns
+  // an EMPTY response with no HTTP error — which is why finished WC matches
+  // never reached result ingestion. The standalone `date` param has no such
+  // constraint, so query each day in the window individually.
+  const out = [];
+  const seen = new Set();
+  for (let i = days; i >= 0; i--) {
+    const date = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
+    const raw = await safeFetch('fixtures', { date, timezone: 'UTC' });
+    for (const f of raw) {
+      if (!isTracked(f) || seen.has(f.fixture?.id)) continue;
+      seen.add(f.fixture?.id);
+      const n = normalise(f);
+      if (n.status === 'FINISHED') out.push(n);
+    }
+  }
+  return out;
 }
 
 // All fixtures for one competition + season (e.g. the full World Cup schedule).
