@@ -1,30 +1,45 @@
 import React from 'react';
+import { Trophy, Globe } from 'lucide-react';
 
 // Compact, horizontally-scrolling filter rows — keeps the browse controls to a
 // slim header so the fixture tiles below get the room (fixes the mobile
 // "screen cut in half" problem).
+// Pills use REAL flag images (same source as the tile bleeds) and proper
+// icons — emoji render differently on every OS and read as a prototype.
 const QUICK = [
   { code: 'ALL', label: 'All' },
-  { code: 'WC', label: '🏆 World Cup', highlight: true },
+  { code: 'WC', label: 'World Cup', icon: Trophy, highlight: true },
   { code: 'LIVE', label: 'Live', live: true },
   { code: 'TODAY', label: 'Today' },
   { code: 'TOMORROW', label: 'Tomorrow' },
 ];
 
 const LEAGUES = [
-  { code: 'FR', name: 'Int. Friendlies', flag: '🌍' },
-  { code: 'PL', name: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-  { code: 'PD', name: 'La Liga', flag: '🇪🇸' },
-  { code: 'BL1', name: 'Bundesliga', flag: '🇩🇪' },
-  { code: 'SA', name: 'Serie A', flag: '🇮🇹' },
-  { code: 'FL1', name: 'Ligue 1', flag: '🇫🇷' },
-  { code: 'CL', name: 'Champions League', flag: '🇪🇺' },
-  { code: 'EL', name: 'Europa League', flag: '🇪🇺' },
-  { code: 'BSA', name: 'Brasileirão', flag: '🇧🇷' },
-  { code: 'ERE', name: 'Eredivisie', flag: '🇳🇱' },
-  { code: 'PPL', name: 'Primeira Liga', flag: '🇵🇹' },
-  { code: 'ELC', name: 'Championship', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { code: 'FR', name: 'Int. Friendlies', icon: Globe },
+  { code: 'PL', name: 'Premier League', iso: 'gb-eng' },
+  { code: 'PD', name: 'La Liga', iso: 'es' },
+  { code: 'BL1', name: 'Bundesliga', iso: 'de' },
+  { code: 'SA', name: 'Serie A', iso: 'it' },
+  { code: 'FL1', name: 'Ligue 1', iso: 'fr' },
+  { code: 'CL', name: 'Champions League', iso: 'eu' },
+  { code: 'EL', name: 'Europa League', iso: 'eu' },
+  { code: 'BSA', name: 'Brasileirão', iso: 'br' },
+  { code: 'ERE', name: 'Eredivisie', iso: 'nl' },
+  { code: 'PPL', name: 'Primeira Liga', iso: 'pt' },
+  { code: 'ELC', name: 'Championship', iso: 'gb-eng' },
 ];
+
+function PillFlag({ iso }) {
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${iso}.png`}
+      alt=""
+      loading="lazy"
+      style={{ width: 16, height: 11, objectFit: 'cover', borderRadius: 2, flexShrink: 0 }}
+      onError={e => { e.target.style.display = 'none'; }}
+    />
+  );
+}
 
 export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, onSelectLeague, onGoDashboard }) {
   const liveCount = (liveMatches || []).length || (fixtures || []).filter(f => f.status === 'IN_PLAY' || f.status === 'PAUSED').length;
@@ -39,6 +54,7 @@ export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, o
             {q.live && (
               <span className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: activeLeague === q.code ? '#fff' : 'var(--success)' }} />
             )}
+            {q.icon && <q.icon size={12} style={{ flexShrink: 0 }} />}
             {q.label}{q.live && liveCount > 0 ? ` · ${liveCount}` : ''}
           </Chip>
         ))}
@@ -49,7 +65,8 @@ export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, o
           const count = (fixtures || []).filter(f => f.league?.code === l.code && new Date(f.date).toDateString() === todayStr).length;
           return (
             <Chip key={l.code} active={activeLeague === l.code} onClick={() => select(l.code)}>
-              <span style={{ marginRight: 5 }}>{l.flag}</span>{l.name}
+              {l.icon ? <l.icon size={12} style={{ flexShrink: 0 }} /> : <PillFlag iso={l.iso} />}
+              {l.name}
               {count > 0 && (
                 <span style={{ marginLeft: 5, fontSize: 10, fontWeight: 700, padding: '0 5px', borderRadius: 8, background: activeLeague === l.code ? 'rgba(255,255,255,0.22)' : 'var(--bg-base)' }}>{count}</span>
               )}

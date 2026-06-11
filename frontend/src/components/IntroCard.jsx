@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'motion/react';
 // in three swipes. Gated by localStorage so it only ever shows once.
 const SLIDES = [
   {
-    emoji: '🧠',
-    title: 'AI predicts every match',
-    body: 'Our model rates who wins, the likely scorelines and the goals — for every game, in every league.',
+    emoji: '🎯',
+    title: 'Every match, priced',
+    body: 'The model rates who wins, the likely scorelines and the goals — for every game, in every league.',
   },
   {
     emoji: '💡',

@@ -25,11 +25,11 @@ export const NATION_COLORS = {
   'Türkiye': '#E30A17', 'Cape Verde Islands': '#003893', 'Congo DR': '#007FFF',
 };
 
-const FALLBACK = ['#A8344A', '#3B82F6', '#16A34A', '#D97706', '#7C3AED', '#0891B2', '#DB2777'];
-function hashColor(name) {
-  let h = 0;
-  for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
-  return FALLBACK[Math.abs(h) % FALLBACK.length];
+// Unknown teams get a NEUTRAL slate — never a random palette colour.
+// (Hash-picked colours rendered probability bars purple/pink for any
+// unmapped team, which read as a glitch, not a design choice.)
+function hashColor() {
+  return '#64748B';
 }
 
 // A colour for any team — nation flag first, then club primary, then a stable hash.

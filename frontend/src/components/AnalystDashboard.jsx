@@ -5,7 +5,8 @@ import { EmailCapture } from './EmailCapture.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient, getMatchColor } from '../constants/nationColors.js';
 import FlagBleed, { hasFlags } from './FlagBleed.jsx';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
+import TeamMark from './TeamMark.jsx';
 
 // ─── CONFIDENCE CONFIG ───────────────────────────────────────────────────────
 const CONFIDENCE = {
@@ -14,21 +15,9 @@ const CONFIDENCE = {
   LOW:    { label: 'Low',    color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.15)' },
 };
 
-// Animated count-up for probability percentages.
-function CountUp({ value, duration = 750 }) {
-  const [n, setN] = React.useState(0);
-  React.useEffect(() => {
-    let raf; const start = performance.now(); const to = Number(value) || 0;
-    const tick = (t) => {
-      const p = Math.min(1, (t - start) / duration);
-      setN(to * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) raf = requestAnimationFrame(tick); else setN(to);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [value, duration]);
-  return <>{n.toFixed(1)}%</>;
-}
+// (Count-up animation removed from card percentages on purpose: numbers
+// hold still so they read as facts; motion lives on surfaces — hover
+// sheen, flag bleeds, bar fills. Restraint on data reads premium.)
 
 function getConfidence(prob) {
   if (!prob) return 'LOW';
@@ -38,25 +27,45 @@ function getConfidence(prob) {
   return 'LOW';
 }
 
+// One or two SPECIFIC observations per card — drawn from what the model
+// actually knows (market disagreement, match shape, likeliest score).
+// The old version produced the same two sentence templates on every card,
+// which read machine-generated when stacked on a page.
 function getInsight(fixture) {
   const prob = fixture.probability?.probabilities;
   if (!prob) return null;
   const { home, draw, away } = prob;
   const homeName = fixture.homeTeam?.name || 'Home';
   const awayName = fixture.awayTeam?.name || 'Away';
+  const lines = [];
 
-  const insights = [];
+  // The market disagreement is the most interesting fact we own.
+  const ve = fixture.probability?.valueEdges;
+  if (ve) {
+    const options = [
+      { edge: ve.home ?? -99, label: homeName },
+      { edge: ve.draw ?? -99, label: 'the draw' },
+      { edge: ve.away ?? -99, label: awayName },
+    ].sort((a, b) => b.edge - a.edge);
+    if (options[0].edge >= 5) {
+      lines.push(`Bookies underrate ${options[0].label} by ${Math.round(options[0].edge)} points — our biggest disagreement here`);
+    }
+  }
 
-  if (home >= 55)  insights.push(`${homeName} are strong favourites at ${home}%`);
-  else if (away >= 55) insights.push(`${awayName} are strong favourites at ${away}%`);
-  else if (draw >= 30) insights.push(`A draw is likely — ${draw}% probability`);
-  else insights.push(`Closely contested — ${homeName} ${home}% vs ${awayName} ${away}%`);
+  // Shape of the match — each profile gets its own voice.
+  const max = Math.max(home, draw, away);
+  if (home >= 70) lines.push(`${homeName} should win this — anything else is a ${Math.round(draw + away)}% shock`);
+  else if (away >= 70) lines.push(`${awayName} to win, and it isn't close`);
+  else if (draw >= 30) lines.push(`Unusually draw-heavy — ${Math.round(draw)}% against a ~25% baseline`);
+  else if (max < 45) lines.push('A genuine three-way coin flip — nothing separates these sides');
+  else if (home > away) lines.push(`${homeName} edge it, but this is no formality`);
+  else lines.push(`${awayName} favoured away from home — rarer than it sounds`);
 
-  const xG = fixture.probability?.expectedGoals;
-  if (xG?.total >= 2.5) insights.push(`High-scoring expected: ${xG.total.toFixed(1)} total goals`);
-  else if (xG?.total < 2.0 && xG?.total > 0) insights.push(`Low-scoring game expected: ${xG.total.toFixed(1)} goals`);
+  // The likeliest scoreline is concrete and different on every card.
+  const top = fixture.probability?.topScorelines?.[0];
+  if (top?.score && lines.length < 2) lines.push(`Most likely score: ${top.score}`);
 
-  return insights.slice(0, 2);
+  return lines.slice(0, 2);
 }
 
 // ─── INSIGHT CARD ────────────────────────────────────────────────────────────
@@ -72,18 +81,30 @@ function InsightCard({ fixture, onSelect, featured, index }) {
   const awayBar = getMatchColor(fixture.awayTeam?.name);
   const ve = fixture.probability?.valueEdges;
   const bestEdge = ve ? Math.max(ve.home ?? 0, ve.draw ?? 0, ve.away ?? 0) : 0;
+  const [hovered, setHovered] = React.useState(false);
+  const reducedMotion = useReducedMotion();
 
   const kickoff = fixture.date
     ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : '';
 
-  // EXPERIMENT: real flags bleeding into each other instead of colour
-  // gradients. Falls back to the colour gradient when a flag is unknown.
+  // Real flags bleeding into each other; colour-gradient fallback when a
+  // flag is unknown. On hover the flags breathe up — the world around the
+  // numbers moves, the numbers themselves hold still.
   const useFlagBleed = hasFlags(fixture.homeTeam?.name, fixture.awayTeam?.name);
+  const bleedOpacity = featured
+    ? (hovered ? 0.85 : 0.75)
+    : (hovered ? 0.78 : 0.65);
 
   return (
     <div
       onClick={() => onSelect?.(fixture)}
+      onMouseMove={e => {
+        if (reducedMotion) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
+        e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
+      }}
       style={{
         background: useFlagBleed
           ? (featured ? 'linear-gradient(135deg, rgba(168,52,74,0.10) 0%, #0B0B0D 60%)' : 'linear-gradient(155deg, #14161B 0%, #0B0B0D 65%)')
@@ -101,11 +122,13 @@ function InsightCard({ fixture, onSelect, featured, index }) {
         isolation: 'isolate',
       }}
       onMouseEnter={e => {
+        setHovered(true);
         e.currentTarget.style.borderColor = featured ? 'rgba(168,52,74,0.45)' : 'var(--border-default)';
         e.currentTarget.style.transform = 'translateY(-2px)';
         e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.3)';
       }}
       onMouseLeave={e => {
+        setHovered(false);
         e.currentTarget.style.borderColor = featured ? 'rgba(168,52,74,0.25)' : 'var(--border-subtle)';
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = 'none';
@@ -115,8 +138,18 @@ function InsightCard({ fixture, onSelect, featured, index }) {
         <FlagBleed
           home={fixture.homeTeam?.name}
           away={fixture.awayTeam?.name}
-          opacity={featured ? 0.75 : 0.65}
+          opacity={bleedOpacity}
         />
+      )}
+      {/* Cursor sheen — a soft light that follows the pointer across the
+          card. Sits with the flags (below content), fades in on hover. */}
+      {!reducedMotion && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none',
+          background: 'radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.07), transparent 70%)',
+          opacity: hovered ? 1 : 0,
+          transition: 'opacity 300ms ease',
+        }} />
       )}
       {/* Top Row: Competition + Status */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -150,18 +183,20 @@ function InsightCard({ fixture, onSelect, featured, index }) {
         <TeamBlock team={fixture.awayTeam} align="right" />
       </div>
 
-      {/* Probability Bar */}
+      {/* Probability Bar — whole integers (decimals live on the analysis
+          page where the calibration story belongs); the FILL animates in
+          on scroll, the numbers hold still. */}
       {prob && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
-            <span>H <strong style={{ color: homeColor }}><CountUp value={prob.home} /></strong></span>
-            <span>D <strong style={{ color: 'var(--text-secondary)' }}><CountUp value={prob.draw} /></strong></span>
-            <span>A <strong style={{ color: awayColor }}><CountUp value={prob.away} /></strong></span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+            <span>H <strong style={{ color: homeColor }}>{Math.round(prob.home)}%</strong></span>
+            <span>D <strong style={{ color: 'var(--text-secondary)' }}>{Math.round(prob.draw)}%</strong></span>
+            <span>A <strong style={{ color: awayColor }}>{Math.round(prob.away)}%</strong></span>
           </div>
           <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.05)', display: 'flex', overflow: 'hidden' }}>
-            <div style={{ width: `${prob.home}%`, background: homeBar, transition: 'width 700ms ease' }} />
-            <div style={{ width: `${prob.draw}%`, background: 'rgba(255,255,255,0.14)', transition: 'width 700ms ease' }} />
-            <div style={{ width: `${prob.away}%`, background: awayBar, transition: 'width 700ms ease' }} />
+            <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.home}%` }} viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} style={{ background: homeBar }} />
+            <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.draw}%` }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }} style={{ background: 'rgba(255,255,255,0.14)' }} />
+            <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.away}%` }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.16, ease: [0.16, 1, 0.3, 1] }} style={{ background: awayBar }} />
           </div>
         </div>
       )}
@@ -179,36 +214,33 @@ function InsightCard({ fixture, onSelect, featured, index }) {
       )}
 
       {/* Footer: Confidence + CTA */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-subtle)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
-            padding: '3px 10px', borderRadius: 99,
-            background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
-          }}>
-            {cfg.label} Confidence
-          </span>
-          {bestEdge >= 3 && (
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.22)' }}>
-              +{Math.round(bestEdge)}% value
-            </span>
-          )}
+      {/* Footer — chips appear only when they MEAN something: confidence
+          only when genuinely high, value only at 5+ points. When every
+          card wears a badge, no card does. The whole card is the link
+          (no redundant button); a quiet chevron signals tappability. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, borderTop: '1px solid var(--border-subtle)', minHeight: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {confidence === 'HIGH' && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
+                padding: '3px 10px', borderRadius: 99,
+                background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+              }}>
+                High confidence
+              </span>
+            )}
+            {bestEdge >= 5 && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.22)' }}>
+                +{Math.round(bestEdge)} pts vs market
+              </span>
+            )}
+          </div>
+          <span aria-hidden style={{
+            fontSize: 16, color: hovered ? 'var(--accent)' : 'var(--text-muted)',
+            transform: hovered ? 'translateX(3px)' : 'translateX(0)',
+            transition: 'transform 200ms ease, color 200ms ease',
+          }}>›</span>
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); onSelect?.(fixture); }}
-          style={{
-            fontSize: 12, fontWeight: 600, padding: '6px 14px',
-            borderRadius: 8, cursor: 'pointer', border: 'none',
-            background: featured ? 'var(--accent)' : 'var(--accent-muted)',
-            color: featured ? '#fff' : 'var(--accent)',
-            transition: 'background 180ms ease',
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = 'var(--accent)'}
-          onMouseLeave={e => e.currentTarget.style.background = featured ? 'var(--accent)' : 'var(--accent-muted)'}
-        >
-          View Match →
-        </button>
-      </div>
     </div>
   );
 }
@@ -220,13 +252,7 @@ function TeamBlock({ team, align }) {
       alignItems: align === 'right' ? 'flex-end' : 'flex-start',
       gap: 6, flex: 1, minWidth: 0,
     }}>
-      {team?.crest && (
-        <img
-          src={team.crest} alt=""
-          style={{ width: 40, height: 40, objectFit: 'contain' }}
-          onError={e => e.target.style.display = 'none'}
-        />
-      )}
+      <TeamMark name={team?.name} crest={team?.crest} size={40} />
       <span style={{
         fontSize: 14, fontWeight: 600, color: 'var(--text-primary)',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -312,10 +338,10 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
           style={{ marginBottom: 24, padding: 'clamp(16px, 5vw, 22px)', borderRadius: 16, border: '1px solid var(--accent-muted)', background: 'linear-gradient(135deg, rgba(168,52,74,0.14), transparent 75%)' }}
         >
           <div style={{ fontSize: 'clamp(20px, 6vw, 27px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em' }}>
-            AI predicts every match.
+            Every match, priced.
           </div>
           <div style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5 }}>
-            Who'll win, <strong style={{ color: 'var(--text-primary)' }}>why</strong>, and where the bookies are wrong — and we <strong style={{ color: 'var(--accent)' }}>publish how often we're right</strong>.
+            Who wins, <strong style={{ color: 'var(--text-primary)' }}>why</strong>, and where the bookies are wrong — and we <strong style={{ color: 'var(--accent)' }}>publish how often we're right</strong>.
           </div>
         </motion.div>
       )}
@@ -329,10 +355,10 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>
               {browse
-                ? `${matches.length} ${matches.length === 1 ? 'fixture' : 'fixtures'} · our AI prediction on every match`
+                ? `${matches.length} ${matches.length === 1 ? 'fixture' : 'fixtures'} · the model's call on every match`
                 : isTodaySelection
-                  ? `${today} · The ${matches.length === 1 ? 'match' : `${matches.length} matches`} our AI rates highest from today's games`
-                  : `No matches today · the AI's top picks from upcoming fixtures`}
+                  ? `${today} · The ${matches.length === 1 ? 'match' : `${matches.length} matches`} the model rates highest from today's games`
+                  : `No matches today · the model's top picks from upcoming fixtures`}
             </p>
           </div>
           {liveCount > 0 && (

@@ -79,7 +79,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.homeTeam?.name} v {f.awayTeam?.name}</div>
                 <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
                   Pick: <strong style={{ color: 'var(--text-secondary)' }}>{pick}</strong> · {Math.round(maxProb)}%
-                  {bestEdge >= 3 && <span style={{ color: '#22c55e', fontWeight: 700 }}> · +{Math.round(bestEdge)}% value</span>}
+                  {bestEdge >= 5 && <span style={{ color: '#22c55e', fontWeight: 700 }}> · +{Math.round(bestEdge)} pts vs market</span>}
                 </div>
                 <div style={{ marginTop: 6, height: 4, borderRadius: 3, background: 'var(--bg-base)', overflow: 'hidden' }}>
                   <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(maxProb)}%` }} transition={{ duration: 0.6, delay: 0.15 + i * 0.04, ease: [0.16, 1, 0.3, 1] }} style={{ height: '100%', background: 'var(--accent)' }} />

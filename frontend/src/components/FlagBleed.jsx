@@ -55,7 +55,7 @@ export default function FlagBleed({ home, away, opacity = 0.55 }) {
     'linear-gradient(279deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 28%, rgba(0,0,0,0.35) 62%, rgba(0,0,0,0) 96%)';
 
   return (
-    <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, opacity, overflow: 'hidden', borderRadius: 'inherit' }}>
+    <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, opacity, overflow: 'hidden', borderRadius: 'inherit', transition: 'opacity 350ms ease' }}>
       <div
         style={{
           ...layer,

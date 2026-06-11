@@ -8,6 +8,7 @@ import { MatchEvidence } from './MatchEvidence.jsx';
 import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient } from '../constants/nationColors.js';
 import FlagBleed, { hasFlags } from './FlagBleed.jsx';
+import TeamMark from './TeamMark.jsx';
 
 /**
  * MatchAnalysisPanel — Center panel for match analysis.
@@ -78,7 +79,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
           {/* Home */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
-            {homeCrest && <img src={homeCrest} alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
+            <TeamMark name={home} crest={homeCrest} size={52} />
             <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3, color: homeColor }}>{home}</span>
             {homeStats?.form && homeStats.form !== 'N/A' && <FormStrip form={homeStats.form} />}
           </div>
@@ -108,7 +109,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
 
           {/* Away */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
-            {awayCrest && <img src={awayCrest} alt="" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => e.target.style.display='none'} />}
+            <TeamMark name={away} crest={awayCrest} size={52} />
             <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3, color: awayColor }}>{away}</span>
             {awayStats?.form && awayStats.form !== 'N/A' && <FormStrip form={awayStats.form} />}
           </div>

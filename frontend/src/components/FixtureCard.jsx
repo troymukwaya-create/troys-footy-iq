@@ -1,6 +1,7 @@
 import React from 'react';
 import { flagGradient } from '../constants/nationColors.js';
 import FlagBleed, { hasFlags } from './FlagBleed.jsx';
+import TeamMark from './TeamMark.jsx';
 
 /**
  * FixtureCard — Compact sidebar match card.
@@ -132,7 +133,7 @@ function TeamRow({ name, crest, score, isWinner, isLive }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-        {crest && <img src={crest} alt="" style={{ width: 16, height: 16, objectFit: 'contain', flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
+        <TeamMark name={name} crest={crest} size={16} />
         <span style={{
           fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           fontWeight: isWinner ? 600 : 400,
@@ -149,9 +150,10 @@ function TeamRow({ name, crest, score, isWinner, isLive }) {
 }
 
 function ProbValue({ label, value }) {
+  // Whole integers on tiles; decimals live on the analysis page.
   return (
     <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-      {label} <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value ?? '–'}%</span>
+      {label} <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value == null ? '–' : Math.round(value)}%</span>
     </span>
   );
 }
