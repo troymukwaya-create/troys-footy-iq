@@ -119,7 +119,7 @@ export async function generateDailyPredictions() {
     LEFT JOIN team_season_stats aws ON aws.team_id = f.away_team_id AND aws.league_id = f.league_id
     LEFT JOIN predictions p ON p.fixture_id = f.id
     WHERE f.status IN ('SCHEDULED', 'NS', 'TIMED')
-      AND l.code != 'WC'
+      AND l.code NOT IN ('WC', 'FR')
       -- World Cup predictions are locked by jobs/wcPredictionLock.js using the
       -- WC Elo+market model. The club model has no national-team stats and was
       -- silently storing league-average defaults for WC fixtures — those

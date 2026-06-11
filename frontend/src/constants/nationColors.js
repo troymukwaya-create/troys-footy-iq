@@ -21,6 +21,8 @@ export const NATION_COLORS = {
   Honduras: '#0073CF', Jamaica: '#009B3A', 'New Zealand': '#00247D', 'Cape Verde': '#003893',
   'DR Congo': '#007FFF', 'Bosnia & Herzegovina': '#002395', Haiti: '#00209F',
   Curacao: '#002B7F', Iraq: '#CE1126', Wales: '#C8102E', Turkey: '#E30A17', Greece: '#0D5EAF',
+  // Provider spellings (API-Football)
+  'Türkiye': '#E30A17', 'Cape Verde Islands': '#003893', 'Congo DR': '#007FFF',
 };
 
 const FALLBACK = ['#A8344A', '#3B82F6', '#16A34A', '#D97706', '#7C3AED', '#0891B2', '#DB2777'];

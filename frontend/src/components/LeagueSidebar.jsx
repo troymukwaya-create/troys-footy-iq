@@ -12,6 +12,7 @@ const QUICK = [
 ];
 
 const LEAGUES = [
+  { code: 'FR', name: 'Int. Friendlies', flag: '🌍' },
   { code: 'PL', name: 'Premier League', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
   { code: 'PD', name: 'La Liga', flag: '🇪🇸' },
   { code: 'BL1', name: 'Bundesliga', flag: '🇩🇪' },

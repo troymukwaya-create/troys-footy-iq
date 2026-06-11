@@ -45,6 +45,27 @@ const NATION_ISO2 = {
   Suriname: 'sr', Guyana: 'gy',
 };
 
+// Data providers spell nations differently ('Türkiye'/'Turkey', 'Cape Verde
+// Islands'/'Cape Verde', 'Congo DR'/'DR Congo'). Exact-string lookup left
+// those tiles flagless — resolve through accent folding + a normalised index
+// so every variant finds its flag.
+const normName = (s) => String(s || '')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[^a-z]/g, '');
+
+const EXTRA_ALIASES = {
+  'Türkiye': 'tr', 'Turkiye': 'tr',
+  'Cape Verde Islands': 'cv', 'Cabo Verde Islands': 'cv',
+  'Congo DR': 'cd', 'DR Congo': 'cd',
+  'Korea Republic': 'kr', 'USA': 'us',
+  'Republic of Ireland': 'ie', 'Northern Ireland': 'gb-nir',
+};
+
+const NORM_INDEX = {};
+for (const map of [NATION_ISO2, EXTRA_ALIASES]) {
+  for (const [name, iso] of Object.entries(map)) NORM_INDEX[normName(name)] = iso;
+}
+
 /**
  * Flag image URL for a national team, or null when unknown
  * (clubs and unmapped names → caller falls back to colour gradients).
@@ -52,7 +73,7 @@ const NATION_ISO2 = {
  * @param {number} w - flagcdn width bucket (320 | 640 | 1280)
  */
 export function flagUrl(name, w = 640) {
-  const iso = NATION_ISO2[name];
+  const iso = NATION_ISO2[name] || NORM_INDEX[normName(name)];
   return iso ? `https://flagcdn.com/w${w}/${iso}.png` : null;
 }
 

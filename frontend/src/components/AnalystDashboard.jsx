@@ -240,8 +240,16 @@ function TeamBlock({ team, align }) {
 
 // ─── HOMEPAGE ────────────────────────────────────────────────────────────────
 export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL' }) {
-  // Prioritize: live → CL/EL → upcoming today → any scheduled
-  const topMatches = useMemo(() => {
+  // "Today's Best Bets" means TODAY: the section is scoped to matches
+  // kicking off today (viewer's local date) — a June-14 fixture has no
+  // business under a June-11 headline. If nothing plays today, we fall
+  // back to the next matches and say so honestly in the subtitle.
+  const { topMatches, isTodaySelection } = useMemo(() => {
+    const isToday = (d) => {
+      const x = new Date(d), n = new Date();
+      return x.getFullYear() === n.getFullYear() && x.getMonth() === n.getMonth() && x.getDate() === n.getDate();
+    };
+
     const scored = (fixtures || [])
       .filter(f => f.homeTeam?.name && f.awayTeam?.name && f.date && f.status !== 'FINISHED' && f.status !== 'FT')
       .map(f => {
@@ -256,7 +264,13 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
       })
       .sort((a, b) => b.score - a.score);
 
-    return scored.slice(0, 5).map(s => s.fixture);
+    const todays = scored.filter(s => isToday(s.fixture.date) ||
+      s.fixture.status === 'IN_PLAY' || s.fixture.status === 'PAUSED');
+
+    if (todays.length > 0) {
+      return { topMatches: todays.slice(0, 5).map(s => s.fixture), isTodaySelection: true };
+    }
+    return { topMatches: scored.slice(0, 5).map(s => s.fixture), isTodaySelection: false };
   }, [fixtures]);
 
   const liveCount = useMemo(() =>
@@ -272,7 +286,8 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
   // fixtures in the centre — not just the curated top-5 best bets.
   const browse = !!activeLeague && activeLeague !== 'ALL';
   const LEAGUE_NAMES = {
-    WC: 'World Cup 2026', PL: 'Premier League', PD: 'La Liga', BL1: 'Bundesliga',
+    WC: 'World Cup 2026', FR: 'International Friendlies',
+    PL: 'Premier League', PD: 'La Liga', BL1: 'Bundesliga',
     SA: 'Serie A', FL1: 'Ligue 1', CL: 'Champions League', EL: 'Europa League',
     BSA: 'Brasileirão', ERE: 'Eredivisie', PPL: 'Primeira Liga', ELC: 'Championship',
     LIVE: 'Live Now', TODAY: "Today's Matches", TOMORROW: "Tomorrow's Matches",
@@ -310,12 +325,14 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 4, lineHeight: 1.2 }}>
-              {browse ? browseTitle : "Today's Best Bets"}
+              {browse ? browseTitle : (isTodaySelection ? "Today's Best Bets" : 'Next Up — Best Bets')}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>
               {browse
                 ? `${matches.length} ${matches.length === 1 ? 'fixture' : 'fixtures'} · our AI prediction on every match`
-                : `${today} · The 5 matches our AI rates highest — confidence + value vs the bookies`}
+                : isTodaySelection
+                  ? `${today} · The ${matches.length === 1 ? 'match' : `${matches.length} matches`} our AI rates highest from today's games`
+                  : `No matches today · the AI's top picks from upcoming fixtures`}
             </p>
           </div>
           {liveCount > 0 && (

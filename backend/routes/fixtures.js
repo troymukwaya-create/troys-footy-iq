@@ -108,6 +108,53 @@ async function getAllFixturesData() {
     console.log(`[fixtures] 🏆 World Cup section: ${wcFixtures.length} fixtures merged into the feed`);
   }
 
+  // ── INTERNATIONAL FRIENDLIES ────────────────────────────────────────────────
+  // Oddyessa is a football site, not a World Cup site — national-team
+  // friendlies (England v Costa Rica, Portugal v Nigeria) belong in the feed.
+  // Same Elo+market engine as the WC, with home-field advantage since
+  // friendlies are hosted, not neutral. Yesterday's results show too.
+  if (hasApsKey) {
+    try {
+      const intlRaw = await api.getInternationalFixtures(1, 7);
+      const { valid: intlValid, rejectedCount: intlRejected } = validateFixtureBatch(intlRaw, 'apisports_friendlies');
+      integrityState.rejectedCount += intlRejected;
+
+      let frOdds = [];
+      try { if (toa.hasKey()) frOdds = await toa.getEvents(); } catch { /* cached after WC fetch */ }
+
+      const seenIntl = new Set(wcFixtures.map(f => f.id));
+      for (const f of intlValid) {
+        if (seenIntl.has(f.id)) continue;
+        seenIntl.add(f.id);
+        attachPrediction(f);
+        if (!f.probability && f.status !== 'FINISHED') {
+          const ev = frOdds.length ? toa.matchEvent(frOdds, f.homeTeam?.name, f.awayTeam?.name) : null;
+          const market = ev ? toa.impliedProbs(ev) : null;
+          let ctx = { homeField: true };
+          try {
+            const [hf, af] = await Promise.all([
+              getWcTeamForm(f.homeTeam?.id),
+              getWcTeamForm(f.awayTeam?.id),
+            ]);
+            ctx = buildWcContext(f.date, hf, af, { homeField: true });
+          } catch { /* context optional */ }
+          const pred = predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name, market, ctx);
+          f.probability = {
+            riskLevel: pred.riskLevel,
+            probabilities: pred.probabilities,
+            topScorelines: (pred.topScorelines || []).slice(0, 2),
+            model: pred.model,
+            valueEdges: pred.valueEdges,
+          };
+        }
+        wcFixtures.push(f); // rides the same merge as the WC section
+      }
+      console.log(`[fixtures] 🤝 Friendlies section: ${intlValid.length} fixtures merged into the feed`);
+    } catch (e) {
+      console.warn('[fixtures] friendlies fetch failed (non-fatal):', e.message);
+    }
+  }
+
   // Merge the World Cup section into whatever the club feed returns.
   const mergeWc = (clubFixtures, source) => {
     if (!wcFixtures.length) return { fixtures: clubFixtures, source };

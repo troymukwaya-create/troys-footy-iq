@@ -29,6 +29,11 @@ const STRENGTH = {
   Qatar: 1640, 'South Africa': 1635, 'DR Congo': 1632, Uzbekistan: 1625, 'Saudi Arabia': 1612,
   Ghana: 1605, Iraq: 1585, Jordan: 1565, 'Cape Verde': 1545, 'Costa Rica': 1660,
   Curacao: 1490, Haiti: 1465, 'New Zealand': 1455,
+  // Qualified but missing from the original snapshot (API-Football calls
+  // them 'Türkiye' — resolved via accent folding + NAME_ALIASES below).
+  // Without this entry Türkiye predicted off DEFAULT_ELO and the model
+  // had Australia favoured over a Euro-2024 quarter-finalist.
+  Turkey: 1885,
 };
 
 const DEFAULT_ELO    = 1640;   // unknown / weakest qualifiers
@@ -40,8 +45,31 @@ const ALTITUDE_VENUE_RE = /mexico city|ciudad de m|guadalajara|zapopan|monterrey
 // Market blend weight is LEARNED daily from scored WC matches (marketWeight.js).
 const HOSTS = new Set(['usa', 'united states', 'canada', 'mexico']);
 
-const norm = (s) => String(s || '').toLowerCase()
-  .replace(/\b(fc|national team|the)\b/g, '').replace(/[^a-z]/g, '').trim();
+// Different providers spell the same nation differently ('Türkiye'/'Turkey',
+// 'Congo DR'/'DR Congo', 'Cape Verde Islands'/'Cape Verde', 'Curaçao'/
+// 'Curacao'). Accent folding + canonical aliases make every variant resolve
+// to one Elo entry — before this, unmatched names silently fell to
+// DEFAULT_ELO and the prediction was garbage for that team.
+const NAME_ALIASES = {
+  turkiye: 'turkey',
+  congodr: 'drcongo',
+  capeverdeislands: 'capeverde',
+  cotedivoire: 'ivorycoast',
+  korearepublic: 'southkorea',
+  unitedstates: 'usa',
+  czechia: 'czechrepublic',
+  bosniaandherzegovina: 'bosniaherzegovina',
+};
+
+export const norm = (s) => {
+  const base = String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // fold accents: ü→u, ç→c
+    .toLowerCase()
+    .replace(/\b(fc|national team|the)\b/g, '')
+    .replace(/[^a-z]/g, '')
+    .trim();
+  return NAME_ALIASES[base] || base;
+};
 
 const STRENGTH_NORM = {};
 for (const [k, v] of Object.entries(STRENGTH)) STRENGTH_NORM[norm(k)] = v;
@@ -134,6 +162,10 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
   if (homeAdv && norm(homeName) === 'mexico' && ALTITUDE_VENUE_RE.test(String(ctx.venueCity || ''))) {
     homeAdv = HOST_ELO_BOOST_ALTITUDE;
   }
+  // Friendlies are NOT neutral — the listed home team hosts (England v
+  // Costa Rica at Wembley). Standard Elo home field is 100; slightly
+  // conservative here since pre-tournament friendlies rotate squads.
+  if (!homeAdv && ctx.homeField) homeAdv = 85;
   const dr = (homeElo + homeAdv) - awayElo;
 
   let baseLh = clamp(WC_AVG_GOALS * Math.exp(dr / GOAL_SCALE), 0.25, 4.5);

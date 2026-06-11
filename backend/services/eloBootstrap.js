@@ -16,7 +16,7 @@
 
 import axios from 'axios';
 import { updateElo } from '../engine/eloLearning.js';
-import { getElo, loadPersistedElo, resetEloOverrides } from '../engine/nationalTeams.js';
+import { getElo, loadPersistedElo, resetEloOverrides, norm as normName } from '../engine/nationalTeams.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 
 const CSV_URL = 'https://raw.githubusercontent.com/martj42/international_results/master/results.csv';
@@ -30,7 +30,7 @@ export const TRACKED = [
   'Egypt', 'Australia', 'Algeria', 'Ivory Coast', 'Norway', 'Bosnia & Herzegovina', 'Paraguay',
   'Canada', 'Sweden', 'Tunisia', 'Scotland', 'Czech Republic', 'Cameroon', 'Panama', 'Qatar',
   'South Africa', 'DR Congo', 'Uzbekistan', 'Saudi Arabia', 'Ghana', 'Iraq', 'Jordan',
-  'Cape Verde', 'Costa Rica', 'Curacao', 'Haiti', 'New Zealand',
+  'Cape Verde', 'Costa Rica', 'Curacao', 'Haiti', 'New Zealand', 'Turkey',
 ];
 
 // Dataset team name → our STRENGTH-table name (only where they differ).
@@ -76,8 +76,8 @@ function median(arr) {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-const normName = (s) => String(s || '').toLowerCase()
-  .replace(/\b(fc|national team|the)\b/g, '').replace(/[^a-z]/g, '').trim();
+// Team-name normalisation is shared with the engine (imported as normName)
+// so persisted national_elo keys always match what getElo() looks up.
 
 /**
  * Replay history → comparison vs snapshot → optionally persist (re-centered).

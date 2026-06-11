@@ -19,6 +19,7 @@ import { DEMO_COMPETITION_CODES } from '../config/lockedDemoFixtures.js';
 // Known valid competition codes (union of all providers)
 const KNOWN_COMPETITION_CODES = new Set([
   'WC', // FIFA World Cup 2026
+  'FR', // International friendlies
   'PL', 'PD', 'BL1', 'SA', 'FL1', 'BSA', 'CL', 'EL', 'ELC',
   'UCL', 'UEL', // API-Sports codes
   'UEFA Champions League', 'UEFA Europa League', // full names as fallback

@@ -13,6 +13,7 @@ const SEASON = 2025;
 
 const LEAGUES = {
   WC: 1,                                  // FIFA World Cup 2026 — without this, WC fixtures are filtered out
+  FR: 10,                                 // International friendlies — a football site, not a WC-only site
   PL: 39, PD: 140, BL1: 78, SA: 135, FL1: 61,
   BSA: 71, BSB: 72, CL: 2, EL: 3, ECL: 848,
   ERE: 88, PPL: 94, CDB: 73,
@@ -324,6 +325,16 @@ const INTL_ELO_LEAGUES = [
   { id: 1, season: 2026, importance: 'world_cup' },
   { id: 10, season: 2026, importance: 'friendly' },
 ];
+// International friendlies in a date window (any status) — the feed shows
+// yesterday's finished friendlies + the upcoming week. One targeted call.
+async function getInternationalFixtures(daysBack = 1, daysAhead = 7) {
+  if (!hasKey()) return [];
+  const from = new Date(Date.now() - daysBack * 86400000).toISOString().split('T')[0];
+  const to = new Date(Date.now() + daysAhead * 86400000).toISOString().split('T')[0];
+  const raw = await safeFetch('fixtures', { league: 10, season: 2026, from, to });
+  return (raw || []).map(normalise);
+}
+
 async function getInternationalResults(days = 7) {
   if (!hasKey()) return [];
   const from = new Date(Date.now() - days * 86400000).toISOString().split('T')[0];
@@ -364,5 +375,5 @@ export default {
   getStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures,
   getTopScorers, getPlayerStats,
   getH2H, getPredictions, getInjuries, getTeamInjuries,
-  getInternationalResults,
+  getInternationalResults, getInternationalFixtures,
 };
