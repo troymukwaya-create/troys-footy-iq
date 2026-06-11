@@ -337,11 +337,11 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           style={{ marginBottom: 24, padding: 'clamp(16px, 5vw, 22px)', borderRadius: 16, border: '1px solid var(--accent-muted)', background: 'linear-gradient(135deg, rgba(168,52,74,0.14), transparent 75%)' }}
         >
-          <div style={{ fontSize: 'clamp(20px, 6vw, 27px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em' }}>
-            Every match, priced.
+          <div className="font-display" style={{ fontSize: 'clamp(20px, 6vw, 27px)', fontWeight: 800, lineHeight: 1.15 }}>
+            Football predictions that show their work.
           </div>
           <div style={{ fontSize: 'clamp(13px, 3.6vw, 15px)', color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.5 }}>
-            Who wins, <strong style={{ color: 'var(--text-primary)' }}>why</strong>, and where the bookies are wrong — and we <strong style={{ color: 'var(--accent)' }}>publish how often we're right</strong>.
+            Win probabilities for every match, <strong style={{ color: 'var(--text-primary)' }}>value against the bookmakers</strong> — and a <strong style={{ color: 'var(--accent)' }}>public accuracy record</strong> updated after every final whistle.
           </div>
         </motion.div>
       )}

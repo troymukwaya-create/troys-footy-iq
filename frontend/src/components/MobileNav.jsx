@@ -1,20 +1,23 @@
 import React from 'react';
-import { Home, Trophy, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
+import { KickoffIcon, PitchIcon, EdgeIcon } from './BrandIcons.jsx';
 
 export function MobileNav({ activeTab, onTabChange }) {
   const tabs = [
-    { id: 'home',    Icon: Home,   label: 'Home' },
-    { id: 'leagues', Icon: Trophy, label: 'Matches' },
-    { id: 'ai',      Icon: Zap,    label: 'Edge' },
+    { id: 'home',    Icon: KickoffIcon, label: 'Home' },
+    { id: 'leagues', Icon: PitchIcon,   label: 'Matches' },
+    { id: 'ai',      Icon: EdgeIcon,    label: 'Edge' },
   ];
 
   return (
-    <div className="mobile-bottom-nav fixed bottom-0 left-0 right-0 backdrop-blur-xl border-t hidden justify-around items-center z-[100]"
+    <div className="mobile-bottom-nav fixed bottom-0 left-0 right-0 border-t hidden justify-around items-center z-[100]"
       style={{
         height: 'calc(56px + env(safe-area-inset-bottom))',
         paddingBottom: 'env(safe-area-inset-bottom)',
-        background: 'rgba(11,11,13,0.96)',
+        // True glass: the page scrolls visibly under the bar.
+        background: 'rgba(11,11,13,0.62)',
+        backdropFilter: 'blur(18px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(18px) saturate(1.4)',
         borderColor: 'var(--border-subtle)',
       }}>
       {tabs.map(({ id, Icon, label }) => {

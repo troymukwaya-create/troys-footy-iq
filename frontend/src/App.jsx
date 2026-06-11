@@ -15,6 +15,7 @@ import { AnalystDashboard } from './components/AnalystDashboard.jsx';
 import { FixtureCard } from './components/FixtureCard.jsx';
 import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
 import { SuggestedSlips } from './components/SuggestedSlips.jsx';
+import { EdgeExplainer } from './components/EdgeExplainer.jsx';
 import { ComplianceFooter } from './components/ComplianceFooter.jsx';
 import { AuthModal } from './components/AuthModal.jsx';
 import { SavedSlipsModal } from './components/SavedSlipsModal.jsx';
@@ -333,12 +334,15 @@ function MainApp() {
           </div>
         </main>
 
-        {/* ═══ RIGHT PANEL ═══ */}
+        {/* ═══ RIGHT PANEL — "The Edge", told as ONE story:
+             what the edge is → the ranked calls → ready-made slips →
+             build your own. (Was three unconnected widgets.) ═══ */}
         <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto' }}>
-          {!selectedFixture && <SuggestedSlips fixtures={filteredFixtures} />}
+          {!selectedFixture && <EdgeExplainer />}
           <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
             <AIInsightsPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading || aiLoading} fixtures={filteredFixtures} onSelect={handleSelectFixture} />
           </React.Suspense>
+          {!selectedFixture && <SuggestedSlips fixtures={filteredFixtures} />}
           <div style={{ padding: '0 12px 12px' }}>
             <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
               <ParlayBuilderPanel />

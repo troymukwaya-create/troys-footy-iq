@@ -11,20 +11,25 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
     <nav style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '8px 16px',
-      background: 'var(--bg-surface)',
+      // Upper glass: content scrolls UNDER the chrome, visible through it.
+      // (Chrome gets glass; tiles stay opaque so the flag bleeds keep punch.)
+      background: 'rgba(11,11,13,0.62)',
+      backdropFilter: 'blur(16px) saturate(1.4)',
+      WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
       borderBottom: '1px solid var(--border-subtle)',
+      position: 'sticky', top: 0,
       zIndex: 30,
     }}>
-      {/* Logo */}
+      {/* Logo — wordmark speaks in the expanded display cut */}
       <div onClick={onGoDashboard} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
         <div style={{
           width: 28, height: 28, borderRadius: 'var(--radius-sm)',
           background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.25)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>O</span>
+          <span className="font-display" style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>O</span>
         </div>
-        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>
+        <span className="font-display" style={{ fontSize: 14, fontWeight: 700 }}>
           <span style={{ color: 'var(--accent)' }}>Odd</span><span style={{ color: 'var(--text-secondary)' }}>yessa</span>
         </span>
       </div>

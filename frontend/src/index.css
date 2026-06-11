@@ -1,4 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Serif:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+/* ─── BRAND TYPE ───────────────────────────────────────
+   ARCHIVO (variable: weight 100-900, width 62-125%) — the one brand face,
+   web + marketing. The EXPANDED cut at heavy weights is the headline voice
+   (broadcast-sport authority); normal width is the UI voice. Available in
+   Canva, so social posts use the exact same face.
+   IBM PLEX MONO stays for every NUMBER — probabilities, odds, the Brier
+   readout. The terminal-data DNA of the brand lives in the numerals. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -42,8 +49,8 @@
   --calibration-cyan:  #5BC0BE;
 
   /* Typography */
-  --font-body:    'IBM Plex Sans', system-ui, sans-serif;
-  --font-serif:   'IBM Plex Serif', Georgia, serif;
+  --font-body:    'Archivo', system-ui, sans-serif;
+  --font-serif:   Georgia, serif;                /* legacy var — no webfont cost */
   --font-mono:    'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
 
   /* Semantic */
@@ -73,13 +80,25 @@
   body {
     background-color: var(--bg-base);
     color: var(--text-primary);
-    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
+  /* Headlines speak in the EXPANDED cut — the brand's display voice.
+     (Archivo variable width axis; numbers everywhere stay Plex Mono.) */
+  h1, h2 {
+    font-stretch: 116%;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Display utility for non-heading hero text + the wordmark */
+.font-display {
+  font-stretch: 116%;
+  letter-spacing: -0.015em;
 }
 
 /* ── Mobile readability + stop iOS input-zoom ─────────────────────── */
