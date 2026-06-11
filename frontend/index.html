@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Oddyessa — AI-powered sports prediction: real-time match intelligence, probabilities, value edges, and an honestly published track record." />
     <title>Oddyessa — read the game</title>
@@ -40,17 +41,38 @@
   </head>
   <body>
     <div id="root">
-      <!-- Instant branded splash — shown before any JS loads so the screen is never blank -->
-      <div id="boot" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#070708;gap:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
-        <div style="width:46px;height:46px;border-radius:12px;background:rgba(168,52,74,0.14);border:1px solid rgba(168,52,74,0.32);display:flex;align-items:center;justify-content:center">
-          <span style="font-size:22px;font-weight:800;color:#A8344A">O</span>
-        </div>
-        <div style="font-size:17px;font-weight:700"><span style="color:#A8344A">Odd</span><span style="color:#cfd2da">yessa</span></div>
-        <div style="width:24px;height:24px;border:2.5px solid rgba(255,255,255,0.12);border-top-color:#A8344A;border-radius:50%;animation:bootspin .8s linear infinite"></div>
+      <!-- Instant branded splash — the animated orbit reveal, pure CSS so it
+           plays before any JS loads and the screen is never blank. -->
+      <div id="boot" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#070708;gap:8px;font-family:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif">
+        <svg width="150" height="100" viewBox="0 0 400 200" style="overflow:visible">
+          <path id="bootRing" pathLength="100" d="M 211.9 55.6 A 46 46 0 1 0 244.4 88.1" fill="none" stroke="#F7F4EE" stroke-width="9" stroke-linecap="round" style="stroke-dasharray:100;stroke-dashoffset:100;animation:bootDraw 1s cubic-bezier(.65,0,.35,1) .42s forwards"/>
+          <circle cx="232.5" cy="67.5" r="11" fill="#A8344A" style="transform-box:fill-box;transform-origin:center;opacity:0;animation:bootPop .5s cubic-bezier(.34,1.7,.5,1) forwards"/>
+        </svg>
+        <div id="bootWord" style="font-size:21px;font-weight:800;font-stretch:125%;font-variation-settings:'wdth' 125,'wght' 800;letter-spacing:-0.01em"></div>
+        <div style="margin-top:10px;width:22px;height:22px;border:2.5px solid rgba(255,255,255,0.12);border-top-color:#A8344A;border-radius:50%;animation:bootspin .8s linear infinite"></div>
         <noscript><div style="color:#cfd2da;font-size:13px">Please enable JavaScript to use Oddyessa.</div></noscript>
       </div>
+      <script>
+        (function(){
+          var w=document.getElementById('bootWord');
+          if(!w)return;
+          var letters='Oddyessa'.split('');
+          letters.forEach(function(ch,i){
+            var s=document.createElement('span');
+            s.textContent=ch;
+            s.style.cssText='display:inline-block;opacity:0;transform:translateY(20px) scale(.5);color:'+(i<3?'#A8344A':'#cfd2da')+';animation:bootLetter .6s cubic-bezier(.5,1.7,.45,1) forwards;animation-delay:'+(1.28+i*0.08)+'s';';
+            w.appendChild(s);
+          });
+        })();
+      </script>
     </div>
-    <style>@keyframes bootspin{to{transform:rotate(360deg)}}</style>
+    <style>
+      @keyframes bootspin{to{transform:rotate(360deg)}}
+      @keyframes bootPop{0%{opacity:0;transform:scale(0)}60%{opacity:1;transform:scale(1.45)}100%{opacity:1;transform:scale(1)}}
+      @keyframes bootDraw{to{stroke-dashoffset:0}}
+      @keyframes bootLetter{0%{opacity:0;transform:translateY(20px) scale(.5)}55%{opacity:1;transform:translateY(-7px) scale(1.09)}100%{opacity:1;transform:translateY(0) scale(1)}}
+      @media (prefers-reduced-motion: reduce){#boot *{animation-duration:.01ms!important}#boot circle{opacity:1!important}#bootRing{stroke-dashoffset:0!important}}
+    </style>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

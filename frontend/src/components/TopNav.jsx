@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
+import OrbitMark from './OrbitMark.jsx';
 
 /**
  * TopNav — Clean, minimal top navigation.
@@ -20,15 +21,9 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
       position: 'sticky', top: 0,
       zIndex: 30,
     }}>
-      {/* Logo — wordmark speaks in the expanded display cut */}
-      <div onClick={onGoDashboard} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 'var(--radius-sm)',
-          background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.25)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span className="font-display" style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)' }}>O</span>
-        </div>
+      {/* Logo — orbit mark + wordmark in the expanded display cut */}
+      <div onClick={onGoDashboard} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
+        <OrbitMark size={26} boxed />
         <span className="font-display" style={{ fontSize: 14, fontWeight: 700 }}>
           <span style={{ color: 'var(--accent)' }}>Odd</span><span style={{ color: 'var(--text-secondary)' }}>yessa</span>
         </span>

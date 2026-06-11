@@ -7,6 +7,7 @@ import { useStore } from './store/useStore.js';
 import { track } from './lib/analytics.js';
 
 import { TopNav } from './components/TopNav.jsx';
+import OrbitMark from './components/OrbitMark.jsx';
 import { MobileNav } from './components/MobileNav.jsx';
 import { HonestBar } from './components/HonestBar.jsx';
 import { LeagueSidebar } from './components/LeagueSidebar.jsx';
@@ -35,12 +36,10 @@ const AuthVerify = React.lazy(() => import('./pages/AuthVerify.jsx'));
 // transition is seamless and the screen is never blank.
 function Splash() {
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#070708', gap: 16, zIndex: 9999 }}>
-      <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(168,52,74,0.14)', border: '1px solid rgba(168,52,74,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: 22, fontWeight: 800, color: '#A8344A' }}>O</span>
-      </div>
-      <div style={{ fontSize: 17, fontWeight: 700 }}><span style={{ color: '#A8344A' }}>Odd</span><span style={{ color: '#cfd2da' }}>yessa</span></div>
-      <div className="oddyessa-boot-spin" style={{ width: 24, height: 24, border: '2.5px solid rgba(255,255,255,0.12)', borderTopColor: '#A8344A', borderRadius: '50%' }} />
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#070708', gap: 14, zIndex: 9999 }}>
+      <OrbitMark size={48} stroke={7} />
+      <div className="font-display" style={{ fontSize: 18, fontWeight: 800 }}><span style={{ color: '#A8344A' }}>Odd</span><span style={{ color: '#cfd2da' }}>yessa</span></div>
+      <div className="oddyessa-boot-spin" style={{ width: 22, height: 22, border: '2.5px solid rgba(255,255,255,0.12)', borderTopColor: '#A8344A', borderRadius: '50%' }} />
       <style>{`@keyframes oddyessaBootSpin{to{transform:rotate(360deg)}} .oddyessa-boot-spin{animation:oddyessaBootSpin .8s linear infinite}`}</style>
     </div>
   );
