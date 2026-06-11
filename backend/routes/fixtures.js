@@ -45,10 +45,16 @@ function attachPrediction(f) {
       f.probability = cached.probability;
     }
   }
-  if (!f.probability) {
+  // NEVER invent a "prediction" for a match that already finished — every
+  // finished friendly was getting the identical generic default attached
+  // post-hoc, which is exactly the kind of fake-looking number that
+  // destroys trust. No pre-match prediction stored → show none.
+  if (!f.probability && f.status !== 'FINISHED') {
     try {
-      const pred = f.league?.code === 'WC'
-        ? predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name)
+      const isIntl = f.league?.code === 'WC' || f.league?.code === 'FR';
+      const pred = isIntl
+        ? predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name, null,
+            f.league?.code === 'FR' ? { homeField: true } : {})
         : predictStatic({}, {});
       f.probability = {
         riskLevel: pred.riskLevel,
@@ -122,9 +128,13 @@ async function getAllFixturesData() {
       let frOdds = [];
       try { if (toa.hasKey()) frOdds = await toa.getEvents(); } catch { /* cached after WC fetch */ }
 
+      // Senior national teams only — API-Football's "Friendlies" league also
+      // carries U17/U20/U23 youth games, which don't belong in the feed.
+      const isYouth = (n) => /\bU-?\d{2}\b|\bU\d{2}\b|youth|women/i.test(String(n || ''));
       const seenIntl = new Set(wcFixtures.map(f => f.id));
       for (const f of intlValid) {
         if (seenIntl.has(f.id)) continue;
+        if (isYouth(f.homeTeam?.name) || isYouth(f.awayTeam?.name)) continue;
         seenIntl.add(f.id);
         attachPrediction(f);
         if (!f.probability && f.status !== 'FINISHED') {
