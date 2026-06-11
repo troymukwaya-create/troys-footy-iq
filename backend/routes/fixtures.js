@@ -32,6 +32,11 @@ const integrityState = {
 };
 
 // Helper to attach cached predictions to a fixture
+// Senior national teams only — API-Football's "Friendlies" league also
+// carries U17/U20/U23 youth games, which don't belong in the feed.
+const isYouthTeam = (n) => /\bU-?\d{2}\b|youth|women/i.test(String(n || ''));
+const isYouthFixture = (f) => isYouthTeam(f?.homeTeam?.name) || isYouthTeam(f?.awayTeam?.name);
+
 function attachPrediction(f) {
   // NOTE: analysis.js writes under 'full_analysis_v2_' — the old un-versioned
   // key silently never hit, so cards could not reuse the page's numbers.
@@ -128,13 +133,10 @@ async function getAllFixturesData() {
       let frOdds = [];
       try { if (toa.hasKey()) frOdds = await toa.getEvents(); } catch { /* cached after WC fetch */ }
 
-      // Senior national teams only — API-Football's "Friendlies" league also
-      // carries U17/U20/U23 youth games, which don't belong in the feed.
-      const isYouth = (n) => /\bU-?\d{2}\b|\bU\d{2}\b|youth|women/i.test(String(n || ''));
       const seenIntl = new Set(wcFixtures.map(f => f.id));
       for (const f of intlValid) {
         if (seenIntl.has(f.id)) continue;
-        if (isYouth(f.homeTeam?.name) || isYouth(f.awayTeam?.name)) continue;
+        if (isYouthFixture(f)) continue;
         seenIntl.add(f.id);
         attachPrediction(f);
         if (!f.probability && f.status !== 'FINISHED') {
@@ -246,7 +248,9 @@ async function getAllFixturesData() {
     const seen = new Set();
     const fixtures = [];
     for (const f of valid) {
-      if (!seen.has(f.id)) { seen.add(f.id); fixtures.push(f); }
+      if (seen.has(f.id) || isYouthFixture(f)) continue;
+      seen.add(f.id);
+      fixtures.push(f);
     }
     fixtures.sort((a, b) => new Date(a.date) - new Date(b.date));
     fixtures.forEach(attachPrediction);
