@@ -130,33 +130,28 @@ async function getAllFixturesData() {
       const { valid: intlValid, rejectedCount: intlRejected } = validateFixtureBatch(intlRaw, 'apisports_friendlies');
       integrityState.rejectedCount += intlRejected;
 
-      let frOdds = [];
-      try { if (toa.hasKey()) frOdds = await toa.getEvents(); } catch { /* cached after WC fetch */ }
-
+      // Same pattern as the WC section: locked row once the lock job has
+      // written one, otherwise the shared compute path (market + cached form,
+      // homeField since friendlies are hosted). attachPrediction only carries
+      // AI extras here — it must never be the headline number for a friendly,
+      // because its fallback predicts with no market and no form context.
       const seenIntl = new Set(wcFixtures.map(f => f.id));
-      for (const f of intlValid) {
-        if (seenIntl.has(f.id)) continue;
-        if (isYouthFixture(f)) continue;
+      const frFixtures = intlValid.filter(f => !seenIntl.has(f.id) && !isYouthFixture(f));
+      const frLockedMap = await getLockedWcPredictionsMap(frFixtures.map(f => String(f.id)));
+      const frOdds = await getSharedOddsEvents();
+      for (const f of frFixtures) {
         seenIntl.add(f.id);
         attachPrediction(f);
-        if (!f.probability && f.status !== 'FINISHED') {
-          const ev = frOdds.length ? toa.matchEvent(frOdds, f.homeTeam?.name, f.awayTeam?.name) : null;
-          const market = ev ? toa.impliedProbs(ev) : null;
-          let ctx = { homeField: true };
-          try {
-            const [hf, af] = await Promise.all([
-              getWcTeamForm(f.homeTeam?.id),
-              getWcTeamForm(f.awayTeam?.id),
-            ]);
-            ctx = buildWcContext(f.date, hf, af, { homeField: true });
-          } catch { /* context optional */ }
-          const pred = predictWorldCupMatch(f.homeTeam?.name, f.awayTeam?.name, market, ctx);
+        if (f.status !== 'FINISHED') {
+          const pred = frLockedMap.get(String(f.id))
+            || await getWcDisplayPrediction(f, { oddsEvents: frOdds, skipLocked: true, homeField: true });
           f.probability = {
             riskLevel: pred.riskLevel,
             probabilities: pred.probabilities,
             topScorelines: (pred.topScorelines || []).slice(0, 2),
             model: pred.model,
             valueEdges: pred.valueEdges,
+            locked: pred.locked || undefined,
           };
         }
         wcFixtures.push(f); // rides the same merge as the WC section

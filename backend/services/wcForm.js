@@ -31,6 +31,17 @@ export async function refreshWcTeamForms(daysAhead = 8) {
     return { refreshed: 0, reason: e.message };
   }
 
+  // International friendlies are locked + scored too — their teams need the
+  // same cached form context. Isolated: a failure here never blocks WC teams.
+  try {
+    const isYouth = (n) => /\bU-?\d{2}\b|youth|women/i.test(String(n || ''));
+    const friendlies = (await api.getInternationalFixtures(0, daysAhead) || [])
+      .filter(f => !isYouth(f.homeTeam?.name) && !isYouth(f.awayTeam?.name));
+    fixtures = [...fixtures, ...friendlies];
+  } catch (e) {
+    console.warn('[wcForm] friendlies schedule fetch failed (non-fatal):', e.message);
+  }
+
   const now = Date.now();
   const horizon = now + daysAhead * 86400000;
   const teams = new Map(); // id -> name

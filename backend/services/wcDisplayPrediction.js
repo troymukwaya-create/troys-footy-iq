@@ -25,6 +25,11 @@ import { getWcTeamForm, buildWcContext, isKnockoutRound } from './wcForm.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 
 const MODEL_VERSION = 'wc-elo-market-v1';
+// International friendlies are locked + scored under their own model version
+// so the public Brier can be read per-model (WC vs friendlies vs club) —
+// same Elo+market engine, different prediction problem, separate ledger.
+export const INTL_MODEL_VERSION = 'intl-elo-market-v1';
+const LOCKED_MODEL_VERSIONS = [MODEL_VERSION, INTL_MODEL_VERSION];
 const PRE_LOCK_TTL_S = 600;     // pre-lock predictions shared for 10 min
 const TOA_EVENTS_TTL_S = 600;   // one odds snapshot shared by all callers
 
@@ -48,14 +53,15 @@ export async function getSharedOddsEvents() {
 // ─── Pre-lock compute (identical inputs for every caller) ───────────
 // This is the lock job's exact recipe; the job itself calls this too,
 // so "what the site shows" and "what gets scored" share one code path.
-export async function computeWcPrediction(match, { oddsEvents = null } = {}) {
+export async function computeWcPrediction(match, { oddsEvents = null, homeField = false } = {}) {
   const events = oddsEvents ?? await getSharedOddsEvents();
   const ev = events?.length
     ? toa.matchEvent(events, match.homeTeam?.name, match.awayTeam?.name)
     : null;
   const marketProbs = ev ? toa.impliedProbs(ev) : null;
 
-  let ctx = {};
+  // Friendlies are hosted, not neutral — and never knockout.
+  let ctx = homeField ? { homeField: true } : {};
   try {
     const [homeForm, awayForm] = await Promise.all([
       getWcTeamForm(match.homeTeam?.id),
@@ -63,11 +69,17 @@ export async function computeWcPrediction(match, { oddsEvents = null } = {}) {
     ]);
     ctx = buildWcContext(match.date, homeForm, awayForm, {
       venueCity: match.city || match.venue || '',
-      knockout: isKnockoutRound(match.league?.round || match.matchday),
+      knockout: homeField ? false : isKnockoutRound(match.league?.round || match.matchday),
+      ...(homeField ? { homeField: true } : {}),
     });
   } catch { /* context is optional — prediction still runs */ }
 
   const pred = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, ctx);
+  // Friendlies are a separate public ledger — label them as such on every
+  // surface so the displayed model name matches the scored model_version.
+  if (homeField && typeof pred.model === 'string') {
+    pred.model = pred.model.replace(/^wc-/, 'intl-');
+  }
   return { pred, ev, marketProbs, ctx };
 }
 
@@ -135,11 +147,11 @@ export async function getLockedWcPredictionsMap(externalIds) {
     const r = await safeQuery(
       `SELECT DISTINCT ON (match_external_id) *
          FROM predictions
-        WHERE model_version = $1
+        WHERE model_version = ANY($1)
           AND match_external_id = ANY($2)
           AND features ? 'lockedAt'
         ORDER BY match_external_id, created_at DESC`,
-      [MODEL_VERSION, externalIds.map(String)]
+      [LOCKED_MODEL_VERSIONS, externalIds.map(String)]
     );
     for (const row of r?.rows || []) {
       map.set(row.match_external_id, lockedRowToDisplay(row));
@@ -156,7 +168,7 @@ export async function getLockedWcPredictionsMap(externalIds) {
  * Callers that already batch-checked locked rows (fixtures/all does ONE
  * query for the whole feed) pass skipLocked to avoid a per-fixture re-query.
  */
-export async function getWcDisplayPrediction(match, { oddsEvents = null, skipLocked = false } = {}) {
+export async function getWcDisplayPrediction(match, { oddsEvents = null, skipLocked = false, homeField = false } = {}) {
   if (!skipLocked) {
     const locked = await getLockedWcPredictionsMap([match.id]);
     if (locked.has(String(match.id))) return locked.get(String(match.id));
@@ -166,7 +178,7 @@ export async function getWcDisplayPrediction(match, { oddsEvents = null, skipLoc
   const cached = cacheService.get(ck);
   if (cached) return cached;
 
-  const { pred } = await computeWcPrediction(match, { oddsEvents });
+  const { pred } = await computeWcPrediction(match, { oddsEvents, homeField });
   cacheService.set(ck, pred, PRE_LOCK_TTL_S);
   return pred;
 }

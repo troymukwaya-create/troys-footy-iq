@@ -55,7 +55,7 @@ async function enrichInjuriesWithImportance(injuries) {
 // WC match context (rest days, availability, market signal) is now built
 // inside services/wcDisplayPrediction.js — the single shared path for every
 // surface that shows a WC probability. No per-route context builders.
-import { getWcDisplayPrediction } from '../services/wcDisplayPrediction.js';
+import { getWcDisplayPrediction, INTL_MODEL_VERSION } from '../services/wcDisplayPrediction.js';
 import { buildReasoning } from '../engine/reasoning.js';
 import { computePreMatchFeatures } from '../engine/preMatchFeatures.js';
 import { storePrediction } from '../services/predictionService.js';
@@ -301,11 +301,13 @@ router.get('/:matchId', async (req, res) => {
     let dataQuality; // COMPLETE | PARTIAL | INSUFFICIENT
     let probabilityResult = null;
 
-    if (match.league?.code === 'WC') {
-      // World Cup: ONE source of truth. getWcDisplayPrediction is the same
-      // function the fixture cards, the Markets tab and the T-75min lock job
-      // use — after lock it returns the stored row, i.e. the exact numbers
-      // the public Brier score will judge.
+    if (match.league?.code === 'WC' || match.league?.code === 'FR') {
+      // World Cup + international friendlies: ONE source of truth.
+      // getWcDisplayPrediction is the same function the fixture cards, the
+      // Markets tab and the T-75min lock job use — after lock it returns the
+      // stored row, i.e. the exact numbers the public Brier score will judge.
+      // Friendlies run the same Elo+market engine with homeField (hosted, not
+      // neutral); the club path below would predict them off empty club stats.
       //
       // The page previously layered its own extras on the headline number
       // (an API-Football 60/40 blend + deeper injury context) — independently
@@ -314,8 +316,8 @@ router.get('/:matchId', async (req, res) => {
       // The deep form + injuries still power the Stats tab and reasoning
       // below; any new signal goes into the SHARED path or not at all.
       dataQuality = 'COMPLETE';
-      probabilityResult = await getWcDisplayPrediction(match);
-      console.log(`[analysis] ${matchId} WC prediction (${probabilityResult?.model}${probabilityResult?.locked ? ', LOCKED' : ''}, form:${probabilityResult?.nationalStrength?.recentMatchesUsed || 0}g)`);
+      probabilityResult = await getWcDisplayPrediction(match, { homeField: match.league?.code === 'FR' });
+      console.log(`[analysis] ${matchId} ${match.league.code} prediction (${probabilityResult?.model}${probabilityResult?.locked ? ', LOCKED' : ''}, form:${probabilityResult?.nationalStrength?.recentMatchesUsed || 0}g)`);
     } else if (validation.valid) {
       // Full data available — run predictions
       dataQuality = 'COMPLETE';
@@ -376,10 +378,14 @@ router.get('/:matchId', async (req, res) => {
           h2h: h2hData || emptyH2H(),
         });
         // Fire-and-forget — don't block the response, but log errors.
-        // WC predictions go under the canonical wc-elo-market-v1 version so
-        // the T-60min lock job (jobs/wcPredictionLock.js) upserts OVER this
-        // snapshot — one scored row per fixture, always the displayed model.
-        const isWc = typeof probabilityResult.model === 'string' && probabilityResult.model.startsWith('wc-');
+        // WC/FR predictions go under their canonical model versions so the
+        // T-75min lock job (jobs/wcPredictionLock.js) upserts OVER this
+        // snapshot — one scored row per fixture per model, always the
+        // displayed model. Friendlies must NEVER store under the WC version:
+        // they are a separate ledger in the public per-model Brier.
+        const canonicalVersion = match.league?.code === 'WC' ? 'wc-elo-market-v1'
+          : match.league?.code === 'FR' ? INTL_MODEL_VERSION
+          : undefined;
         storePrediction({
           matchExternalId: matchId,
           homeTeam: match.homeTeam?.name,
@@ -389,7 +395,7 @@ router.get('/:matchId', async (req, res) => {
           valueEdges: null,
           features,
           leagueCode: match.league?.code || null,
-          modelVersion: isWc ? 'wc-elo-market-v1' : undefined,
+          modelVersion: canonicalVersion,
         }).catch(err => {
           console.error(`[analysis] Prediction storage failed for ${matchId}:`, err.message);
         });
@@ -458,11 +464,11 @@ router.get('/:matchId', async (req, res) => {
     };
 
     // ─── STEP 7: Cache ONLY complete/partial analyses ───────────
-    // WC analyses cache for 10 min (the shared-prediction cadence): a 24h
+    // WC/FR analyses cache for 10 min (the shared-prediction cadence): a 24h
     // page cache served day-old numbers while the cards recomputed fresh —
     // the exact card-vs-page contradiction this route was blamed for.
     if (dataQuality === 'COMPLETE') {
-      const ttl = match.league?.code === 'WC' ? 600 : 86400;
+      const ttl = (match.league?.code === 'WC' || match.league?.code === 'FR') ? 600 : 86400;
       cacheService.set(cacheKey, result, ttl);
     } else if (dataQuality === 'PARTIAL') {
       cacheService.set(cacheKey, result, 1800); // 30 min — allow retry

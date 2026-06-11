@@ -56,10 +56,30 @@ router.get('/', async (req, res) => {
       LIMIT 100
     `);
 
+    // Per-model ledger: WC, friendlies and club models are different
+    // prediction problems — each keeps its own public track record so no
+    // model's results can dilute (or inflate) another's.
+    const perModel = await safeQuery(`
+      SELECT
+        p.model_version,
+        COUNT(*)::int as total_predictions,
+        COUNT(*) FILTER (WHERE mp.prediction_correct = true)::int as correct,
+        ROUND(AVG(CASE WHEN mp.prediction_correct THEN 100.0 ELSE 0 END)::numeric, 1) as accuracy,
+        ROUND(AVG(mp.brier_score)::numeric, 4) as avg_brier,
+        ROUND(AVG(mp.log_loss)::numeric, 4) as avg_log_loss,
+        MIN(mp.created_at) as first_evaluation,
+        MAX(mp.created_at) as last_evaluation
+      FROM model_performance mp
+      JOIN predictions p ON mp.prediction_id = p.id
+      GROUP BY p.model_version
+      ORDER BY MAX(mp.created_at) DESC
+    `);
+
     res.json({
       error: false,
       data: {
         overall: overall?.rows?.[0] || null,
+        perModel: perModel?.rows || [],
         runs: runs?.rows || [],
         recentPredictions: perLeague?.rows || [],
       },

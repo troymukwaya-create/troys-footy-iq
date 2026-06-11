@@ -608,6 +608,12 @@ INSERT INTO leagues (code, name, country, source)
 VALUES ('WC', 'FIFA World Cup', 'World', 'apisports')
 ON CONFLICT (code) DO NOTHING;
 
+-- The international-friendlies league row must exist so the prediction-lock
+-- job can upsert FR fixture rows (locked friendlies are scored like WC ones).
+INSERT INTO leagues (code, name, country, source)
+VALUES ('FR', 'International Friendlies', 'World', 'apisports')
+ON CONFLICT (code) DO NOTHING;
+
 -- ─── Predictions integrity ──────────────────────────────────────────
 -- 1) Dedupe: keep the NEWEST prediction per (fixture, model), delete the
 --    rest (and their dependent rows) so each fixture is scored once.

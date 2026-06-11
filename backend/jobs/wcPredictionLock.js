@@ -18,7 +18,7 @@
 
 import api from '../services/apisports.js';
 import * as toa from '../services/sources/theOddsApi.js';
-import { computeWcPrediction } from '../services/wcDisplayPrediction.js';
+import { computeWcPrediction, INTL_MODEL_VERSION } from '../services/wcDisplayPrediction.js';
 import { storePrediction } from '../services/predictionService.js';
 import { upsertFixture } from '../db/upsert.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
@@ -29,6 +29,8 @@ const SCHEDULE_TTL = 3 * 3600_000;   // WC schedule cache (kickoff times are sta
 
 let _schedule = null;
 let _scheduleAt = 0;
+let _frSchedule = null;
+let _frScheduleAt = 0;
 
 async function getWcSchedule() {
   if (_schedule && Date.now() - _scheduleAt < SCHEDULE_TTL) return _schedule;
@@ -37,9 +39,84 @@ async function getWcSchedule() {
   return _schedule || [];
 }
 
-async function wcLeagueId() {
-  const r = await safeQuery(`SELECT id FROM leagues WHERE code = 'WC'`);
+// Upcoming international friendlies (league 10) — today + tomorrow covers
+// every possible 75-min lock window between schedule refreshes.
+async function getFriendlySchedule() {
+  if (_frSchedule && Date.now() - _frScheduleAt < SCHEDULE_TTL) return _frSchedule;
+  const fixtures = await api.getInternationalFixtures(0, 1);
+  _frSchedule = fixtures || [];
+  _frScheduleAt = Date.now();
+  return _frSchedule;
+}
+
+// Senior national teams only — league 10 also carries U17/U20/U23 + women's
+// fixtures, which are not in the engine's Elo domain (same rule as the feed).
+const isYouthTeam = (n) => /\bU-?\d{2}\b|youth|women/i.test(String(n || ''));
+const isYouthFixture = (f) => isYouthTeam(f?.homeTeam?.name) || isYouthTeam(f?.awayTeam?.name);
+
+async function leagueIdByCode(code) {
+  const r = await safeQuery(`SELECT id FROM leagues WHERE code = $1`, [code]);
   return r?.rows?.[0]?.id || null;
+}
+
+// Lock one match: fixture upsert → shared-path prediction → upserted
+// prediction row → odds snapshot. Used by both the WC and friendlies loops;
+// the only differences are the model version, league code and homeField ctx.
+async function lockOneMatch(match, { leagueId, leagueCode, modelVersion, homeField = false, oddsEvents }) {
+  // 1. Fixture row must exist BEFORE kickoff so results can be matched.
+  let fixtureRowOk = false;
+  if (leagueId) {
+    try { fixtureRowOk = !!(await upsertFixture(match, leagueId)); }
+    catch (e) { console.warn(`[wcLock] fixture upsert failed for ${match.id}:`, e.message); }
+  }
+
+  // 2+3. Predict via the SHARED code path (services/wcDisplayPrediction):
+  // the locked row is computed by literally the same function the cards
+  // and the analysis page use, so display and scoring can never diverge.
+  const { pred, ev, marketProbs, ctx } = await computeWcPrediction(match, { oddsEvents, homeField });
+
+  const best = ev?.markets?.['1X2']?.bestOdds || null;
+  const odds = best?.Home && best?.Draw && best?.Away
+    ? { home: best.Home.odd, draw: best.Draw.odd, away: best.Away.odd }
+    : null;
+  const valueEdges = pred.valueEdges
+    ? [
+        { outcome: 'Home', valueEdge: pred.valueEdges.home },
+        { outcome: 'Draw', valueEdge: pred.valueEdges.draw },
+        { outcome: 'Away', valueEdge: pred.valueEdges.away },
+      ]
+    : null;
+
+  await storePrediction({
+    matchExternalId: match.id,
+    homeTeam: match.homeTeam?.name,
+    awayTeam: match.awayTeam?.name,
+    prediction: pred,
+    odds,
+    valueEdges,
+    features: {
+      modelProbs: pred.modelProbs,
+      marketProbs: pred.marketProbs,
+      marketWeight: pred.marketWeight,
+      nationalStrength: pred.nationalStrength,
+      contextFactors: pred.contextFactors,
+      knockout: !!ctx.knockout,
+      // advance is stored so locked knockout rows can still display
+      // P(advance) — it is rehydrated by wcDisplayPrediction.
+      advance: pred.advance || null,
+      lockedAt: new Date().toISOString(),
+    },
+    leagueCode,
+    modelVersion,
+    upsert: true,
+  });
+
+  // 4. Odds snapshots → closing-line value tracking.
+  if (ev && fixtureRowOk) await snapshotOdds(match.id, ev, marketProbs);
+
+  console.log(`[wcLock] 🔒 ${match.homeTeam?.name} vs ${match.awayTeam?.name} ` +
+    `(${modelVersion}, market:${marketProbs ? marketProbs.source : 'none'}, ` +
+    `form:${pred.nationalStrength?.recentMatchesUsed || 0}g, ko:${ctx.knockout ? 'y' : 'n'})`);
 }
 
 export async function runWcPredictionLock() {
@@ -47,86 +124,59 @@ export async function runWcPredictionLock() {
 
   const now = Date.now();
   const windowEnd = now + LOCK_WINDOW_MIN * 60_000;
-
-  let schedule;
-  try { schedule = await getWcSchedule(); }
-  catch (e) { console.warn('[wcLock] schedule fetch failed:', e.message); return { locked: 0 }; }
-
-  const due = schedule.filter(f => {
+  const isDue = (f) => {
     const t = new Date(f.date).getTime();
     if (!(t > now && t <= windowEnd)) return false;
     return !f.status || ['SCHEDULED', 'TIMED', 'NS'].includes(f.status);
-  });
-  if (!due.length) return { locked: 0 };
+  };
 
-  const leagueId = await wcLeagueId();
+  let wcDue = [];
+  try { wcDue = (await getWcSchedule()).filter(isDue); }
+  catch (e) { console.warn('[wcLock] schedule fetch failed:', e.message); }
+
+  // International friendlies lock the same way under their own model version.
+  // Fully isolated: a friendlies failure can never affect World Cup locking.
+  let frDue = [];
+  try { frDue = (await getFriendlySchedule()).filter(isDue).filter(f => !isYouthFixture(f)); }
+  catch (e) { console.warn('[wcLock] friendlies schedule fetch failed:', e.message); }
+
+  if (!wcDue.length && !frDue.length) return { locked: 0 };
+
   let oddsEvents = [];
   try { oddsEvents = await toa.getEvents(); } catch { /* market optional */ }
 
   let locked = 0;
-  for (const match of due) {
-    try {
-      // 1. Fixture row must exist BEFORE kickoff so results can be matched.
-      let fixtureRowOk = false;
-      if (leagueId) {
-        try { fixtureRowOk = !!(await upsertFixture(match, leagueId)); }
-        catch (e) { console.warn(`[wcLock] fixture upsert failed for ${match.id}:`, e.message); }
+
+  if (wcDue.length) {
+    const leagueId = await leagueIdByCode('WC');
+    for (const match of wcDue) {
+      try {
+        await lockOneMatch(match, {
+          leagueId, leagueCode: 'WC', modelVersion: 'wc-elo-market-v1', oddsEvents,
+        });
+        locked++;
+      } catch (e) {
+        console.error(`[wcLock] failed for ${match.id}:`, e.message);
       }
-
-      // 2+3. Predict via the SHARED code path (services/wcDisplayPrediction):
-      // the locked row is computed by literally the same function the cards
-      // and the analysis page use, so display and scoring can never diverge.
-      const { pred, ev, marketProbs, ctx } = await computeWcPrediction(match, { oddsEvents });
-
-      const best = ev?.markets?.['1X2']?.bestOdds || null;
-      const odds = best?.Home && best?.Draw && best?.Away
-        ? { home: best.Home.odd, draw: best.Draw.odd, away: best.Away.odd }
-        : null;
-      const valueEdges = pred.valueEdges
-        ? [
-            { outcome: 'Home', valueEdge: pred.valueEdges.home },
-            { outcome: 'Draw', valueEdge: pred.valueEdges.draw },
-            { outcome: 'Away', valueEdge: pred.valueEdges.away },
-          ]
-        : null;
-
-      await storePrediction({
-        matchExternalId: match.id,
-        homeTeam: match.homeTeam?.name,
-        awayTeam: match.awayTeam?.name,
-        prediction: pred,
-        odds,
-        valueEdges,
-        features: {
-          modelProbs: pred.modelProbs,
-          marketProbs: pred.marketProbs,
-          marketWeight: pred.marketWeight,
-          nationalStrength: pred.nationalStrength,
-          contextFactors: pred.contextFactors,
-          knockout: !!ctx.knockout,
-          // advance is stored so locked knockout rows can still display
-          // P(advance) — it is rehydrated by wcDisplayPrediction.
-          advance: pred.advance || null,
-          lockedAt: new Date().toISOString(),
-        },
-        leagueCode: 'WC',
-        modelVersion: 'wc-elo-market-v1',
-        upsert: true,
-      });
-
-      // 4. Odds snapshots → closing-line value tracking.
-      if (ev && fixtureRowOk) await snapshotOdds(match.id, ev, marketProbs);
-
-      locked++;
-      console.log(`[wcLock] 🔒 ${match.homeTeam?.name} vs ${match.awayTeam?.name} ` +
-        `(${pred.model}, market:${marketProbs ? marketProbs.source : 'none'}, ` +
-        `form:${pred.nationalStrength?.recentMatchesUsed || 0}g, ko:${ctx.knockout ? 'y' : 'n'})`);
-    } catch (e) {
-      console.error(`[wcLock] failed for ${match.id}:`, e.message);
     }
   }
 
-  if (locked) console.log(`[wcLock] Locked/refreshed ${locked} WC prediction(s)`);
+  if (frDue.length) {
+    const frLeagueId = await leagueIdByCode('FR');
+    for (const match of frDue) {
+      try {
+        await lockOneMatch(match, {
+          leagueId: frLeagueId, leagueCode: 'FR', modelVersion: INTL_MODEL_VERSION,
+          homeField: true, oddsEvents,
+        });
+        locked++;
+      } catch (e) {
+        console.error(`[wcLock] friendly failed for ${match.id}:`, e.message);
+      }
+    }
+  }
+
+  if (locked) console.log(`[wcLock] Locked/refreshed ${locked} prediction(s) (WC due: ${wcDue.length}, FR due: ${frDue.length})`);
   return { locked };
 }
 
