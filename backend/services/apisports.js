@@ -103,10 +103,23 @@ async function getTodayFixtures() {
 
 async function getUpcomingFixtures(days = 7) {
   if (!hasKey()) return [];
-  const from = new Date().toISOString().split('T')[0];
-  const to   = new Date(Date.now() + days * 86400000).toISOString().split('T')[0];
-  const raw  = await safeFetch('fixtures', { from, to, timezone: 'UTC' });
-  return raw.filter(isTracked).map(normalise);
+  // API-Football rejects bare from/to (they require league+season) and returns
+  // an EMPTY response with no HTTP error — same trap getRecentFixtures hit.
+  // Query each day with the standalone `date` param instead. Each day costs
+  // one API call, so cap the window to keep the budget bounded.
+  const capped = Math.min(days, 7);
+  const out = [];
+  const seen = new Set();
+  for (let i = 0; i <= capped; i++) {
+    const date = new Date(Date.now() + i * 86400000).toISOString().split('T')[0];
+    const raw = await safeFetch('fixtures', { date, timezone: 'UTC' });
+    for (const f of raw) {
+      if (!isTracked(f) || seen.has(f.fixture?.id)) continue;
+      seen.add(f.fixture?.id);
+      out.push(normalise(f));
+    }
+  }
+  return out;
 }
 
 async function getRecentFixtures(days = 3) {
