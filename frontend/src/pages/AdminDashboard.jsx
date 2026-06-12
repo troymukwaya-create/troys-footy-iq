@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import adminApi, { getToken, clearToken, adminLogin } from '../api/adminClient.js';
 import { AdminCtx, useAdmin, Card, C } from '../components/admin/ui.jsx';
 import Overview from './admin/Overview.jsx';
+import Ops from './admin/Ops.jsx';
 import Visitors from './admin/Visitors.jsx';
 import VisitorDetail from './admin/VisitorDetail.jsx';
 import TrafficDetail from './admin/TrafficDetail.jsx';
@@ -13,7 +14,8 @@ import Spend from './admin/Spend.jsx';
 import ApiUsage from './admin/ApiUsage.jsx';
 
 const NAV = [
-  { to: '/admin', label: 'Overview', end: true },
+  { to: '/admin', label: 'Mission Control', end: true },
+  { to: '/admin/business', label: 'Business' },
   { to: '/admin/visitors', label: 'Visitors' },
   { to: '/admin/traffic', label: 'Traffic' },
   { to: '/admin/predictions', label: 'Predictions' },
@@ -123,7 +125,8 @@ function Shell({ onLogout }) {
           )}
           <DemoBanner demo={demo} setDemo={setDemo} />
           <Routes>
-            <Route index element={<Overview />} />
+            <Route index element={<Ops />} />
+            <Route path="business" element={<Overview />} />
             <Route path="visitors" element={<Visitors />} />
             <Route path="visitors/:id" element={<VisitorDetail />} />
             <Route path="traffic" element={<TrafficDetail />} />

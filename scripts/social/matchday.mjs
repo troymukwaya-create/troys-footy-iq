@@ -79,6 +79,10 @@ if (!state || !Array.isArray(state.prematch) || !Array.isArray(state.receipts)) 
 
 const gen = (args) => execFileSync('node', [path.join(DIR, 'generate.mjs'), ...args], { stdio: 'inherit', cwd: DIR });
 const actions = [];
+// Append-only post log — the CEO dashboard's ops feed reads this off the
+// social-assets branch to show "pre-match posted / receipt posted" events.
+state.log = Array.isArray(state.log) ? state.log.slice(-199) : [];
+const logPost = (kind, id, label) => state.log.push({ kind, id, label, at: new Date().toISOString() });
 
 // ── 2. pre-match due? ────────────────────────────────────────────────
 const duePre = wcUpcoming
@@ -92,7 +96,11 @@ if (duePre.length) {
   console.log(`pre-match due: ${f.homeTeam?.name} v ${f.awayTeam?.name} (${f.id}), KO ${f.date}`);
   gen(['prematch', f.id]);
   const payload = JSON.parse(readFileSync(path.join(OUT, 'prematch.json'), 'utf8'));
-  if (!payload.skip) { state.prematch.push(f.id); actions.push('prematch'); }
+  if (!payload.skip) {
+    state.prematch.push(f.id);
+    actions.push('prematch');
+    logPost('prematch', f.id, `${f.homeTeam?.name} v ${f.awayTeam?.name}`);
+  }
   if (duePre.length > 1) console.log(`${duePre.length - 1} more pre-match due — next tick takes the next one`);
 }
 
@@ -122,7 +130,11 @@ if (dueReceipt.length) {
     console.log(`receipt due: ${s.home_team} v ${s.away_team} (${id})${verdictReady ? '' : ' — posting without verdict after max holds'}`);
     gen(['match', id]);
     const payload = JSON.parse(readFileSync(path.join(OUT, 'match.json'), 'utf8'));
-    if (!payload.skip) { state.receipts.push(id); actions.push('match'); }
+    if (!payload.skip) {
+      state.receipts.push(id);
+      actions.push('match');
+      logPost('match', id, `${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team}`);
+    }
     delete state.verdictWait[id];
     if (dueReceipt.length > 1) console.log(`${dueReceipt.length - 1} more receipts due — next tick takes the next one`);
   }

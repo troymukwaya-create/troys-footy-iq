@@ -68,6 +68,7 @@ import verifyRouter from './routes/verify.js';
 import demoRouter from './routes/demo.js';
 import adminRouter from './routes/admin.js';
 import adminDetailRouter from './routes/adminDetail.js';
+import adminOpsRouter from './routes/adminOps.js';
 import trackRouter from './routes/track.js';
 import subscribeRouter from './routes/subscribe.js';
 import authRouter from './routes/auth.js';
@@ -219,6 +220,7 @@ safeMount('/api/slips', slipsRouter, 'slips');             // saved slips (accou
 safeMount('/api/slip-share', slipShareRouter, 'slip-share'); // public slip share codes (?slip=CODE)
 safeMount('/api/admin', adminRouter, 'admin');         // CEO command center (token-protected)
 safeMount('/api/admin', adminDetailRouter, 'admin-detail'); // drill-down detail endpoints
+safeMount('/api/admin', adminOpsRouter, 'admin-ops');  // mission control: ops feed + buttons
 
 // Debug / integrity routes — served from the fixtures router
 // GET /api/debug/fixtures-integrity
