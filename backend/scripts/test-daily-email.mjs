@@ -1,5 +1,5 @@
-// Smoke test: build the daily picks email from canned data (the real
-// Day-1 shapes) and write the HTML so it can be eyeballed in a browser.
+// Smoke test: build the daily picks email (v2 — plain words, flag tiles,
+// animated header) from canned data and write the HTML for eyeballing.
 import { writeFileSync } from 'fs';
 import { buildDailyPicksEmail } from '../services/dailyPicksEmail.js';
 
@@ -13,7 +13,7 @@ const slate = [
     scoreline: { score: '2-1', probability: 11.9 },
   },
   {
-    id: 'apf_2', home: 'Canada', away: 'Bosnia and Herzegovina',
+    id: 'apf_2', home: 'Canada', away: 'Bosnia & Herzegovina',
     kickoff: new Date('2026-06-13T01:00:00Z'),
     probs: { home: 44.0, draw: 28.0, away: 28.0 },
     lean: { team: 'Canada', prob: 44.0, edge: 6.3 },
@@ -24,37 +24,49 @@ const slate = [
 
 const receipts = [
   {
+    match_external_id: 'apf_1489369',
     home_team: 'Mexico', away_team: 'South Africa', predicted_outcome: 'HOME',
     prediction_correct: true, brier_score: 0.0552,
     prob_home: 67.3, prob_draw: 21.5, prob_away: 11.2, hg: 2, ag: 0,
+    scoreline_exact: true,
   },
   {
+    match_external_id: 'apf_1538999',
     home_team: 'South Korea', away_team: 'Czech Republic', predicted_outcome: 'HOME',
     prediction_correct: false, brier_score: 0.2012,
     prob_home: 36.6, prob_draw: 29.7, prob_away: 33.7, hg: 2, ag: 1,
+    scoreline_exact: false,
   },
 ];
 
 const ledger = { total: 2, correct: 2, avg_brier: '0.128' };
 
 // Full email
-let out = buildDailyPicksEmail({ slate, receipts, ledger, date: new Date('2026-06-12T07:00:00Z') });
+const out = buildDailyPicksEmail({ slate, receipts, ledger, date: new Date('2026-06-12T07:00:00Z') });
 console.log('SUBJECT:', out.subject);
-if (!out.subject.includes('2 matches') || !out.subject.includes('1/2')) throw new Error('subject wrong: ' + out.subject);
-if (!out.html.includes('Mexico') || !out.html.includes('__UNSUB__')) throw new Error('html missing pieces');
-if (!out.html.includes('+6 pts vs market')) throw new Error('edge chip missing');
-if (out.html.includes('+1 pts')) throw new Error('edge chip should hide below 5pts');
-if (!out.text.includes('Unsubscribe: __UNSUB__')) throw new Error('text unsub missing');
+const must = (cond, msg) => { if (!cond) throw new Error(msg); };
+must(out.subject.includes('1 of 2 right'), 'subject should carry yesterday tally: ' + out.subject);
+must(out.html.includes('email-header.gif'), 'animated header missing');
+must(out.html.includes('We even called the exact score'), 'exact-score line missing');
+must(out.html.includes('It stays on the record'), 'honest miss line missing');
+must(out.html.includes('we lean this way') && out.html.includes('coin flip'), 'plain-words confidence missing');
+must(out.html.includes('underrating Canada'), 'value chip missing (edge 6.3)');
+must(!out.html.includes('underrating Brazil'), 'value chip should hide below 5pts');
+must(!out.html.match(/Brier/i), 'jargon leak: Brier should not appear in v2 copy');
+must(out.html.includes('accuracy score'), 'plain accuracy footnote missing');
+must(out.html.includes('__UNSUB__') && out.text.includes('__UNSUB__'), 'unsub placeholder missing');
+must(out.html.includes('linear-gradient(100deg, #006847'), 'Mexico flag bleed missing');
+must(out.html.includes('bgcolor="#FF0000"'), 'Canada probability bar colour missing');
 
-// No matches today (rest day)
+// Rest day (no slate)
 const rest = buildDailyPicksEmail({ slate: [], receipts, ledger, date: new Date() });
-if (!rest.subject.startsWith('The ledger')) throw new Error('rest-day subject wrong: ' + rest.subject);
+must(rest.subject.startsWith('How we did yesterday'), 'rest-day subject wrong: ' + rest.subject);
 
-// No receipts (first morning)
+// First morning (no receipts)
 const first = buildDailyPicksEmail({ slate, receipts: [], ledger: null, date: new Date() });
-if (first.html.includes('YESTERDAY')) throw new Error('empty receipts should hide section');
+must(!first.html.includes('Yesterday'), 'empty receipts should hide section');
+must(first.subject.includes('Today’s World Cup picks'), 'today-only subject wrong: ' + first.subject);
 
-writeFileSync('/tmp/oddyessa-day1/daily-email-preview.html',
-  `<body style="background:#222;padding:20px">${out.html}</body>`);
+writeFileSync('/tmp/oddyessa-email/daily-email-v2-preview.html', out.html);
 console.log('TEXT VERSION:\n' + out.text);
-console.log('\nAll assertions passed ✓ — preview at /tmp/oddyessa-day1/daily-email-preview.html');
+console.log('\nAll assertions passed ✓ — preview at /tmp/oddyessa-email/daily-email-v2-preview.html');

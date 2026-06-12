@@ -19,6 +19,7 @@ import {
 import { sendEmail, emailEnabled } from './email.js';
 import { getRecentResults } from './resultService.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
+import { getNationColor, emailFlagBleed } from '../constants/nationColors.js';
 
 const SITE = 'https://oddyessa.com';
 const PUBLIC_API = (process.env.PUBLIC_API_URL || 'https://troys-footy-iq-api.onrender.com').replace(/\/+$/, '');
@@ -75,10 +76,19 @@ async function getYesterdaysReceipts() {
   // day — i.e. the whole previous matchday including the overnight games.
   const rows = await getRecentResults(20).catch(() => []);
   const cutoff = Date.now() - 26 * 3600 * 1000;
-  return rows
+  const recent = rows
     .filter(r => r.match_date && new Date(r.match_date).getTime() >= cutoff)
     .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
     .map(r => ({ ...r, hg: r.ft_home_goals ?? r.home_goals, ag: r.ft_away_goals ?? r.away_goals }));
+
+  // "We even called the exact score" — true when the locked call's #1
+  // scoreline matches the 90-minute result (same rule as the site verdict).
+  const lockedMap = await getLockedWcPredictionsMap(recent.map(r => String(r.match_external_id))).catch(() => new Map());
+  for (const r of recent) {
+    const top = lockedMap.get(String(r.match_external_id))?.topScorelines?.[0];
+    r.scoreline_exact = !!top && top.score === `${r.hg}-${r.ag}`;
+  }
+  return recent;
 }
 
 async function getLedger() {
@@ -92,90 +102,174 @@ async function getLedger() {
   return row && row.total > 0 ? row : null;
 }
 
-// ─── Rendering ──────────────────────────────────────────────────────
+// ─── Rendering (v2) ─────────────────────────────────────────────────
+// Design rules: plain words a casual fan understands (no jargon in the
+// body — the accuracy score lives in the small print); every match tile
+// carries the app's signature flag-colour bleed; the header is the
+// animated orbit-mark GIF (served from the site, ~79KB, loops). All
+// numbers in monospace. Gradients are progressive enhancement —
+// background-color paints first so stripped clients still read fine.
 
 const fmtPct = (v) => `${Math.round(Number(v))}%`;
 const fmtTime = (d) => d.toISOString().slice(11, 16) + ' UTC';
 const fmtDay = (d) => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-const RISK_LABEL = { LOW: 'clear favourite', MEDIUM: 'lean', HIGH: 'coin flip' };
+const HEADER_GIF = `${SITE}/email-header.gif`;
+const MONO = "'IBM Plex Mono',Menlo,Consolas,monospace";
+
+// Plain-words confidence — no model-speak.
+const RISK_PLAIN = {
+  LOW: 'we’re confident',
+  MEDIUM: 'we lean this way',
+  HIGH: 'coin flip — could go anywhere',
+};
 const RISK_COLOR = { LOW: '#22C55E', MEDIUM: '#EAB308', HIGH: '#EAB308' };
 
-function probLean(rec) {
+function leanOf(rec) {
   const p = { HOME: rec.prob_home, DRAW: rec.prob_draw, AWAY: rec.prob_away }[rec.predicted_outcome];
-  const name = { HOME: rec.home_team, DRAW: 'Draw', AWAY: rec.away_team }[rec.predicted_outcome];
-  return `${esc(name)} @ ${fmtPct(p)}`;
+  const name = { HOME: rec.home_team, DRAW: 'a draw', AWAY: rec.away_team }[rec.predicted_outcome];
+  return { name, p };
+}
+
+// Three-segment probability bar as a table — tables render everywhere,
+// including Outlook. Home side in the home nation's colour, away in the
+// away's, the draw stays neutral slate.
+function probBar(m) {
+  const h = Math.max(4, Math.round(m.probs.home));
+  const a = Math.max(4, Math.round(m.probs.away));
+  const d = Math.max(4, 100 - h - a);
+  const hc = getNationColor(m.home), ac = getNationColor(m.away);
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:2px 0;margin:10px 0 4px">
+    <tr style="line-height:7px;font-size:1px">
+      <td width="${h}%" bgcolor="${hc}" style="height:7px;border-radius:4px 0 0 4px"></td>
+      <td width="${d}%" bgcolor="#2A2D35" style="height:7px"></td>
+      <td width="${a}%" bgcolor="${ac}" style="height:7px;border-radius:0 4px 4px 0"></td>
+    </tr>
+  </table>
+  <div style="font-family:${MONO};font-size:11px;color:#7c828d">
+    ${esc(m.home)} ${fmtPct(m.probs.home)} &nbsp;·&nbsp; draw ${fmtPct(m.probs.draw)} &nbsp;·&nbsp; ${esc(m.away)} ${fmtPct(m.probs.away)}
+  </div>`;
 }
 
 export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date() }) {
   const nToday = slate.length;
-  const yesterdayLine = receipts.length
-    ? `${receipts.filter(x => x.prediction_correct).length}/${receipts.length} yesterday`
-    : null;
+  const nRight = receipts.filter(x => x.prediction_correct).length;
+  const allRight = receipts.length > 0 && nRight === receipts.length;
 
-  const subject = nToday
-    ? `Today's calls — ${nToday} ${nToday === 1 ? 'match' : 'matches'}${yesterdayLine ? ` · we went ${yesterdayLine}` : ''}`
-    : `The ledger — ${yesterdayLine ? `we went ${yesterdayLine}` : 'rest day'}`;
+  const subject = receipts.length && nToday
+    ? `We got ${nRight} of ${receipts.length} right — today’s picks inside ⚽`
+    : nToday
+      ? `Today’s World Cup picks — ${nToday} ${nToday === 1 ? 'game' : 'games'} ⚽`
+      : receipts.length
+        ? `How we did yesterday — ${nRight} of ${receipts.length} right`
+        : 'The World Cup rests today — so do we';
 
-  const receiptRows = receipts.map(rcp => `
-    <div style="display:block;background:#14161B;border:1px solid #26282e;border-radius:10px;padding:12px 14px;margin:8px 0">
-      <span style="color:${rcp.prediction_correct ? '#22C55E' : '#EF4444'};font-weight:700">${rcp.prediction_correct ? '✓' : '✗'}</span>
-      <span style="color:#fff;font-weight:600">&nbsp;${esc(rcp.home_team)} ${rcp.hg}–${rcp.ag} ${esc(rcp.away_team)}</span>
-      <div style="color:#9aa0aa;font-size:13px;margin-top:4px">called ${probLean(rcp)} · Brier <span style="font-family:Menlo,Consolas,monospace">${Number(rcp.brier_score).toFixed(3)}</span></div>
-    </div>`).join('');
-
-  const slateRows = slate.map(m => {
-    const edge = m.lean.edge != null && Number(m.lean.edge) >= 5
-      ? `<span style="color:#22C55E;font-size:12px;font-weight:700">&nbsp;+${Math.round(m.lean.edge)} pts vs market</span>` : '';
-    const score = m.scoreline ? ` · most likely ${esc(m.scoreline.score)} (${fmtPct(m.scoreline.probability)})` : '';
+  // ── Yesterday: settled tiles ──
+  const receiptTiles = receipts.map(rcp => {
+    const hit = !!rcp.prediction_correct;
+    const lean = leanOf(rcp);
+    const exact = rcp.scoreline_exact; // optional flag if provided upstream
     return `
-    <div style="background:#14161B;border:1px solid #26282e;border-radius:10px;padding:14px;margin:8px 0">
-      <div style="color:#9aa0aa;font-size:12px;letter-spacing:.08em">${fmtTime(m.kickoff)}</div>
-      <div style="color:#fff;font-size:16px;font-weight:700;margin:4px 0">${esc(m.home)} v ${esc(m.away)}</div>
-      <div style="font-size:14px;color:#c7c7cf">
-        <span style="color:#A8344A;font-weight:700">${esc(m.lean.team)} @ ${fmtPct(m.lean.prob)}</span>
-        <span style="color:${RISK_COLOR[m.risk] || '#9aa0aa'};font-size:12px">&nbsp;· ${RISK_LABEL[m.risk] || m.risk.toLowerCase()}</span>${edge}
+    <div style="background-color:#14161B;background-image:${emailFlagBleed(rcp.home_team, rcp.away_team)};border:1px solid #26282e;border-radius:14px;padding:16px 18px;margin:10px 0">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="color:#ffffff;font-size:17px;font-weight:700">
+          ${esc(rcp.home_team)} <span style="font-family:${MONO}">${rcp.hg}–${rcp.ag}</span> ${esc(rcp.away_team)}
+        </td>
+        <td align="right" style="font-size:15px;font-weight:800;color:${hit ? '#22C55E' : '#EF4444'};white-space:nowrap">
+          ${hit ? '✓ RIGHT' : '✗ WRONG'}
+        </td>
+      </tr></table>
+      <div style="color:#aeb3bc;font-size:13.5px;margin-top:6px;line-height:1.5">
+        We said <b style="color:#fff">${esc(lean.name)}</b> (${fmtPct(lean.p)} sure) — ${hit ? 'and that’s how it went.' : 'we were wrong. It stays on the record.'}
+        ${exact ? `<br><span style="color:#EAB308">We even called the exact score.</span>` : ''}
       </div>
-      <div style="color:#6b6b73;font-size:12px;margin-top:4px">${fmtPct(m.probs.home)} / ${fmtPct(m.probs.draw)} / ${fmtPct(m.probs.away)}${score}</div>
     </div>`;
   }).join('');
 
-  const ledgerLine = ledger
-    ? `<p style="color:#9aa0aa;font-size:13px;margin:14px 0 0">Running ledger: <b style="color:#fff">${ledger.correct}/${ledger.total}</b> winners · avg Brier <b style="color:#fff;font-family:Menlo,Consolas,monospace">${ledger.avg_brier}</b> <span style="color:#6b6b73">(0 = perfect, 0.222 = coin flip${ledger.total < 20 ? ` · early days, n=${ledger.total}` : ''})</span></p>`
+  const tallyLine = ledger
+    ? `<p style="color:#8a909b;font-size:13px;margin:12px 2px 0;line-height:1.5">
+         This World Cup so far: <b style="color:#fff">${ledger.correct} of ${ledger.total}</b> winners called.
+       </p>`
     : '';
 
-  const html = `<div style="background:#0B0B0D;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:28px 20px;max-width:560px;margin:0 auto;border-radius:16px">
-  <div style="font-size:20px;font-weight:800"><span style="color:#A8344A">Odd</span>yessa</div>
-  <p style="color:#6b6b73;font-size:12px;letter-spacing:.14em;margin:6px 0 0">${fmtDay(date).toUpperCase()} · WORLD CUP 2026</p>
+  // ── Today: pick tiles ──
+  const pickTiles = slate.map(m => {
+    const edge = m.lean.edge != null && Number(m.lean.edge) >= 5;
+    return `
+    <div style="background-color:#14161B;background-image:${emailFlagBleed(m.home, m.away)};border:1px solid #26282e;border-radius:14px;padding:16px 18px;margin:10px 0">
+      <div style="font-family:${MONO};font-size:11.5px;letter-spacing:.08em;color:#8a909b">${fmtTime(m.kickoff)}</div>
+      <div style="color:#ffffff;font-size:17px;font-weight:700;margin:5px 0 2px">${esc(m.home)} v ${esc(m.away)}</div>
+      <div style="font-size:14.5px;color:#d6d9de;margin-top:4px">
+        Our pick: <b style="color:#fff">${esc(m.lean.team)}</b>
+        <span style="color:${RISK_COLOR[m.risk] || '#8a909b'};font-size:12.5px"> · ${RISK_PLAIN[m.risk] || ''}</span>
+      </div>
+      ${probBar(m)}
+      ${m.scoreline ? `<div style="color:#8a909b;font-size:12.5px;margin-top:8px">Most likely score: <span style="font-family:${MONO};color:#d6d9de">${esc(m.scoreline.score)}</span></div>` : ''}
+      ${edge ? `<div style="display:inline-block;margin-top:9px;padding:4px 10px;border:1px solid rgba(34,197,94,.45);border-radius:99px;color:#22C55E;font-size:12px;font-weight:700">The bookies are underrating ${esc(m.lean.team)} — worth a look</div>` : ''}
+    </div>`;
+  }).join('');
 
-  ${receipts.length ? `<h2 style="font-size:15px;margin:22px 0 4px;color:#9aa0aa;letter-spacing:.08em">YESTERDAY — SETTLED</h2>${receiptRows}${ledgerLine}` : ''}
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0B0B0D">
+<div style="display:none;max-height:0;overflow:hidden">${receipts.length ? `Yesterday: ${nRight} of ${receipts.length} right.` : ''} ${nToday ? `Today: ${nToday} ${nToday === 1 ? 'game' : 'games'}, picks inside.` : ''}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+<div style="max-width:600px;margin:0 auto;padding:0 0 28px;background-color:#0B0B0D;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
 
-  ${nToday ? `<h2 style="font-size:15px;margin:26px 0 4px;color:#9aa0aa;letter-spacing:.08em">NEXT 24 HOURS — OUR CALLS</h2>${slateRows}
-  <p style="color:#6b6b73;font-size:12px;margin-top:6px">Numbers may sharpen until each call locks 75 minutes before kickoff — the locked number is what we score ourselves on.</p>` : `<p style="color:#c7c7cf;font-size:14px;margin-top:22px">No matches in the next 24 hours. The ledger rests; so should you.</p>`}
+  <a href="${SITE}" style="text-decoration:none">
+    <img src="${HEADER_GIF}" width="600" alt="Oddyessa — your morning calls" style="display:block;width:100%;max-width:600px;height:auto;border:0"/>
+  </a>
 
-  <a href="${SITE}" style="display:inline-block;margin-top:18px;background:#A8344A;color:#fff;text-decoration:none;padding:11px 20px;border-radius:12px;font-weight:700;font-size:14px">Full reasoning on every call →</a>
+  <div style="padding:6px 22px 0">
+    <div style="font-family:${MONO};font-size:11.5px;letter-spacing:.22em;color:#6d737e;text-align:center;margin:2px 0 18px">
+      ${fmtDay(date).toUpperCase()} · WORLD CUP 2026
+    </div>
 
-  <p style="color:#6b6b73;font-size:11px;margin-top:26px;line-height:1.6;border-top:1px solid #26282e;padding-top:14px">
-    Probabilities, not promises — information, not betting advice. 18+ · <a href="https://www.begambleaware.org" style="color:#9a9aa2">BeGambleAware.org</a>.<br>
-    Every prediction is locked before kickoff and scored in public — including the misses.<br>
-    <a href="__UNSUB__" style="color:#9a9aa2">Unsubscribe</a> any time.
-  </p>
-</div>`;
+    ${receipts.length ? `
+    <h2 style="color:#ffffff;font-size:20px;margin:14px 0 2px;letter-spacing:-.01em">
+      Yesterday: we got ${allRight ? (receipts.length === 1 ? 'it' : 'both') : `${nRight} of ${receipts.length}`} right${allRight ? '.' : '.'}
+    </h2>
+    <p style="color:#8a909b;font-size:13px;margin:4px 0 6px">Every pick below was published before kickoff — then checked against the result.</p>
+    ${receiptTiles}
+    ${tallyLine}` : ''}
+
+    ${nToday ? `
+    <h2 style="color:#ffffff;font-size:20px;margin:${receipts.length ? '30px' : '14px'} 0 2px;letter-spacing:-.01em">Today’s games — who we’ve got</h2>
+    <p style="color:#8a909b;font-size:13px;margin:4px 0 6px">Our numbers can shift a little until each game locks before kickoff.</p>
+    ${pickTiles}` : `
+    <p style="color:#d6d9de;font-size:15px;margin:18px 0">No games in the next 24 hours. Back tomorrow.</p>`}
+
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:22px auto 0"><tr>
+      <td bgcolor="#A8344A" style="border-radius:12px">
+        <a href="${SITE}" style="display:inline-block;padding:13px 26px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">See the full reasoning →</a>
+      </td>
+    </tr></table>
+
+    <p style="color:#5d626c;font-size:11px;margin-top:30px;line-height:1.7;border-top:1px solid #26282e;padding-top:16px">
+      ${ledger ? `Our accuracy score so far: <span style="font-family:${MONO}">${ledger.avg_brier}</span> — 0 is perfect, 0.222 is guessing. We publish it even when it looks bad.<br>` : ''}
+      This is information, not betting advice. 18+ · <a href="https://www.begambleaware.org" style="color:#8a909b">BeGambleAware.org</a><br>
+      You signed up at oddyessa.com · <a href="__UNSUB__" style="color:#8a909b">Unsubscribe</a> any time.
+    </p>
+  </div>
+</div>
+</body></html>`;
 
   const text = [
     `Oddyessa — ${fmtDay(date)} · World Cup 2026`,
     '',
     ...(receipts.length ? [
-      'YESTERDAY — SETTLED',
-      ...receipts.map(rcp => `${rcp.prediction_correct ? '[HIT] ' : '[MISS]'} ${rcp.home_team} ${rcp.hg}-${rcp.ag} ${rcp.away_team} — called ${probLean(rcp).replace(/&[a-z]+;/g, '')} (Brier ${Number(rcp.brier_score).toFixed(3)})`),
-      ledger ? `Running ledger: ${ledger.correct}/${ledger.total} winners, avg Brier ${ledger.avg_brier}` : '',
+      `YESTERDAY: WE GOT ${nRight} OF ${receipts.length} RIGHT`,
+      ...receipts.map(rcp => {
+        const lean = leanOf(rcp);
+        return `${rcp.prediction_correct ? '[RIGHT]' : '[WRONG]'} ${rcp.home_team} ${rcp.hg}-${rcp.ag} ${rcp.away_team} — we said ${lean.name} (${fmtPct(lean.p)} sure)`;
+      }),
+      ledger ? `This World Cup so far: ${ledger.correct} of ${ledger.total} winners called.` : '',
       '',
     ] : []),
     ...(nToday ? [
-      'NEXT 24 HOURS — OUR CALLS',
-      ...slate.map(m => `${fmtTime(m.kickoff)}  ${m.home} v ${m.away} — ${m.lean.team} @ ${fmtPct(m.lean.prob)} (${RISK_LABEL[m.risk] || m.risk})`),
-    ] : ['No matches in the next 24 hours.']),
+      'TODAY — WHO WE’VE GOT',
+      ...slate.map(m => `${fmtTime(m.kickoff)}  ${m.home} v ${m.away} — our pick: ${m.lean.team} (${fmtPct(m.lean.prob)} sure${RISK_PLAIN[m.risk] ? `, ${RISK_PLAIN[m.risk]}` : ''})`),
+    ] : ['No games in the next 24 hours. Back tomorrow.']),
     '',
     `Full reasoning: ${SITE}`,
     'Information, not betting advice. 18+. Unsubscribe: __UNSUB__',
