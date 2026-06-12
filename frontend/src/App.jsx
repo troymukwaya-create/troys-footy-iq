@@ -1,10 +1,11 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Routes, Route, Navigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFixtures, useLiveMatches, useAnalysis, useAIAnalysisProgressive, api as queryApi } from './hooks/useQueries.js';
 import { useRealTime } from './hooks/useRealTime.js';
 import { useStore } from './store/useStore.js';
 import { track } from './lib/analytics.js';
+import { loadSlipFromUrl } from './lib/slipCodec.js';
 
 import { TopNav } from './components/TopNav.jsx';
 import OrbitMark from './components/OrbitMark.jsx';
@@ -52,6 +53,7 @@ function MainApp() {
     selectedFixture, setSelectedFixture,
     activeLeague, setActiveLeague,
     goalFlashes,
+    addParlaySelection, clearParlay,
   } = useStore();
 
   // Validate any stored session on load — keeps people signed in across visits.
@@ -148,6 +150,30 @@ function MainApp() {
     return Object.entries(byDate).sort(([a], [b]) => new Date(a) - new Date(b));
   }, [filteredFixtures]);
 
+  // ─── Shared-slip deep links ───────────────────────────────────
+  // ?slip=CODE (server short code) or #slip=od1.… (self-contained)
+  // restores the sender's exact parlay in the builder. Seeds ONCE per
+  // page load; on mobile it switches to the Edge tab so the loaded
+  // slip is actually on screen.
+  const slipSeeded = useRef(false);
+  const [slipToast, setSlipToast] = useState(null);
+  useEffect(() => {
+    if (slipSeeded.current) return;
+    const hasSlip = new URLSearchParams(window.location.search).get('slip') || window.location.hash.includes('slip=');
+    if (!hasSlip) return;
+    slipSeeded.current = true;
+    loadSlipFromUrl().then(r => {
+      if (!r?.legs?.length) return;
+      clearParlay();
+      r.legs.forEach(l => addParlaySelection(l));
+      const odds = r.legs.reduce((p, l) => p * l.odds, 1);
+      track('slip_link_opened', { legs: r.legs.length, source: r.source });
+      setSearchParams(prev => ({ ...Object.fromEntries(prev), tab: 'ai' }), { replace: true });
+      setSlipToast({ n: r.legs.length, odds });
+      setTimeout(() => setSlipToast(null), 5000);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Handlers ─────────────────────────────────────────────────
   // Match selection lives in the URL (?match=<id>): links to a specific
   // call are shareable, the browser back button closes the match, and a
@@ -218,14 +244,25 @@ function MainApp() {
   };
 
   // First-visit gate: new visitors pass through the cinematic intro once —
-  // but NEVER when they followed a link to a specific match. Someone who
-  // clicked a shared call must land on that call, not on a marketing page.
+  // but NEVER when they followed a link to a specific match or a shared
+  // slip. Someone who clicked a shared call must land on that call, and
+  // someone who opened a friend's parlay must land on that parlay.
   const firstVisit = (() => { try { return !localStorage.getItem('oddyessa_welcomed'); } catch { return false; } })();
-  if (firstVisit && !searchParams.get('match')) return <Navigate to="/how-it-works" replace />;
+  // slipSeeded covers the re-render AFTER the loader consumed the #slip=
+  // fragment from the URL — without it the gate fires once the URL is
+  // cleaned and yanks the new visitor off their freshly loaded slip.
+  const hasSlipLink = !!searchParams.get('slip') || window.location.hash.includes('slip=') || slipSeeded.current;
+  if (firstVisit && !searchParams.get('match') && !hasSlipLink) return <Navigate to="/how-it-works" replace />;
 
   return (
     <div className="flex flex-col app-shell overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
       <GoalFlash flashes={goalFlashes} />
+      {slipToast && (
+        <div style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 340, display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 999, background: 'rgba(11,11,13,0.92)', border: '1px solid rgba(168,52,74,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', boxShadow: '0 10px 30px rgba(0,0,0,0.45)' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
+          Slip loaded — {slipToast.n} leg{slipToast.n > 1 ? 's' : ''} @ {slipToast.odds.toFixed(2)}×
+        </div>
+      )}
       <AuthModal />
       <SavedSlipsModal />
       <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />

@@ -665,3 +665,19 @@ DELETE FROM market_predictions WHERE id IN (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_market_pred_market
   ON market_predictions (prediction_id, market_type);
+
+-- ─── SHARED SLIPS (public share codes — the parlay viral loop) ──────
+-- A slip shared from the builder gets a short code; anyone opening
+-- oddyessa.com/?slip=CODE has the exact parlay restored. No account
+-- needed on either side. `hits` counts opens (growth + affiliate-pitch
+-- evidence: "N slips/day leave for bookmakers").
+CREATE TABLE IF NOT EXISTS shared_slips (
+  code VARCHAR(12) PRIMARY KEY,
+  legs JSONB NOT NULL,
+  combined_odds FLOAT,
+  ev_pct FLOAT,
+  visitor VARCHAR(64),
+  hits INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_shared_slips_created ON shared_slips(created_at DESC);

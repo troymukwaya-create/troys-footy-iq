@@ -2,11 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Plus, Minus, TrendingUp, TrendingDown,
-  AlertTriangle, ListChecks, Sparkles, Info, Copy, Share2, Bookmark,
+  AlertTriangle, ListChecks, Sparkles, Info, Bookmark, Send,
 } from 'lucide-react';
 import { useStore } from '../store/useStore.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { enterStagger, snap } from '../lib/motion.js';
+import { TransferSheet } from './TransferSheet.jsx';
+import { track } from '../lib/analytics.js';
 
 // ─── EDGE THRESHOLDS ────────────────────────────────────────────────
 // 3% edge ≈ within calibration noise. 7%+ is a meaningful signal.
@@ -53,8 +55,8 @@ export function ParlayBuilderPanel() {
   } = useStore();
 
   const [stake, setStake] = useState(10);
-  const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const { user, openAuth, authedFetch } = useAuth();
 
   // Compute per-leg derived metrics
@@ -127,20 +129,9 @@ export function ParlayBuilderPanel() {
     ? 'unknown'
     : totals.expectedValuePct > 0 ? 'positive' : totals.expectedValuePct > -2 ? 'neutral' : 'negative';
 
-  const slipText = () => {
-    const lines = legs.map((l, i) => `${i + 1}) ${l.matchLabel} — ${l.outcome} @ ${l.odds.toFixed(2)}`);
-    const edge = totals.expectedValuePct != null
-      ? ` · model edge ${totals.expectedValuePct > 0 ? '+' : ''}${totals.expectedValuePct.toFixed(0)}%` : '';
-    const header = `🎟️ Oddyessa Slip · ${legs.length}-leg @ ${totals.combinedOdds.toFixed(2)}${edge}`;
-    const footer = `Stake $${stake} → $${totals.expectedReturn.toFixed(2)} if it wins\nBuilt on oddyessa.com · data only, not betting advice · 18+`;
-    return [header, '', ...lines, '', footer].join('\n');
-  };
-  const handleCopy = async () => {
-    try { await navigator.clipboard.writeText(slipText()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* ignore */ }
-  };
-  const handleShare = async () => {
-    if (navigator.share) { try { await navigator.share({ title: 'My Oddyessa Slip', text: slipText() }); return; } catch { /* fall through to copy */ } }
-    handleCopy();
+  const openTransfer = () => {
+    track('slip_transfer_opened', { legs: legs.length, odds: totals.combinedOdds });
+    setTransferOpen(true);
   };
   const handleSave = async () => {
     if (!user) { openAuth(); return; }
@@ -158,6 +149,7 @@ export function ParlayBuilderPanel() {
   };
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -327,21 +319,29 @@ export function ParlayBuilderPanel() {
           <Bookmark size={13} /> {saved ? 'Saved to your slips ✓' : user ? 'Save to my slips' : 'Sign in to save'}
         </button>
 
-        {/* Copy / Share — take it to your own bookmaker */}
-        <div className="grid grid-cols-2 gap-2 mt-2">
-          <button onClick={handleCopy} className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--accent-muted)', color: 'var(--accent)', border: '1px solid rgba(168,52,74,0.2)' }}>
-            <Copy size={13} /> {copied ? 'Copied!' : 'Copy slip'}
-          </button>
-          <button onClick={handleShare} className="flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--bg-raised)', color: 'var(--text-secondary)', border: '1px solid var(--border-subtle)' }}>
-            <Share2 size={13} /> Share
-          </button>
-        </div>
+        {/* Transfer — the slip leaves here WITH its picks: share link,
+            receipt image, or rewritten for your own bookmaker. */}
+        <button
+          onClick={openTransfer}
+          className="w-full mt-2 py-3 rounded-lg text-xs font-bold inline-flex items-center justify-center gap-1.5"
+          style={{ background: 'var(--accent)', color: '#fff', border: '1px solid var(--accent)', cursor: 'pointer' }}
+        >
+          <Send size={13} /> Transfer slip
+        </button>
 
         <p className="text-[10px] text-on-surface-variant/60 text-center mt-3 leading-relaxed">
-          Data only — we don't take bets. Copy your slip to your own bookmaker. 18+
+          Data only — we don't take bets. Transfer your slip to your own bookmaker. 18+
         </p>
       </div>
     </motion.div>
+
+    <TransferSheet
+      open={transferOpen}
+      onClose={() => setTransferOpen(false)}
+      legs={legs}
+      totals={totals}
+    />
+    </>
   );
 }
 
