@@ -29,8 +29,10 @@ jobs:
           node-version: 22
       - uses: browser-actions/setup-chrome@v1
         id: chrome
-      - name: install renderer
-        run: npm i --no-save puppeteer-core@latest
+      - name: install renderer + finisher
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          npm i --no-save puppeteer-core@latest
         working-directory: scripts/social
       - name: generate cards + captions
         run: node generate.mjs ledger
