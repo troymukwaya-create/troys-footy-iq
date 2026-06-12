@@ -11,7 +11,7 @@ function visitorId() { try { return localStorage.getItem('fiq_visitor') || null;
 function alreadySubscribed() { try { return !!localStorage.getItem('oddyessa_subscribed'); } catch { return false; } }
 function rememberSubscribed() { try { localStorage.setItem('oddyessa_subscribed', '1'); } catch { /* private mode */ } }
 
-export function EmailCapture({ source = 'site', headline, sub, hideIfSubscribed = false }) {
+export function EmailCapture({ source = 'site', headline, sub, hideIfSubscribed = false, compact = false, onDone }) {
   const [email, setEmail] = useState('');
   const [state, setState] = useState('idle'); // idle | loading | done | error
 
@@ -32,6 +32,7 @@ export function EmailCapture({ source = 'site', headline, sub, hideIfSubscribed 
       if (!res.ok) throw new Error('bad');
       rememberSubscribed();
       setState('done');
+      onDone?.();
     } catch { setState('error'); }
   };
 
@@ -45,12 +46,16 @@ export function EmailCapture({ source = 'site', headline, sub, hideIfSubscribed 
 
   return (
     <div>
-      <h3 style={{ fontSize: 'clamp(19px, 5vw, 24px)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 8 }}>
-        {headline || 'Get the day’s best bets in your inbox'}
-      </h3>
-      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.55, marginBottom: 16 }}>
-        {sub || 'Free value picks every morning of the World Cup — who wins, why, and where the bookies are wrong. No spam.'}
-      </p>
+      {!compact && (
+        <>
+          <h3 style={{ fontSize: 'clamp(19px, 5vw, 24px)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 8 }}>
+            {headline || 'Get the day’s best bets in your inbox'}
+          </h3>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.55, marginBottom: 16 }}>
+            {sub || 'Free value picks every morning of the World Cup — who wins, why, and where the bookies are wrong. No spam.'}
+          </p>
+        </>
+      )}
       <form onSubmit={submit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <input
           type="email"
@@ -77,7 +82,9 @@ export function EmailCapture({ source = 'site', headline, sub, hideIfSubscribed 
         <div style={{ fontSize: 12, color: '#ef4444', marginTop: 8 }}>Hmm, that didn’t work — check the email and try again.</div>
       )}
       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 12, lineHeight: 1.5 }}>
-        By joining you agree to receive emails from Oddyessa. Data only, not betting advice. 18+. Unsubscribe anytime.
+        {compact
+          ? 'Free · every morning of the World Cup · unsubscribe anytime. 18+, not betting advice.'
+          : 'By joining you agree to receive emails from Oddyessa. Data only, not betting advice. 18+. Unsubscribe anytime.'}
       </div>
     </div>
   );
