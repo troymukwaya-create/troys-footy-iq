@@ -318,12 +318,14 @@ router.post('/reset-analytics', async (_req, res) => {
 // ─── POST /send-daily-picks ─────────────────────────────────────────
 // Manual trigger / preview for the 07:00 UTC daily picks email.
 //   { mode: 'dry-run' }          → build + return content, send nothing
+//   { mode: 'status' }           → email_log history + subscriber counts
 //   { mode: 'send' }             → send now (once-per-day guard applies)
 //   { mode: 'send', force: true} → send even if today's already went out
 router.post('/send-daily-picks', async (req, res) => {
   try {
-    const { sendDailyPicks } = await import('../services/dailyPicksEmail.js');
+    const { sendDailyPicks, dailyPicksStatus } = await import('../services/dailyPicksEmail.js');
     const mode = (req.body?.mode || 'dry-run').toLowerCase();
+    if (mode === 'status') return res.json({ error: false, ...(await dailyPicksStatus()) });
     const result = await sendDailyPicks({
       dryRun: mode !== 'send',
       force: !!req.body?.force,

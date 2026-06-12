@@ -17,6 +17,7 @@ import {
   getWcDisplayPrediction, getSharedOddsEvents, getLockedWcPredictionsMap,
 } from './wcDisplayPrediction.js';
 import { sendEmail, emailEnabled } from './email.js';
+import { getRecentResults } from './resultService.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 
 const SITE = 'https://oddyessa.com';
@@ -68,19 +69,16 @@ async function getTodaysSlate() {
 }
 
 async function getYesterdaysReceipts() {
-  if (!isDbAvailable()) return [];
-  // 26h window at 07:00 UTC covers every kickoff since 05:00 the previous
+  // model_performance has no team/date columns of its own — reuse the
+  // proven predictions+fixtures join behind /api/results/recent. The 26h
+  // window at 07:00 UTC covers every kickoff since 05:00 the previous
   // day — i.e. the whole previous matchday including the overnight games.
-  const r = await safeQuery(`
-    SELECT home_team, away_team, predicted_outcome, prediction_correct,
-           brier_score, prob_home, prob_draw, prob_away,
-           COALESCE(ft_home_goals, home_goals) AS hg,
-           COALESCE(ft_away_goals, away_goals) AS ag,
-           match_date
-    FROM model_performance
-    WHERE match_date >= NOW() - INTERVAL '26 hours'
-    ORDER BY match_date ASC`);
-  return r?.rows || [];
+  const rows = await getRecentResults(20).catch(() => []);
+  const cutoff = Date.now() - 26 * 3600 * 1000;
+  return rows
+    .filter(r => r.match_date && new Date(r.match_date).getTime() >= cutoff)
+    .sort((a, b) => new Date(a.match_date) - new Date(b.match_date))
+    .map(r => ({ ...r, hg: r.ft_home_goals ?? r.home_goals, ag: r.ft_away_goals ?? r.away_goals }));
 }
 
 async function getLedger() {
@@ -248,6 +246,20 @@ export async function sendDailyPicks({ dryRun = false, force = false } = {}) {
   return { sent, failed, recipients: recipients.length, subject };
 }
 
+/** Ops view: did today's (and recent) sends happen, and is sending possible? */
+export async function dailyPicksStatus() {
+  const log = await safeQuery(
+    `SELECT kind, send_date, recipients, meta, created_at
+     FROM email_log ORDER BY send_date DESC LIMIT 7`);
+  const subs = await safeQuery(
+    `SELECT status, COUNT(*)::int AS n FROM subscribers GROUP BY status`);
+  return {
+    emailEnabled: emailEnabled(),
+    log: log?.rows || [],
+    subscribers: Object.fromEntries((subs?.rows || []).map(r => [r.status, r.n])),
+  };
+}
+
 /**
  * Boot catch-up: if the dyno was asleep at 07:00 UTC, send late — but only
  * in the morning window (07:00–12:00 UTC) so a midnight deploy doesn't
@@ -260,4 +272,4 @@ export async function catchUpDailyPicks() {
   return sendDailyPicks();
 }
 
-export default { sendDailyPicks, catchUpDailyPicks, buildDailyPicksEmail };
+export default { sendDailyPicks, catchUpDailyPicks, buildDailyPicksEmail, dailyPicksStatus };
