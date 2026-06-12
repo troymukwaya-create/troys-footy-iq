@@ -3,9 +3,10 @@
 // posted → live → graded → receipt), a unified ops feed of everything
 // the machine does, the growth funnel, and the buttons.
 import React, { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAdmin, Card, Section, Metric, grid, timeAgo, C } from '../../components/admin/ui.jsx';
 import adminApi from '../../api/adminClient.js';
+import client from '../../api/client.js';
 
 const TYPE_COLOR = {
   lock: C.accent, grade: C.ok, social: '#5BC0BE',
@@ -13,8 +14,27 @@ const TYPE_COLOR = {
 };
 
 // ─── Tonight board ───────────────────────────────────────────────────
+// Admin /tonight knows what the DB has seen (locks, grades, posts); the
+// public upcoming feed knows games the engine has priced but not yet
+// stored. Merge both so tomorrow's slate is visible all day.
 function Tonight() {
-  const rows = useAdmin('/tonight', 15000).data || [];
+  const dbRows = useAdmin('/tonight', 15000).data || [];
+  const { data: pub } = useQuery({
+    queryKey: ['adm-upcoming'],
+    queryFn: async () => (await client.get('/fixtures/upcoming')).data?.fixtures || [],
+    refetchInterval: 60000,
+  });
+  const known = new Set(dbRows.map(r => r.id));
+  const horizon = Date.now() + 26 * 3600 * 1000;
+  const extra = (pub || [])
+    .filter(f => f.league?.code === 'WC' && !known.has(f.id)
+      && new Date(f.date) > new Date() && new Date(f.date).getTime() < horizon)
+    .map(f => ({
+      id: f.id, ko: f.date, status: f.status, home: f.homeTeam?.name, away: f.awayTeam?.name,
+      probs: f.probability?.probabilities || null, risk: f.probability?.riskLevel,
+      stages: { priced: !!f.probability?.probabilities, callPosted: false, live: false, graded: false, receiptPosted: false },
+    }));
+  const rows = [...dbRows, ...extra].sort((a, b) => new Date(a.ko) - new Date(b.ko));
   if (!rows.length) return null;
   const chip = (on, label, color = C.ok) => (
     <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '2px 7px', borderRadius: 8,
