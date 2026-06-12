@@ -17,6 +17,7 @@ import { runHealthCheck, checkForModelDegradation, createAlert } from '../servic
 import { invalidateMaturityCache } from '../engine/trustSignals.js';
 import { loadPersistedElo } from '../engine/nationalTeams.js';
 import { runEloLearningCycle } from './eloIngest.js';
+import { sendDailyPicks, catchUpDailyPicks } from '../services/dailyPicksEmail.js';
 import { runWcPredictionLock } from './wcPredictionLock.js';
 import { refreshWcTeamForms } from '../services/wcForm.js';
 import { refreshWcMarketWeight, optimizeWcMarketWeight } from '../engine/marketWeight.js';
@@ -203,6 +204,22 @@ export default function initJobs() {
       console.log('[SCHEDULER] Market weight:', JSON.stringify(r));
     } catch (err) { console.error('[SCHEDULER] Market weight optimization failed:', err.message); }
   });
+
+  // ─── DAILY PICKS EMAIL ─────────────────────────────────────────────
+  // 07:00 UTC — after the overnight matches are scored (results ingest at
+  // 04:00/06:00) and Elo has learned (06:15): yesterday's receipts + the
+  // next 24h of calls, to every active subscriber until they unsubscribe.
+  cron.schedule('0 7 * * *', async () => {
+    console.log('[SCHEDULER] Sending daily picks email...');
+    try {
+      const r = await sendDailyPicks();
+      console.log('[SCHEDULER] Daily picks email:', JSON.stringify(r));
+    } catch (err) { console.error('[SCHEDULER] Daily picks email failed:', err.message); }
+  });
+  // Boot catch-up (07:00–12:00 UTC window; email_log guard prevents doubles)
+  setTimeout(() => catchUpDailyPicks().then(r => {
+    if (!r?.skipped) console.log('[SCHEDULER] Daily picks catch-up:', JSON.stringify(r));
+  }).catch(() => {}), 120_000);
 
   // Daily at 08:00 — Update standings for all leagues
   cron.schedule('0 8 * * *', async () => {

@@ -315,6 +315,25 @@ router.post('/reset-analytics', async (_req, res) => {
 });
 
 
+// ─── POST /send-daily-picks ─────────────────────────────────────────
+// Manual trigger / preview for the 07:00 UTC daily picks email.
+//   { mode: 'dry-run' }          → build + return content, send nothing
+//   { mode: 'send' }             → send now (once-per-day guard applies)
+//   { mode: 'send', force: true} → send even if today's already went out
+router.post('/send-daily-picks', async (req, res) => {
+  try {
+    const { sendDailyPicks } = await import('../services/dailyPicksEmail.js');
+    const mode = (req.body?.mode || 'dry-run').toLowerCase();
+    const result = await sendDailyPicks({
+      dryRun: mode !== 'send',
+      force: !!req.body?.force,
+    });
+    res.json({ error: false, ...result });
+  } catch (err) {
+    res.status(500).json({ error: true, message: err.message });
+  }
+});
+
 // ─── POST /elo-bootstrap ────────────────────────────────────────────
 // Replay the full international-results history through our Elo updater.
 //   { action: 'dry-run' }  → comparison table vs the static snapshot (no writes)

@@ -482,6 +482,18 @@ CREATE TABLE IF NOT EXISTS subscribers (
 CREATE INDEX IF NOT EXISTS idx_subscribers_status ON subscribers(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_subscribers_visitor ON subscribers(visitor_id);
 
+-- One row per broadcast send; the UNIQUE pair is the once-per-day guard
+-- (two instances racing during a deploy can't both send the daily picks).
+CREATE TABLE IF NOT EXISTS email_log (
+  id SERIAL PRIMARY KEY,
+  kind VARCHAR(30) NOT NULL,                -- 'daily_picks'
+  send_date DATE NOT NULL,
+  recipients INT DEFAULT 0,
+  meta JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (kind, send_date)
+);
+
 -- ═══════════════════════════════════════════════════════════════════
 -- ACCOUNTS / AUTH (v11) — passwordless magic-link login + saved slips
 -- ═══════════════════════════════════════════════════════════════════
