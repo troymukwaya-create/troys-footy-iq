@@ -195,8 +195,12 @@ async function generateLedger() {
     'oddyessa.com',
   ].filter(l => l !== null).join('\n');
 
+  const captionX = caption
+    .replace(/\n?oddyessa\.com\s*$/i, '')
+    .replace(/Every call locked before kickoff, graded in public\./, 'Every call locked before kickoff, graded in public. Full receipts on the site — link in bio.')
+    .trim();
   writeFileSync(path.join(OUT, 'ledger.json'), JSON.stringify({
-    caption, images: ['ledger.png', ...settled.slice(0, 3).map((_, j) => `receipt-${j}.png`)],
+    caption, captionX, images: ['ledger.png', ...settled.slice(0, 3).map((_, j) => `receipt-${j}.png`)],
   }, null, 2));
   console.log(`ledger generated: ${n} matches, ${nRight} right`);
 }
@@ -221,7 +225,8 @@ async function generatePicks() {
     'Full reasoning: oddyessa.com',
   ].join('\n');
 
-  writeFileSync(path.join(OUT, 'picks.json'), JSON.stringify({ caption, images: [] }, null, 2));
+  const captionX = caption.replace(/\n?Full reasoning: oddyessa\.com\s*$/i, '\nFull reasoning on the site — link in bio.').trim();
+  writeFileSync(path.join(OUT, 'picks.json'), JSON.stringify({ caption, captionX, images: [] }, null, 2));
   console.log(`picks generated: ${slate.length} matches`);
 }
 
