@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ─── Morning Ledger card system (parametric) ───────────────────────
+     The Day-1 cards, turned into a template the generator fills with
+     live data each morning. Brand canon: REAL flag bleeds (FlagBleed
+     recipe), Archivo Expanded display, Plex Mono numbers, dark chrome. */
+  :root{
+    --chrome:#0B0B0D; --page:#1B1E25; --card:#14161B;
+    --ox:#A8344A; --green:#22C55E; --gold:#EAB308; --red:#EF4444;
+    --t92:rgba(255,255,255,.92); --t60:rgba(255,255,255,.60); --t36:rgba(255,255,255,.36);
+    --rule:rgba(255,255,255,.08);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#333;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .card{position:relative;overflow:hidden;background:var(--chrome);margin:20px auto;}
+  .wordmark{font-stretch:116%;font-weight:800;font-size:28px;color:var(--t92);}
+  .wordmark b{color:var(--ox);}
+
+  /* flag bleed — site recipe */
+  .bleedwrap{isolation:isolate;}
+  .bleed{position:absolute;inset:0;z-index:-1;overflow:hidden;border-radius:inherit;}
+  .paper .bleed{
+    -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 30%,rgba(0,0,0,.35) 55%,transparent 80%);
+    mask-image:linear-gradient(180deg,#000 0%,#000 30%,rgba(0,0,0,.35) 55%,transparent 80%);}
+  .bleed .fl,.bleed .fr{position:absolute;top:0;bottom:0;width:68%;background-size:cover;background-position:center;
+    filter:blur(4px) saturate(1.05);transform:scale(1.15);}
+  .bleed .fl{left:-4%;
+    -webkit-mask-image:linear-gradient(99deg,#000 0%,rgba(0,0,0,.9) 28%,rgba(0,0,0,.35) 62%,transparent 96%);
+    mask-image:linear-gradient(99deg,#000 0%,rgba(0,0,0,.9) 28%,rgba(0,0,0,.35) 62%,transparent 96%);}
+  .bleed .fr{right:-4%;
+    -webkit-mask-image:linear-gradient(279deg,#000 0%,rgba(0,0,0,.9) 28%,rgba(0,0,0,.35) 62%,transparent 96%);
+    mask-image:linear-gradient(279deg,#000 0%,rgba(0,0,0,.9) 28%,rgba(0,0,0,.35) 62%,transparent 96%);}
+  .bleed .veil{position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(11,11,13,.28) 0%,rgba(11,11,13,.46) 55%,rgba(11,11,13,.68) 100%);}
+  .lrow .veil{background:linear-gradient(180deg,rgba(11,11,13,.5) 0%,rgba(11,11,13,.62) 55%,rgba(11,11,13,.75) 100%) !important;}
+
+  /* ═══ LEDGER 1600×900 ═══ */
+  #ledger{width:1600px;height:900px;padding:64px 72px;display:flex;flex-direction:column;}
+  #ledger .top{display:flex;justify-content:space-between;align-items:center;}
+  #ledger .kicker{font-family:'IBM Plex Mono',monospace;font-size:19px;letter-spacing:.14em;color:var(--t60);}
+  #ledger h1{font-stretch:116%;font-weight:800;font-size:80px;line-height:1.04;color:var(--t92);margin-top:38px;}
+  #ledger h1 .ox{color:var(--ox);}
+  .ledgerrows{margin-top:40px;display:flex;flex-direction:column;gap:13px;}
+  .lrow{position:relative;display:flex;align-items:center;gap:26px;background:var(--card);border:1px solid var(--rule);
+    border-radius:14px;padding:20px 28px;overflow:hidden;}
+  .lrow .score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:27px;color:var(--t92);min-width:320px;}
+  .lrow .call{font-size:21px;color:var(--t60);flex:1;}
+  .lrow .call b{color:var(--t92);font-weight:600;}
+  .lrow .brier{font-family:'IBM Plex Mono',monospace;font-size:22px;color:var(--t60);text-align:right;}
+  .lrow .brier b{color:var(--t92);font-weight:600;}
+  .tick{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;}
+  .tick.hit{background:rgba(34,197,94,.12);border:2px solid var(--green);color:var(--green);}
+  .tick.miss{background:rgba(239,68,68,.12);border:2px solid var(--red);color:var(--red);}
+  .track-wrap{margin-top:46px;}
+  .track-labels{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:17px;letter-spacing:.1em;color:var(--t36);margin-bottom:14px;}
+  .track{position:relative;height:10px;border-radius:5px;
+    background:linear-gradient(90deg,rgba(34,197,94,.55),rgba(234,179,8,.4) 60%,rgba(239,68,68,.45));}
+  .marker{position:absolute;top:50%;transform:translate(-50%,-50%);}
+  .marker .dot{width:26px;height:26px;border-radius:50%;background:var(--ox);border:5px solid #0B0B0D;box-shadow:0 0 0 2px var(--ox),0 6px 18px rgba(168,52,74,.5);}
+  .marker .tag{position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--t92);font-weight:600;}
+  .marker .tag span{color:var(--ox);font-weight:700;}
+  #ledger .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;}
+  #ledger .foot .note{font-size:19px;color:var(--t36);}
+  #ledger .foot .url{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--t60);}
+
+  /* ═══ RECEIPT 1080×1350 ═══ */
+  #receipt-stage{width:1080px;height:1350px;background:var(--page);display:flex;align-items:center;justify-content:center;}
+  .paper{position:relative;width:880px;background:#14161B;border:1px solid rgba(255,255,255,.10);
+    border-radius:6px;padding:54px 64px 44px;box-shadow:0 40px 90px rgba(0,0,0,.55);}
+  .paper:before,.paper:after{content:'';position:absolute;left:0;right:0;height:14px;
+    background-image:radial-gradient(circle at 7px 7px, var(--page) 6px, transparent 6.5px);
+    background-size:28px 14px;background-position:center;z-index:2;}
+  .paper:before{top:-1px;} .paper:after{bottom:-1px;transform:rotate(180deg);}
+  .r-head{position:relative;text-align:center;padding-bottom:26px;border-bottom:1px dashed rgba(255,255,255,.18);}
+  .r-kicker{font-family:'IBM Plex Mono',monospace;font-size:17px;letter-spacing:.22em;color:var(--t36);margin-top:16px;}
+  .r-match{font-stretch:116%;font-weight:800;font-size:42px;color:var(--t92);margin-top:10px;line-height:1.12;}
+  .r-ft{font-family:'IBM Plex Mono',monospace;font-size:74px;font-weight:700;color:var(--t92);margin-top:6px;}
+  .r-meta{font-family:'IBM Plex Mono',monospace;font-size:17px;color:var(--t60);margin-top:10px;}
+  .r-items{position:relative;padding:24px 0;border-bottom:1px dashed rgba(255,255,255,.18);}
+  .item{display:flex;align-items:baseline;gap:14px;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:21px;}
+  .item .lab{color:var(--t60);}
+  .item .dots{flex:1;border-bottom:2px dotted rgba(255,255,255,.14);transform:translateY(-5px);}
+  .item .val{color:var(--t92);font-weight:600;}
+  .item .res{width:34px;text-align:center;font-weight:700;}
+  .hit{color:var(--green);} .miss{color:var(--red);}
+  .item .sub{color:var(--t36);font-size:17px;}
+  .r-total{position:relative;display:flex;align-items:center;justify-content:space-between;padding:28px 0 6px;}
+  .r-total .lab{font-family:'IBM Plex Mono',monospace;letter-spacing:.22em;font-size:18px;color:var(--t60);}
+  .r-total .lab small{display:block;letter-spacing:.05em;font-size:14px;color:var(--t36);margin-top:6px;}
+  .brier-num{font-family:'IBM Plex Mono',monospace;font-size:80px;font-weight:700;}
+  .brier-num .lead{color:#7A8694;} .brier-num .digits{color:var(--ox);}
+  .r-foot{position:relative;margin-top:24px;padding-top:20px;border-top:1px dashed rgba(255,255,255,.18);display:flex;justify-content:space-between;align-items:center;}
+  .r-foot .url{font-family:'IBM Plex Mono',monospace;font-size:18px;color:var(--t60);}
+  .r-foot .tag{font-size:18px;color:var(--t36);font-style:italic;}
+  .barcode{height:32px;width:230px;opacity:.55;
+    background:repeating-linear-gradient(90deg,var(--t92) 0 2px,transparent 2px 5px,var(--t92) 5px 9px,transparent 9px 12px,var(--t92) 12px 13px,transparent 13px 17px);}
+  .stamp{position:absolute;top:58px;right:30px;transform:rotate(8deg);border:4px solid var(--green);color:var(--green);
+    border-radius:10px;padding:9px 20px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:20px;letter-spacing:.1em;
+    background:rgba(34,197,94,.07);z-index:3;}
+  .stamp.miss{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.07);}
+</style>
+</head>
+<body>
+
+<div class="card" id="ledger"></div>
+<div class="card" id="receipt-stage"><div class="paper bleedwrap" id="paper"></div></div>
+
+<script>
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const bleed = (hIso, aIso, op) => (hIso && aIso) ? `
+    <div class="bleed" style="opacity:${op}">
+      <div class="fl" style="background-image:url(https://flagcdn.com/w640/${hIso}.png)"></div>
+      <div class="fr" style="background-image:url(https://flagcdn.com/w640/${aIso}.png)"></div>
+      <div class="veil"></div>
+    </div>` : '';
+
+  // data.results: [{abbr, hg, ag, hit, line, brier, hIso, aIso}]
+  // data.headline {a, b}, kicker, note, ours (brier float)
+  window.renderLedger = (d) => {
+    const rows = d.results.map(r => `
+      <div class="lrow bleedwrap" style="background:#14161B">
+        ${bleed(r.hIso, r.aIso, '.28')}
+        <div class="tick ${r.hit ? 'hit' : 'miss'}">${r.hit ? '✓' : '✗'}</div>
+        <div class="score">${esc(r.abbr)}</div>
+        <div class="call">${r.line}</div>
+        <div class="brier">BRIER <b>${r.brier}</b></div>
+      </div>`).join('');
+    const pos = Math.max(2, Math.min(98, (d.ours / 0.25) * 100));
+    document.getElementById('ledger').innerHTML = `
+      <div class="top">
+        <div>
+          <svg width="44" height="44" viewBox="0 0 100 100" style="vertical-align:middle;margin-right:14px">
+            <path d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" stroke-width="9" stroke-linecap="round"/>
+            <circle cx="69.8" cy="30.2" r="8" fill="#A8344A"/>
+          </svg><span class="wordmark"><b>Odd</b>yessa</span>
+        </div>
+        <div class="kicker">${esc(d.kicker)}</div>
+      </div>
+      <h1>${esc(d.headline.a)}<br><span class="ox">${esc(d.headline.b)}</span></h1>
+      <div class="ledgerrows">${rows}</div>
+      <div class="track-wrap">
+        <div class="track-labels"><span>PERFECT 0.000</span><span>COIN FLIP 0.222</span></div>
+        <div class="track">
+          <div class="marker" style="left:${pos}%"><div class="dot"></div><div class="tag">OURS <span>${d.ours.toFixed(3)}</span></div></div>
+        </div>
+      </div>
+      <div class="foot">
+        <div class="note">${esc(d.note)}</div>
+        <div class="url">every call locked before kickoff · oddyessa.com</div>
+      </div>`;
+  };
+
+  // r: {title, ft, kicker, meta, items:[{lab,val,res:'hit'|'miss'|null,sub}], brier, stampText, stampMiss, hIso, aIso}
+  window.renderReceipt = (r) => {
+    const items = r.items.map(it => it.sub
+      ? `<div class="item"><span class="sub">↳ ${esc(it.sub)}</span></div>`
+      : `<div class="item"><span class="lab">${esc(it.lab)}</span><span class="dots"></span><span class="val">${esc(it.val)}</span>${it.res ? `<span class="res ${it.res}">${it.res === 'hit' ? '✓' : '✗'}</span>` : ''}</div>`
+    ).join('');
+    const [lead, digits] = r.brier.split('.');
+    document.getElementById('paper').innerHTML = `
+      ${bleed(r.hIso, r.aIso, '.45')}
+      <div class="stamp ${r.stampMiss ? 'miss' : ''}">${esc(r.stampText)}</div>
+      <div class="r-head">
+        <svg width="56" height="56" viewBox="0 0 100 100" style="display:block;margin:0 auto">
+          <path d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="69.8" cy="30.2" r="8" fill="#A8344A"/>
+        </svg>
+        <div class="wordmark" style="margin-top:12px"><b>Odd</b>yessa</div>
+        <div class="r-kicker">${esc(r.kicker)}</div>
+        <div class="r-match">${r.title}</div>
+        <div class="r-ft">${esc(r.ft)}</div>
+        <div class="r-meta">${esc(r.meta)}</div>
+      </div>
+      <div class="r-items">${items}</div>
+      <div class="r-total">
+        <div class="lab">MATCH BRIER<small>0 = perfect · 0.25 = coin flip</small></div>
+        <div class="brier-num"><span class="lead">${lead}.</span><span class="digits">${digits}</span></div>
+      </div>
+      <div class="r-foot">
+        <div><div class="url">oddyessa.com</div><div class="tag">read the game.</div></div>
+        <div class="barcode"></div>
+      </div>`;
+  };
+
+  window.imagesReady = async () => {
+    const urls = [...document.querySelectorAll('[style*="background-image"]')]
+      .map(el => (el.style.backgroundImage.match(/url\("?(.*?)"?\)/) || [])[1]).filter(Boolean);
+    await Promise.all([...new Set(urls)].map(u => new Promise(res => {
+      const i = new Image(); i.onload = i.onerror = res; i.src = u;
+    })));
+    await document.fonts.ready;
+  };
+</script>
+</body>
+</html>

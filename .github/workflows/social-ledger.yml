@@ -1,0 +1,48 @@
+# Morning Ledger — yesterday's receipts to the social channels.
+# Cron is UTC and GitHub delays it a few minutes, so 06:50 lands ~07:00
+# (Troy's 8 a.m.). Manual runs via the Actions tab → Run workflow.
+name: social-ledger
+on:
+  schedule:
+    - cron: '50 6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - name: install renderer
+        run: npm i --no-save puppeteer-core@latest
+        working-directory: scripts/social
+      - name: generate cards + captions
+        run: node generate.mjs ledger
+        working-directory: scripts/social
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+      - name: publish
+        run: node publish.mjs ledger
+        working-directory: scripts/social
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+      - name: keep the morning's pack as an artifact (Troy can download for LinkedIn/Reddit)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledger-pack-${{ github.run_id }}
+          path: scripts/social/out/
+          retention-days: 7

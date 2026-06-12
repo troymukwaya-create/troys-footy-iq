@@ -1,0 +1,40 @@
+# Today's Picks — the day's calls to the social channels.
+# 07:50 UTC cron lands ~08:00 (Troy's 9 a.m.).
+name: social-picks
+on:
+  schedule:
+    - cron: '50 7 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - name: install renderer
+        run: npm i --no-save puppeteer-core@latest
+        working-directory: scripts/social
+      - name: generate captions
+        run: node generate.mjs picks
+        working-directory: scripts/social
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+      - name: publish
+        run: node publish.mjs picks
+        working-directory: scripts/social
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
