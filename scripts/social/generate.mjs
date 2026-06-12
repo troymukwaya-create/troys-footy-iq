@@ -144,6 +144,15 @@ async function generateLedger() {
     await page.evaluate(() => window.imagesReady());
     await (await page.$('#ledger')).screenshot({ path: path.join(OUT, 'ledger.png') });
 
+    await page.evaluate((d) => window.renderLedgerIG(d), {
+      results: rows, headline,
+      kickerShort: 'THE MORNING LEDGER',
+      note: stats && stats.total < 20 ? `n = ${stats.total}. It’s early.` : 'Every result, in the same font.',
+      ours: stats ? stats.brier : 0.187,
+    });
+    await page.evaluate(() => window.imagesReady());
+    await (await page.$('#ledger-ig')).screenshot({ path: path.join(OUT, 'ledger-ig-raw.png') });
+
     // one receipt card per settled match (max 3 extra images)
     let i = 0;
     for (const s of settled.slice(0, 3)) {
@@ -199,10 +208,21 @@ async function generateLedger() {
     .replace(/\n?oddyessa\.com\s*$/i, '')
     .replace(/Every call locked before kickoff, graded in public\./, 'Every call locked before kickoff, graded in public. Full receipts on the site — link in bio.')
     .trim();
+  // IG-native finishing: exact 1080×1350, lanczos + unsharp + slight lift
+  const { execFileSync } = await import('child_process');
+  const finish = (src_, dst) => execFileSync('ffmpeg', ['-y', '-i', path.join(OUT, src_),
+    '-vf', 'scale=1080:1350:flags=lanczos,unsharp=5:5:0.45,eq=contrast=1.05:saturation=1.06',
+    path.join(OUT, dst)], { stdio: 'pipe' });
+  const imagesIG = ['ledger-ig.png'];
+  finish('ledger-ig-raw.png', 'ledger-ig.png');
+  settled.slice(0, 3).forEach((_, j) => { finish(`receipt-${j}.png`, `receipt-${j}-ig.png`); imagesIG.push(`receipt-${j}-ig.png`); });
+
   writeFileSync(path.join(OUT, 'ledger.json'), JSON.stringify({
-    caption, captionX, images: ['ledger.png', ...settled.slice(0, 3).map((_, j) => `receipt-${j}.png`)],
+    caption, captionX,
+    images: ['ledger.png', ...settled.slice(0, 3).map((_, j) => `receipt-${j}.png`)],
+    imagesIG,
   }, null, 2));
-  console.log(`ledger generated: ${n} matches, ${nRight} right`);
+  console.log(`ledger generated: ${n} matches, ${nRight} right (+${imagesIG.length} IG-native cards)`);
 }
 
 async function generatePicks() {

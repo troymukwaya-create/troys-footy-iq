@@ -145,14 +145,19 @@ async function postInstagram() {
     return j.id;
   };
 
-  const urls = images.slice(0, 10).map(f => `${base}/${path.basename(f)}`);
+  // IG gets its native 4:5 set when the generator produced one
+  const igFiles = (payload.imagesIG || []).map(n => path.join(OUT, n)).filter(existsSync);
+  const chosen = igFiles.length ? igFiles : images;
+  const urls = chosen.slice(0, 10).map(f => `${base}/${path.basename(f)}`);
+  const igCaption = payload.caption.replace(/\n?oddyessa\.com\s*$/i, 'Full reasoning → oddyessa.com (link in bio)')
+    + '\n\n#WorldCup2026 #FootballPredictions #ReadTheGame';
   let containerId;
   if (urls.length === 1) {
-    containerId = await call(`${uid}/media`, { image_url: urls[0], caption: payload.caption });
+    containerId = await call(`${uid}/media`, { image_url: urls[0], caption: igCaption });
   } else {
     const children = [];
     for (const u of urls) children.push(await call(`${uid}/media`, { image_url: u, is_carousel_item: 'true' }));
-    containerId = await call(`${uid}/media`, { media_type: 'CAROUSEL', children: children.join(','), caption: payload.caption });
+    containerId = await call(`${uid}/media`, { media_type: 'CAROUSEL', children: children.join(','), caption: igCaption });
   }
   for (let i = 0; i < 10; i++) {
     const s = await (await fetch(`${API}/${containerId}?fields=status_code&access_token=${token}`)).json();

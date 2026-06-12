@@ -68,6 +68,25 @@
   #ledger .foot .note{font-size:19px;color:var(--t36);}
   #ledger .foot .url{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--t60);}
 
+
+  /* ═══ LEDGER IG 1080×1350 (4:5 native) ═══ */
+  #ledger-ig{width:1080px;height:1350px;padding:64px 60px;display:flex;flex-direction:column;}
+  #ledger-ig .kicker{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.14em;color:rgba(255,255,255,.6);}
+  #ledger-ig h1{font-stretch:116%;font-weight:800;font-size:78px;line-height:1.05;color:var(--t92);margin-top:36px;}
+  #ledger-ig h1 .ox{color:var(--ox);}
+  #ledger-ig .igrow{position:relative;overflow:hidden;background:#14161B;border:1px solid var(--rule);border-radius:16px;padding:24px 26px;}
+  #ledger-ig .igrows{margin-top:42px;display:flex;flex-direction:column;gap:16px;}
+  #ledger-ig .igrow .line1{display:flex;align-items:center;gap:18px;}
+  #ledger-ig .igrow .score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:33px;color:#fff;flex:1;}
+  #ledger-ig .igrow .brier{font-family:'IBM Plex Mono',monospace;font-size:21px;color:rgba(255,255,255,.72);}
+  #ledger-ig .igrow .line2{font-size:23px;color:rgba(255,255,255,.78);margin-top:10px;}
+  #ledger-ig .igrow .line2 b{color:#fff;}
+  #ledger-ig .track-wrap{margin-top:52px;}
+  #ledger-ig .track-labels{font-size:18px;}
+  #ledger-ig .foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;}
+  #ledger-ig .foot .note{font-size:20px;color:rgba(255,255,255,.45);}
+  #ledger-ig .foot .url{font-family:'IBM Plex Mono',monospace;font-size:22px;color:rgba(255,255,255,.7);}
+
   /* ═══ RECEIPT 1080×1350 ═══ */
   #receipt-stage{width:1080px;height:1350px;background:var(--page);display:flex;align-items:center;justify-content:center;}
   .paper{position:relative;width:880px;background:#14161B;border:1px solid rgba(255,255,255,.10);
@@ -77,18 +96,18 @@
     background-size:28px 14px;background-position:center;z-index:2;}
   .paper:before{top:-1px;} .paper:after{bottom:-1px;transform:rotate(180deg);}
   .r-head{position:relative;text-align:center;padding-bottom:26px;border-bottom:1px dashed rgba(255,255,255,.18);}
-  .r-kicker{font-family:'IBM Plex Mono',monospace;font-size:17px;letter-spacing:.22em;color:var(--t36);margin-top:16px;}
+  .r-kicker{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.2em;color:rgba(255,255,255,.5);margin-top:16px;}
   .r-match{font-stretch:116%;font-weight:800;font-size:42px;color:var(--t92);margin-top:10px;line-height:1.12;}
   .r-ft{font-family:'IBM Plex Mono',monospace;font-size:74px;font-weight:700;color:var(--t92);margin-top:6px;}
-  .r-meta{font-family:'IBM Plex Mono',monospace;font-size:17px;color:var(--t60);margin-top:10px;}
+  .r-meta{font-family:'IBM Plex Mono',monospace;font-size:19px;color:rgba(255,255,255,.72);margin-top:10px;}
   .r-items{position:relative;padding:24px 0;border-bottom:1px dashed rgba(255,255,255,.18);}
-  .item{display:flex;align-items:baseline;gap:14px;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:21px;}
-  .item .lab{color:var(--t60);}
+  .item{display:flex;align-items:baseline;gap:14px;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:24px;}
+  .item .lab{color:rgba(255,255,255,.78);}
   .item .dots{flex:1;border-bottom:2px dotted rgba(255,255,255,.14);transform:translateY(-5px);}
   .item .val{color:var(--t92);font-weight:600;}
   .item .res{width:34px;text-align:center;font-weight:700;}
   .hit{color:var(--green);} .miss{color:var(--red);}
-  .item .sub{color:var(--t36);font-size:17px;}
+  .item .sub{color:rgba(255,255,255,.5);font-size:19px;}
   .r-total{position:relative;display:flex;align-items:center;justify-content:space-between;padding:28px 0 6px;}
   .r-total .lab{font-family:'IBM Plex Mono',monospace;letter-spacing:.22em;font-size:18px;color:var(--t60);}
   .r-total .lab small{display:block;letter-spacing:.05em;font-size:14px;color:var(--t36);margin-top:6px;}
@@ -108,6 +127,7 @@
 <body>
 
 <div class="card" id="ledger"></div>
+<div class="card" id="ledger-ig"></div>
 <div class="card" id="receipt-stage"><div class="paper bleedwrap" id="paper"></div></div>
 
 <script>
@@ -184,6 +204,45 @@
       <div class="r-foot">
         <div><div class="url">oddyessa.com</div><div class="tag">read the game.</div></div>
         <div class="barcode"></div>
+      </div>`;
+  };
+
+
+  window.renderLedgerIG = (d) => {
+    const rows = d.results.map(r => `
+      <div class="igrow bleedwrap">
+        ${bleed(r.hIso, r.aIso, '.3')}
+        <div class="line1">
+          <div class="tick ${r.hit ? 'hit' : 'miss'}">${r.hit ? '✓' : '✗'}</div>
+          <div class="score">${esc(r.abbr)}</div>
+          <div class="brier">${r.brier}</div>
+        </div>
+        <div class="line2">${r.line}</div>
+      </div>`).join('');
+    const pos = Math.max(2, Math.min(98, (d.ours / 0.25) * 100));
+    document.getElementById('ledger-ig').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <svg width="46" height="46" viewBox="0 0 100 100" style="vertical-align:middle;margin-right:13px">
+            <path d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" stroke-width="9" stroke-linecap="round"/>
+            <circle cx="69.8" cy="30.2" r="8" fill="#A8344A"/>
+          </svg><span class="wordmark"><b>Odd</b>yessa</span>
+        </div>
+        <div class="kicker">${esc(d.kickerShort || 'THE MORNING LEDGER')}</div>
+      </div>
+      <div style="margin:auto 0">
+        <h1 style="margin-top:0">${esc(d.headline.a)}<br><span class="ox">${esc(d.headline.b)}</span></h1>
+        <div class="igrows">${rows}</div>
+        <div class="track-wrap">
+          <div class="track-labels"><span>PERFECT 0.000</span><span>COIN FLIP 0.222</span></div>
+          <div class="track">
+            <div class="marker" style="left:${pos}%"><div class="dot"></div><div class="tag">OURS <span>${d.ours.toFixed(3)}</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="foot" style="margin-top:0">
+        <div class="note">${esc(d.note)}</div>
+        <div class="url">every call locked before kickoff · oddyessa.com</div>
       </div>`;
   };
 
