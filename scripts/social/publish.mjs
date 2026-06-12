@@ -109,7 +109,7 @@ async function postX() {
   // 2. the tweet (v2). X captions cap at 280 chars — generate writes
   //    telegram-length captions, so trim to the first paragraphs + link.
   let text = payload.captionX || payload.caption;
-  if (text.length > 270) text = text.slice(0, text.lastIndexOf('\n', 250)).trimEnd() + '\n\noddyessa.com';
+  if (text.length > 278) text = text.slice(0, text.lastIndexOf('\n', 252)).trimEnd() + '\n\nlink in bio';
 
   const url = 'https://api.twitter.com/2/tweets';
   const r = await fetch(url, {
@@ -150,7 +150,7 @@ async function postInstagram() {
   const chosen = igFiles.length ? igFiles : images;
   const urls = chosen.slice(0, 10).map(f => `${base}/${path.basename(f)}`);
   const igCaption = payload.caption.replace(/\n?oddyessa\.com\s*$/i, 'Full reasoning → oddyessa.com (link in bio)')
-    + '\n\n#WorldCup2026 #FootballPredictions #ReadTheGame';
+    + '\n\n' + (payload.hashtagsIG || '#WorldCup2026 #FootballPredictions #ReadTheGame');
   let containerId;
   if (urls.length === 1) {
     containerId = await call(`${uid}/media`, { image_url: urls[0], caption: igCaption });

@@ -4,7 +4,12 @@ name: social-picks
 on:
   schedule:
     - cron: '50 7 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Generate + host only, skip posting'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -32,6 +37,7 @@ jobs:
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
       - name: publish
+        if: ${{ inputs.dry_run != true }}
         run: node publish.mjs picks
         working-directory: scripts/social
         env:

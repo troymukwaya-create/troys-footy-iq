@@ -79,6 +79,24 @@ async function getSlate() {
     });
 }
 
+
+// Hashtags are derived from the morning's matches — during a World Cup,
+// the matches ARE what's trending. Match codes use the broadcast format
+// (#MEXRSA). Dosage per platform: X 2-3 (more reads as spam and counts
+// against 280), Instagram ~14 (discovery rewards volume), Telegram 3.
+const tag = (s) => '#' + String(s).replace(/[^A-Za-z0-9]/g, '');
+function buildHashtags(matchups) {
+  const matchTags = matchups.map(([h, a]) => '#' + abbr(h) + abbr(a));
+  const teamTags = [...new Set(matchups.flat())].map(tag);
+  return {
+    x: ['#FIFAWorldCup', ...matchTags.slice(0, 2)].join(' '),
+    ig: [...new Set(['#WorldCup2026', '#FIFAWorldCup', '#WorldCup', ...matchTags,
+      ...teamTags, '#Football', '#Soccer', '#FootballPredictions', '#SoccerPicks',
+      '#WorldCupPredictions', '#ReadTheGame'])].slice(0, 15).join(' '),
+    tg: ['#WorldCup2026', ...matchTags.slice(0, 2)].join(' '),
+  };
+}
+
 const RISK_PLAIN = { LOW: 'we’re confident', MEDIUM: 'we lean this way', HIGH: 'coin flip — could go anywhere' };
 const fmtTime = (d) => new Date(d).toISOString().slice(11, 16) + ' UTC';
 
@@ -217,8 +235,18 @@ async function generateLedger() {
   finish('ledger-ig-raw.png', 'ledger-ig.png');
   settled.slice(0, 3).forEach((_, j) => { finish(`receipt-${j}.png`, `receipt-${j}-ig.png`); imagesIG.push(`receipt-${j}-ig.png`); });
 
+  const tags = buildHashtags(settled.map(s => [s.home_team, s.away_team]));
+  // X gets a compact, purpose-built caption: result lines + tags ≤ 280
+  const xLines = settled.map(s => {
+    const v = verdicts[s.match_external_id];
+    return `${flagEmoji(s.home_team)} ${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)} ${s.prediction_correct ? '✓ called' : '✗ missed'}${v?.scoreline?.exact ? ' · exact score ✓' : ''}`;
+  });
+  let xCap = `Yesterday: ${nRight}/${n} ${nRight === n ? '✓' : ''}\n\n${xLines.join('\n')}\n\nEvery call locked before kickoff. Receipts attached — full reasoning in bio.\n\n${tags.x}`;
+  if (xCap.length > 278) xCap = `Yesterday: ${nRight}/${n} winners called — receipts attached. Every call locked before kickoff.\n\n${tags.x}`;
   writeFileSync(path.join(OUT, 'ledger.json'), JSON.stringify({
-    caption, captionX,
+    caption: caption + '\n\n' + tags.tg,
+    captionX: xCap,
+    hashtagsIG: tags.ig,
     images: ['ledger.png', ...settled.slice(0, 3).map((_, j) => `receipt-${j}.png`)],
     imagesIG,
   }, null, 2));
@@ -245,8 +273,17 @@ async function generatePicks() {
     'Full reasoning: oddyessa.com',
   ].join('\n');
 
-  const captionX = caption.replace(/\n?Full reasoning: oddyessa\.com\s*$/i, '\nFull reasoning on the site — link in bio.').trim();
-  writeFileSync(path.join(OUT, 'picks.json'), JSON.stringify({ caption, captionX, images: [] }, null, 2));
+  const tags = buildHashtags(slate.map(m => [m.home, m.away]));
+  const shown = slate.slice(0, 4);
+  const xLines = shown.map(m => `${flagEmoji(m.home)} ${abbr(m.home)} v ${abbr(m.away)} — ${m.pick === 'Draw' ? 'draw' : abbr(m.pick)} ${pct(m.probs[m.pick === m.home ? 'home' : m.pick === m.away ? 'away' : 'draw'])}${m.risk === 'HIGH' ? ' (coin flip)' : ''}`);
+  let xCap = `Today’s calls:\n\n${xLines.join('\n')}${slate.length > shown.length ? `\n+${slate.length - shown.length} more on the site` : ''}\n\nWhy each pick — link in bio.\n\n${tags.x}`;
+  if (xCap.length > 278) xCap = `Today’s calls — ${slate.length} games, locked before kickoff. Why each pick — link in bio.\n\n${tags.x}`;
+  writeFileSync(path.join(OUT, 'picks.json'), JSON.stringify({
+    caption: caption + '\n\n' + tags.tg,
+    captionX: xCap,
+    hashtagsIG: tags.ig,
+    images: [],
+  }, null, 2));
   console.log(`picks generated: ${slate.length} matches`);
 }
 

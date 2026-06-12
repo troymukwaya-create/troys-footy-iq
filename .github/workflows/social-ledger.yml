@@ -5,7 +5,12 @@ name: social-ledger
 on:
   schedule:
     - cron: '50 6 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Generate + host only, skip posting'
+        type: boolean
+        default: false
 
 permissions:
   contents: write   # pushes the morning's cards to the social-assets branch (public URLs for Instagram)
@@ -49,6 +54,7 @@ jobs:
             echo "no cards generated — nothing to host"
           fi
       - name: publish
+        if: ${{ inputs.dry_run != true }}
         run: node publish.mjs ledger
         working-directory: scripts/social
         env:
