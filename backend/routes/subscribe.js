@@ -42,14 +42,28 @@ router.post('/', async (req, res) => {
 
     if (isNew && emailEnabled()) {
       const unsub = `${PUBLIC_API}/api/subscribe/unsubscribe?token=${row.unsubscribe_token}`;
-      // best-effort: never block the response on the email send
-      sendEmail({
-        to: email,
-        subject: 'You’re in — Oddyessa’s best bets, every morning ⚽',
-        html: welcomeHtml(unsub),
-        text: welcomeText(unsub),
-        headers: { 'List-Unsubscribe': `<${unsub}>` },
-      }).catch(() => {});
+      // best-effort: never block the response on the email build/send.
+      // The v2 welcome (flag tiles + today's pick) needs live data — if
+      // anything in that path throws, fall back to the plain welcome.
+      (async () => {
+        let mail;
+        try {
+          const { buildWelcomeEmail } = await import('../services/dailyPicksEmail.js');
+          const built = await buildWelcomeEmail();
+          mail = {
+            subject: built.subject,
+            html: built.html.replaceAll('__UNSUB__', unsub),
+            text: built.text.replaceAll('__UNSUB__', unsub),
+          };
+        } catch {
+          mail = {
+            subject: 'You’re in — Oddyessa’s picks, every morning ⚽',
+            html: welcomeHtml(unsub),
+            text: welcomeText(unsub),
+          };
+        }
+        await sendEmail({ to: email, ...mail, headers: { 'List-Unsubscribe': `<${unsub}>` } });
+      })().catch(() => {});
     }
 
     return res.json({ ok: true, isNew, emailQueued: isNew && emailEnabled() });

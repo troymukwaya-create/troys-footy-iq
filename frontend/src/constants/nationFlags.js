@@ -4,7 +4,7 @@
 // into the other across the card, instead of flat colour gradients.
 // Returns null for unknown teams (component falls back to colour gradient).
 
-const NATION_ISO2 = {
+export const NATION_ISO2 = {
   Mexico: 'mx', 'South Africa': 'za', Brazil: 'br', Argentina: 'ar',
   France: 'fr', Spain: 'es', England: 'gb-eng', Germany: 'de',
   Portugal: 'pt', Netherlands: 'nl', Belgium: 'be', Croatia: 'hr',
@@ -106,4 +106,4 @@ export function flagUrl(name, w = 640) {
   return iso ? `https://flagcdn.com/w${w}/${iso}.png` : null;
 }
 
-export default { flagUrl };
+export default { flagUrl, NATION_ISO2 };

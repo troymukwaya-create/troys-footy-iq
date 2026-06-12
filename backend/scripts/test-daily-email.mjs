@@ -1,7 +1,7 @@
 // Smoke test: build the daily picks email (v2 — plain words, flag tiles,
 // animated header) from canned data and write the HTML for eyeballing.
 import { writeFileSync } from 'fs';
-import { buildDailyPicksEmail } from '../services/dailyPicksEmail.js';
+import { buildDailyPicksEmail, buildWelcomeEmail } from '../services/dailyPicksEmail.js';
 
 const slate = [
   {
@@ -55,7 +55,9 @@ must(!out.html.includes('underrating Brazil'), 'value chip should hide below 5pt
 must(!out.html.match(/Brier/i), 'jargon leak: Brier should not appear in v2 copy');
 must(out.html.includes('accuracy score'), 'plain accuracy footnote missing');
 must(out.html.includes('__UNSUB__') && out.text.includes('__UNSUB__'), 'unsub placeholder missing');
-must(out.html.includes('linear-gradient(100deg, #006847'), 'Mexico flag bleed missing');
+must(out.html.includes('email-flags/mx-l.webp') && out.html.includes('email-flags/za-r.webp'), 'Mexico/SA real-flag strips missing');
+must(out.html.includes('flagcdn.com/w40/mx.png'), 'flag chip missing');
+must(!out.html.includes('linear-gradient(100deg'), 'colour gradients must be gone (brand rule: real flags)');
 must(out.html.includes('bgcolor="#FF0000"'), 'Canada probability bar colour missing');
 
 // Rest day (no slate)
@@ -66,6 +68,13 @@ must(rest.subject.startsWith('How we did yesterday'), 'rest-day subject wrong: '
 const first = buildDailyPicksEmail({ slate, receipts: [], ledger: null, date: new Date() });
 must(!first.html.includes('Yesterday'), 'empty receipts should hide section');
 must(first.subject.includes('Today’s World Cup picks'), 'today-only subject wrong: ' + first.subject);
+
+// Welcome email — no-slate fallback path (local key is stale → empty slate)
+const welcome = await buildWelcomeEmail();
+must(welcome.subject.includes('You’re in'), 'welcome subject wrong: ' + welcome.subject);
+must(welcome.html.includes('email-header.gif') && welcome.html.includes('__UNSUB__'), 'welcome header/unsub missing');
+must(welcome.html.includes('even when we’re wrong'), 'welcome honesty line missing');
+writeFileSync('/tmp/oddyessa-email/welcome-preview.html', welcome.html);
 
 writeFileSync('/tmp/oddyessa-email/daily-email-v2-preview.html', out.html);
 console.log('TEXT VERSION:\n' + out.text);

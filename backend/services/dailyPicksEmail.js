@@ -19,7 +19,8 @@ import {
 import { sendEmail, emailEnabled } from './email.js';
 import { getRecentResults } from './resultService.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
-import { getNationColor, getBarColor, emailFlagBleed } from '../constants/nationColors.js';
+import { getBarColor } from '../constants/nationColors.js';
+import { flagChipUrl, emailFlagStrips } from '../constants/nationFlags.js';
 
 const SITE = 'https://oddyessa.com';
 const PUBLIC_API = (process.env.PUBLIC_API_URL || 'https://troys-footy-iq-api.onrender.com').replace(/\/+$/, '');
@@ -105,10 +106,12 @@ async function getLedger() {
 // ─── Rendering (v2) ─────────────────────────────────────────────────
 // Design rules: plain words a casual fan understands (no jargon in the
 // body — the accuracy score lives in the small print); every match tile
-// carries the app's signature flag-colour bleed; the header is the
-// animated orbit-mark GIF (served from the site, ~79KB, loops). All
-// numbers in monospace. Gradients are progressive enhancement —
-// background-color paints first so stripped clients still read fine.
+// carries the brand's REAL-flag bleed (pre-baked blurred strips that
+// overlap mid-tile, mirroring the app's FlagBleed — Troy's rule: real
+// flags, never colour gradients); the header is the animated orbit-mark
+// GIF. All numbers in monospace. Backgrounds are progressive
+// enhancement — background-color paints first, so clients that strip
+// them (Outlook desktop) still get clean dark tiles + crisp flag chips.
 
 const fmtPct = (v) => `${Math.round(Number(v))}%`;
 const fmtTime = (d) => d.toISOString().slice(11, 16) + ' UTC';
@@ -117,6 +120,22 @@ const esc = (s) => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 
 const HEADER_GIF = `${SITE}/email-header.gif`;
 const MONO = "'IBM Plex Mono',Menlo,Consolas,monospace";
+
+// Real-flag tile background — the brand's FlagBleed, pre-baked as alpha
+// WebP strips (see constants/nationFlags.js). Falls back to the plain
+// dark tile when a flag is unknown or a client drops background images.
+function tileStyle(home, away) {
+  const s = emailFlagStrips(home, away);
+  const base = 'background-color:#14161B;border:1px solid #26282e;border-radius:14px;padding:16px 18px;margin:10px 0';
+  if (!s) return base;
+  return `${base};background-image:url('${s.left}'),url('${s.right}');background-repeat:no-repeat,no-repeat;background-position:left center,right center;background-size:auto 100%,auto 100%`;
+}
+
+// Crisp little flag next to a team name — renders in every client.
+function chip(name) {
+  const u = flagChipUrl(name);
+  return u ? `<img src="${u}" width="18" height="12" alt="" style="border-radius:2px;vertical-align:-1px;border:0"/> ` : '';
+}
 
 // Plain-words confidence — no model-speak.
 const RISK_PLAIN = {
@@ -153,6 +172,24 @@ function probBar(m) {
   </div>`;
 }
 
+// One match as a flag-bled pick tile — shared by the daily email and the
+// welcome email (the welcome includes today's top pick as instant value).
+function pickTile(m) {
+  const edge = m.lean.edge != null && Number(m.lean.edge) >= 5;
+  return `
+    <div style="${tileStyle(m.home, m.away)}">
+      <div style="font-family:${MONO};font-size:11.5px;letter-spacing:.08em;color:#8a909b">${fmtTime(m.kickoff)}</div>
+      <div style="color:#ffffff;font-size:17px;font-weight:700;margin:5px 0 2px">${chip(m.home)}${esc(m.home)} v ${esc(m.away)} ${chip(m.away)}</div>
+      <div style="font-size:14.5px;color:#d6d9de;margin-top:4px">
+        Our pick: <b style="color:#fff">${esc(m.lean.team)}</b>
+        <span style="color:${RISK_COLOR[m.risk] || '#8a909b'};font-size:12.5px"> · ${RISK_PLAIN[m.risk] || ''}</span>
+      </div>
+      ${probBar(m)}
+      ${m.scoreline ? `<div style="color:#8a909b;font-size:12.5px;margin-top:8px">Most likely score: <span style="font-family:${MONO};color:#d6d9de">${esc(m.scoreline.score)}</span></div>` : ''}
+      ${edge ? `<div style="display:inline-block;margin-top:9px;padding:4px 10px;border:1px solid rgba(34,197,94,.45);border-radius:99px;color:#22C55E;font-size:12px;font-weight:700">The bookies are underrating ${esc(m.lean.team)} — worth a look</div>` : ''}
+    </div>`;
+}
+
 export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date() }) {
   const nToday = slate.length;
   const nRight = receipts.filter(x => x.prediction_correct).length;
@@ -172,10 +209,10 @@ export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date(
     const lean = leanOf(rcp);
     const exact = rcp.scoreline_exact; // optional flag if provided upstream
     return `
-    <div style="background-color:#14161B;background-image:${emailFlagBleed(rcp.home_team, rcp.away_team)};border:1px solid #26282e;border-radius:14px;padding:16px 18px;margin:10px 0">
+    <div style="${tileStyle(rcp.home_team, rcp.away_team)}">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="color:#ffffff;font-size:17px;font-weight:700">
-          ${esc(rcp.home_team)} <span style="font-family:${MONO}">${rcp.hg}–${rcp.ag}</span> ${esc(rcp.away_team)}
+          ${chip(rcp.home_team)}${esc(rcp.home_team)} <span style="font-family:${MONO}">${rcp.hg}–${rcp.ag}</span> ${esc(rcp.away_team)} ${chip(rcp.away_team)}
         </td>
         <td align="right" style="font-size:15px;font-weight:800;color:${hit ? '#22C55E' : '#EF4444'};white-space:nowrap">
           ${hit ? '✓ RIGHT' : '✗ WRONG'}
@@ -195,21 +232,7 @@ export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date(
     : '';
 
   // ── Today: pick tiles ──
-  const pickTiles = slate.map(m => {
-    const edge = m.lean.edge != null && Number(m.lean.edge) >= 5;
-    return `
-    <div style="background-color:#14161B;background-image:${emailFlagBleed(m.home, m.away)};border:1px solid #26282e;border-radius:14px;padding:16px 18px;margin:10px 0">
-      <div style="font-family:${MONO};font-size:11.5px;letter-spacing:.08em;color:#8a909b">${fmtTime(m.kickoff)}</div>
-      <div style="color:#ffffff;font-size:17px;font-weight:700;margin:5px 0 2px">${esc(m.home)} v ${esc(m.away)}</div>
-      <div style="font-size:14.5px;color:#d6d9de;margin-top:4px">
-        Our pick: <b style="color:#fff">${esc(m.lean.team)}</b>
-        <span style="color:${RISK_COLOR[m.risk] || '#8a909b'};font-size:12.5px"> · ${RISK_PLAIN[m.risk] || ''}</span>
-      </div>
-      ${probBar(m)}
-      ${m.scoreline ? `<div style="color:#8a909b;font-size:12.5px;margin-top:8px">Most likely score: <span style="font-family:${MONO};color:#d6d9de">${esc(m.scoreline.score)}</span></div>` : ''}
-      ${edge ? `<div style="display:inline-block;margin-top:9px;padding:4px 10px;border:1px solid rgba(34,197,94,.45);border-radius:99px;color:#22C55E;font-size:12px;font-weight:700">The bookies are underrating ${esc(m.lean.team)} — worth a look</div>` : ''}
-    </div>`;
-  }).join('');
+  const pickTiles = slate.map(pickTile).join('');
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background-color:#0B0B0D">
@@ -274,6 +297,70 @@ export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date(
     `Full reasoning: ${SITE}`,
     'Information, not betting advice. 18+. Unsubscribe: __UNSUB__',
   ].filter(Boolean).join('\n');
+
+  return { subject, html, text };
+}
+
+// ─── Welcome email (sent once at signup, same design system) ────────
+// Instant value: includes today's next call(s) so the first email isn't
+// an empty handshake. Falls back gracefully when there's no slate.
+export async function buildWelcomeEmail() {
+  const slate = await getTodaysSlate().catch(() => []);
+  const picks = slate.slice(0, 2);
+
+  const subject = picks.length
+    ? 'You’re in — your first pick is inside ⚽'
+    : 'You’re in ⚽ First picks land tomorrow morning';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0B0B0D">
+<div style="display:none;max-height:0;overflow:hidden">Every morning: who wins, how sure we are, and how we did yesterday.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+<div style="max-width:600px;margin:0 auto;padding:0 0 28px;background-color:#0B0B0D;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+
+  <a href="${SITE}" style="text-decoration:none">
+    <img src="${HEADER_GIF}" width="600" alt="Oddyessa — your morning calls" style="display:block;width:100%;max-width:600px;height:auto;border:0"/>
+  </a>
+
+  <div style="padding:6px 22px 0">
+    <h1 style="color:#ffffff;font-size:26px;margin:16px 0 8px;letter-spacing:-.01em">You’re in.</h1>
+    <p style="color:#aeb3bc;font-size:15px;line-height:1.65;margin:0 0 6px">
+      Every morning of the World Cup you’ll get one email from us:
+      <b style="color:#fff">who we think wins each game</b>, how sure we are,
+      and how we did the day before. We keep score in public — even when we’re wrong.
+    </p>
+
+    ${picks.length ? `
+    <h2 style="color:#ffffff;font-size:18px;margin:24px 0 2px;letter-spacing:-.01em">To get you started — ${picks.length === 1 ? 'today’s next call' : 'today’s next calls'}:</h2>
+    ${picks.map(pickTile).join('')}` : `
+    <p style="color:#d6d9de;font-size:15px;margin:18px 0">No games left today — your first picks land tomorrow morning, before kickoff.</p>`}
+
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:22px auto 0"><tr>
+      <td bgcolor="#A8344A" style="border-radius:12px">
+        <a href="${SITE}" style="display:inline-block;padding:13px 26px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none">See the reasoning behind every call →</a>
+      </td>
+    </tr></table>
+
+    <p style="color:#5d626c;font-size:11px;margin-top:30px;line-height:1.7;border-top:1px solid #26282e;padding-top:16px">
+      This is information, not betting advice. 18+ · <a href="https://www.begambleaware.org" style="color:#8a909b">BeGambleAware.org</a><br>
+      You signed up at oddyessa.com · <a href="__UNSUB__" style="color:#8a909b">Unsubscribe</a> any time.
+    </p>
+  </div>
+</div>
+</body></html>`;
+
+  const text = [
+    'You’re in — Oddyessa.',
+    '',
+    'Every morning of the World Cup you’ll get one email: who we think wins each game, how sure we are, and how we did the day before. We keep score in public — even when we’re wrong.',
+    '',
+    ...(picks.length ? [
+      'TO GET YOU STARTED:',
+      ...picks.map(m => `${fmtTime(m.kickoff)}  ${m.home} v ${m.away} — our pick: ${m.lean.team} (${fmtPct(m.lean.prob)} sure${RISK_PLAIN[m.risk] ? `, ${RISK_PLAIN[m.risk]}` : ''})`),
+      '',
+    ] : ['No games left today — your first picks land tomorrow morning.', '']),
+    `The reasoning behind every call: ${SITE}`,
+    'Information, not betting advice. 18+. Unsubscribe: __UNSUB__',
+  ].join('\n');
 
   return { subject, html, text };
 }
@@ -366,4 +453,4 @@ export async function catchUpDailyPicks() {
   return sendDailyPicks();
 }
 
-export default { sendDailyPicks, catchUpDailyPicks, buildDailyPicksEmail, dailyPicksStatus };
+export default { sendDailyPicks, catchUpDailyPicks, buildDailyPicksEmail, buildWelcomeEmail, dailyPicksStatus };
