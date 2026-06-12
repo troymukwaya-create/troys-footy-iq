@@ -19,7 +19,7 @@ import {
 import { sendEmail, emailEnabled } from './email.js';
 import { getRecentResults } from './resultService.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
-import { getNationColor, emailFlagBleed } from '../constants/nationColors.js';
+import { getNationColor, getBarColor, emailFlagBleed } from '../constants/nationColors.js';
 
 const SITE = 'https://oddyessa.com';
 const PUBLIC_API = (process.env.PUBLIC_API_URL || 'https://troys-footy-iq-api.onrender.com').replace(/\/+$/, '');
@@ -139,7 +139,7 @@ function probBar(m) {
   const h = Math.max(4, Math.round(m.probs.home));
   const a = Math.max(4, Math.round(m.probs.away));
   const d = Math.max(4, 100 - h - a);
-  const hc = getNationColor(m.home), ac = getNationColor(m.away);
+  const hc = getBarColor(m.home), ac = getBarColor(m.away);
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:2px 0;margin:10px 0 4px">
     <tr style="line-height:7px;font-size:1px">

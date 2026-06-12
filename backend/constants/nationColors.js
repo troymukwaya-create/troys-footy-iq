@@ -30,6 +30,23 @@ export function getNationColor(name) {
   return NATION_COLORS[name] || '#64748B';
 }
 
+// Probability-bar colours need a luminance floor: USA navy or Bosnia blue
+// on a dark tile makes the segment invisible, and an invisible favourite
+// reads as the OTHER side being favoured. Lift dark colours toward white
+// until the bar is legible; leave bright flags untouched.
+export function getBarColor(name) {
+  const hex = getNationColor(name);
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  // Visibility on a near-black tile tracks the strongest channel: saturated
+  // red (255,0,0) pops, deep navy (60,59,110) vanishes. Luminance gets this
+  // wrong — it would wash red while leaving navy alone.
+  const maxc = Math.max(r, g, b);
+  if (maxc >= 150) return hex;
+  const lift = 0.15 + ((150 - maxc) / 150) * 0.35;
+  const mix = (c) => Math.round(c + (255 - c) * lift);
+  return '#' + [r, g, b].map(c => mix(c).toString(16).padStart(2, '0')).join('');
+}
+
 // Same formula as the app's flagGradient, tightened to the edges so the
 // centre stays readable in a 600px email column. Returns ONLY the
 // gradient image — set background-color separately so clients that strip
