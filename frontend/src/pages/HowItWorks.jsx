@@ -124,6 +124,69 @@ function LineItem({ left, right, color }) {
 
 const Dashed = () => <div style={{ borderTop: '1px dashed rgba(255,255,255,0.16)', margin: '30px 0' }} />;
 
+// ─── COMPANY LIGHTS ──────────────────────────────────────────────────
+// The room the receipt prints in. Big blurred light beams in the brand
+// colours sweep slowly across the dark — GTA-loading-screen energy, but
+// oxblood instead of police blue. Pure transform animations on their own
+// GPU layers; statics for reduced-motion.
+function CompanyLights() {
+  const reduce = useReducedMotion();
+  const beams = [
+    { color: 'rgba(168,52,74,0.50)', top: '-6%', h: '24vmin', angle: -16, dur: 13, delay: 0 },
+    { color: 'rgba(122,31,43,0.42)', top: '30%', h: '30vmin', angle: -22, dur: 17, delay: -6 },
+    { color: 'rgba(40,90,180,0.30)', top: '58%', h: '26vmin', angle: -14, dur: 21, delay: -11 },
+    { color: 'rgba(247,244,238,0.10)', top: '82%', h: '16vmin', angle: -19, dur: 15, delay: -3 },
+  ];
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+      <style>{`
+        @keyframes beamSweep {
+          0%   { transform: translate3d(-38vw,0,0) rotate(var(--a)); }
+          100% { transform: translate3d(38vw,0,0) rotate(var(--a)); }
+        }
+      `}</style>
+      {beams.map((b, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute', left: '-30vmax', top: b.top,
+            width: '160vmax', height: b.h, borderRadius: 999,
+            background: `linear-gradient(90deg, transparent 8%, ${b.color} 50%, transparent 92%)`,
+            filter: 'blur(clamp(36px, 5vw, 70px))',
+            '--a': `${b.angle}deg`,
+            transform: `rotate(${b.angle}deg)`,
+            willChange: 'transform',
+            animation: reduce ? 'none' : `beamSweep ${b.dur}s ease-in-out ${b.delay}s infinite alternate`,
+          }}
+        />
+      ))}
+      {/* gentle vignette keeps the centre calm so the paper stays the hero */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 60% at 50% 38%, rgba(11,11,13,0.42), transparent 75%)' }} />
+    </div>
+  );
+}
+
+// Faint printed marginalia — desktop only, so the wide canvas reads as a
+// composed page rather than empty space around a narrow receipt.
+function Marginalia() {
+  const note = (side, text) => (
+    <div aria-hidden style={{
+      position: 'fixed', top: '50%', [side]: 'clamp(14px,2.5vw,44px)', zIndex: 1,
+      transform: `translateY(-50%)${side === 'left' ? ' rotate(180deg)' : ''}`,
+      writingMode: 'vertical-rl',
+      fontFamily: MONO, fontSize: 12, letterSpacing: '0.34em',
+      color: 'rgba(255,255,255,0.30)', whiteSpace: 'nowrap',
+    }}>{text}</div>
+  );
+  return (
+    <div className="pt-marginalia">
+      <style>{`@media (max-width: 1099px) { .pt-marginalia { display: none; } }`}</style>
+      {note('left', 'WORLD CUP 2026 · 104 MATCHES · 104 RECEIPTS')}
+      {note('right', 'EVERY CALL LOCKED BEFORE KICKOFF · MISSES PRINTED TOO')}
+    </div>
+  );
+}
+
 export default function HowItWorks() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
@@ -140,20 +203,20 @@ export default function HowItWorks() {
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#0B0B0D', color: 'var(--text-primary)', overflowX: 'hidden' }}>
-      {/* faint spotlight down the middle — the only light in the room */}
-      <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', background: 'radial-gradient(640px 380px at 50% -8%, rgba(168,52,74,0.12), transparent 65%)' }} />
+    <div style={{ minHeight: '100dvh', background: '#0B0B0D', color: 'var(--text-primary)', overflowX: 'hidden', fontFamily: "'Archivo', system-ui, sans-serif" }}>
+      <CompanyLights />
+      <Marginalia />
 
-      {/* the printer slot, fixed — the paper feeds through it as you scroll */}
-      <div aria-hidden style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', width: 'min(700px, 96vw)', height: 22, zIndex: 10, background: '#050506', borderRadius: 11, border: '1px solid rgba(255,255,255,0.12)', boxShadow: 'inset 0 3px 9px rgba(0,0,0,0.9), 0 6px 18px rgba(0,0,0,0.5)' }}>
-        <div style={{ position: 'absolute', left: 20, right: 20, top: 9, height: 4, borderRadius: 2, background: '#000' }} />
+      {/* the printer slot — part of the page, scrolls away with the paper */}
+      <div aria-hidden style={{ position: 'relative', zIndex: 2, width: 'min(780px, 97vw)', height: 24, margin: '26px auto 0', background: '#050506', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)', boxShadow: 'inset 0 3px 9px rgba(0,0,0,0.9), 0 14px 30px rgba(0,0,0,0.55)' }}>
+        <div style={{ position: 'absolute', left: 22, right: 22, top: 10, height: 4, borderRadius: 2, background: '#000' }} />
       </div>
 
       {/* ── THE PAPER ── */}
       <motion.div
         animate={tearing ? { y: -40, opacity: 0.92 } : {}}
         transition={{ duration: 0.5, ease }}
-        style={{ position: 'relative', width: 'min(620px, 92vw)', margin: '24px auto 0', background: '#14161B', border: '1px solid rgba(255,255,255,0.10)', borderTop: 'none', boxShadow: '0 40px 110px rgba(0,0,0,0.6)', padding: 'clamp(34px,7vw,56px) clamp(22px,6vw,54px) 0' }}
+        style={{ position: 'relative', zIndex: 1, width: 'min(700px, 93vw)', margin: '-12px auto 0', background: '#14161B', border: '1px solid rgba(255,255,255,0.10)', borderTop: 'none', boxShadow: '0 40px 110px rgba(0,0,0,0.6)', padding: 'clamp(40px,7vw,60px) clamp(22px,6vw,58px) 0' }}
       >
         {/* header zone gets the subtlest hint of the day's flags */}
         <div style={{ textAlign: 'center' }}>
@@ -172,8 +235,8 @@ export default function HowItWorks() {
 
           <Dashed />
 
-          <motion.h1 {...print} className="font-display" style={{ fontSize: 'clamp(28px,7vw,40px)', fontWeight: 800, lineHeight: 1.12, letterSpacing: '-0.01em', margin: 0 }}>
-            Football predictions<br />that <span style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>show their work.</span>
+          <motion.h1 {...print} className="font-display" style={{ fontSize: 'clamp(28px,7vw,38px)', fontWeight: 800, lineHeight: 1.14, letterSpacing: '-0.01em', margin: 0 }}>
+            Football predictions that <span style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>show their work.</span>
           </motion.h1>
           <motion.p {...print} style={{ fontSize: 'clamp(14px,3.8vw,17px)', lineHeight: 1.6, color: 'rgba(255,255,255,0.6)', maxWidth: 430, margin: '16px auto 0' }}>
             Before every match we work out who should win, the likely score,
@@ -236,10 +299,10 @@ export default function HowItWorks() {
         whileHover={reduce ? {} : { rotate: 0.8 }}
         transition={{ duration: 0.5, ease }}
         style={{
-          display: 'block', width: 'min(620px, 92vw)', margin: '0 auto 70px', cursor: 'pointer',
+          display: 'block', position: 'relative', zIndex: 1, width: 'min(700px, 93vw)', margin: '0 auto 70px', cursor: 'pointer',
           background: '#14161B', color: 'inherit', border: '1px solid rgba(255,255,255,0.10)', borderTop: 'none',
           boxShadow: '0 40px 110px rgba(0,0,0,0.6)', padding: 'clamp(20px,5vw,28px)',
-          textAlign: 'center', transformOrigin: '20% 0%',
+          textAlign: 'center', transformOrigin: '20% 0%', fontFamily: "'Archivo', system-ui, sans-serif",
         }}
         aria-label="Tear the receipt and step inside Oddyessa"
       >
