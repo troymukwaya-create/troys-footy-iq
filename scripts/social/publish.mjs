@@ -122,8 +122,50 @@ async function postX() {
   console.log(`x: posted ${kind} — tweet ${j.data.id}`);
 }
 
+// ─── Instagram (Graph API — images by public URL only) ──────────────
+// The workflow commits the morning's cards to the social-assets branch
+// and passes IMAGE_BASE_URL (raw.githubusercontent). Text-only posts
+// (picks) are skipped — Instagram requires media.
+async function postInstagram() {
+  const token = process.env.IG_ACCESS_TOKEN, uid = process.env.IG_USER_ID;
+  if (!token || !uid) { console.log('instagram: secrets missing — skipped'); return; }
+  if (!images.length) { console.log('instagram: text-only post — skipped (IG needs media)'); return; }
+  const base = process.env.IMAGE_BASE_URL;
+  if (!base) { console.log('instagram: IMAGE_BASE_URL missing — skipped'); return; }
+
+  const API = 'https://graph.instagram.com/v23.0';
+  const call = async (p, params) => {
+    const r = await fetch(`${API}/${p}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ ...params, access_token: token }),
+    });
+    const j = await r.json();
+    if (!j.id) throw new Error(`ig ${p} failed: ${JSON.stringify(j).slice(0, 300)}`);
+    return j.id;
+  };
+
+  const urls = images.slice(0, 10).map(f => `${base}/${path.basename(f)}`);
+  let containerId;
+  if (urls.length === 1) {
+    containerId = await call(`${uid}/media`, { image_url: urls[0], caption: payload.caption });
+  } else {
+    const children = [];
+    for (const u of urls) children.push(await call(`${uid}/media`, { image_url: u, is_carousel_item: 'true' }));
+    containerId = await call(`${uid}/media`, { media_type: 'CAROUSEL', children: children.join(','), caption: payload.caption });
+  }
+  for (let i = 0; i < 10; i++) {
+    const s = await (await fetch(`${API}/${containerId}?fields=status_code&access_token=${token}`)).json();
+    if (s.status_code === 'FINISHED') break;
+    if (s.status_code === 'ERROR') throw new Error('ig container processing failed');
+    await new Promise(r => setTimeout(r, 3000));
+  }
+  const postId = await call(`${uid}/media_publish`, { creation_id: containerId });
+  console.log(`instagram: posted ${kind} — ${postId} (${urls.length} images)`);
+}
+
 let failed = false;
-for (const [name, fn] of [['telegram', postTelegram], ['x', postX]]) {
+for (const [name, fn] of [['telegram', postTelegram], ['x', postX], ['instagram', postInstagram]]) {
   try { await fn(); }
   catch (e) { failed = true; console.error(`${name}: ${e.message}`); }
 }

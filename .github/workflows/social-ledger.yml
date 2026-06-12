@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write   # pushes the morning's cards to the social-assets branch (public URLs for Instagram)
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -32,6 +32,22 @@ jobs:
         working-directory: scripts/social
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+      - name: host cards publicly (social-assets branch → raw URLs for Instagram)
+        id: host
+        run: |
+          if ls scripts/social/out/*.png >/dev/null 2>&1; then
+            DATE=$(date -u +%F)
+            git config user.name "oddyessa-bot"
+            git config user.email "bot@oddyessa.com"
+            git fetch origin social-assets:social-assets || git branch social-assets
+            git worktree add /tmp/assets social-assets
+            mkdir -p "/tmp/assets/$DATE"
+            cp scripts/social/out/*.png "/tmp/assets/$DATE/"
+            cd /tmp/assets && git add . && git commit -m "social assets $DATE" && git push origin social-assets
+            echo "IMAGE_BASE_URL=https://raw.githubusercontent.com/${{ github.repository }}/social-assets/$DATE" >> "$GITHUB_ENV"
+          else
+            echo "no cards generated — nothing to host"
+          fi
       - name: publish
         run: node publish.mjs ledger
         working-directory: scripts/social
@@ -42,6 +58,8 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
       - name: keep the morning's pack as an artifact (Troy can download for LinkedIn/Reddit)
         if: always()
         uses: actions/upload-artifact@v4
