@@ -11,12 +11,19 @@ on:
         description: 'Generate + host only, skip posting'
         type: boolean
         default: false
+      match_id:
+        description: 'Single-match receipt mode: external fixture id (e.g. apf_1539000). Empty = normal morning ledger.'
+        type: string
+        default: ''
 
 permissions:
   contents: write   # pushes the morning's cards to the social-assets branch (public URLs for Instagram)
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  # cron runs have no inputs → MODE defaults to the morning ledger
+  MODE: ${{ inputs.match_id != '' && inputs.match_id != null && 'match' || 'ledger' }}
+  MATCH_ID: ${{ inputs.match_id }}
 
 jobs:
   post:
@@ -35,7 +42,7 @@ jobs:
           npm i --no-save puppeteer-core@latest
         working-directory: scripts/social
       - name: generate cards + captions
-        run: node generate.mjs ledger
+        run: node generate.mjs $MODE $MATCH_ID
         working-directory: scripts/social
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
@@ -57,7 +64,7 @@ jobs:
           fi
       - name: publish
         if: ${{ inputs.dry_run != true }}
-        run: node publish.mjs ledger
+        run: node publish.mjs $MODE
         working-directory: scripts/social
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

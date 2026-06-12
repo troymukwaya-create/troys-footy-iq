@@ -41,3 +41,4 @@ memory/
 backend/data/
 scripts/social/out/
 scripts/social/node_modules/
+scripts/social/state.json

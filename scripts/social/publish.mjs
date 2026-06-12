@@ -3,7 +3,7 @@
 // without its secrets is skipped with a notice, never an error — so the
 // pipeline ships before every account exists and lights up one by one.
 //
-//   node publish.mjs ledger|picks
+//   node publish.mjs ledger|picks|match
 //
 // Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL
 //          X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET
@@ -16,7 +16,7 @@ import crypto from 'crypto';
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(DIR, 'out');
 const kind = process.argv[2];
-if (!['ledger', 'picks'].includes(kind)) { console.error('usage: node publish.mjs ledger|picks'); process.exit(1); }
+if (!['ledger', 'picks', 'match', 'prematch'].includes(kind)) { console.error('usage: node publish.mjs ledger|picks|match|prematch'); process.exit(1); }
 
 const payloadPath = path.join(OUT, `${kind}.json`);
 if (!existsSync(payloadPath)) { console.error(`missing ${payloadPath} — run generate.mjs first`); process.exit(1); }

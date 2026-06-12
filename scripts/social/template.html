@@ -122,6 +122,55 @@
     border-radius:10px;padding:9px 20px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:20px;letter-spacing:.1em;
     background:rgba(34,197,94,.07);z-index:3;}
   .stamp.miss{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.07);}
+
+  /* ── PRE-MATCH "THE CALL" — X 1600×900 + IG 1080×1350 ── */
+  #prematch{width:1600px;height:900px;padding:60px 72px;display:flex;flex-direction:column;background:var(--chrome);}
+  #prematch-ig{width:1080px;height:1350px;padding:64px 60px;display:flex;flex-direction:column;background:var(--chrome);}
+  .pm-kicker{font-family:'IBM Plex Mono',monospace;font-size:19px;letter-spacing:.14em;color:var(--t60);}
+  .pm-stage{position:relative;overflow:hidden;border-radius:18px;background:#14161B;border:1px solid var(--rule);
+    padding:40px 48px;margin-top:34px;}
+  .pm-teams{font-stretch:116%;font-weight:800;color:var(--t92);line-height:1.06;}
+  #prematch .pm-teams{font-size:64px;}
+  #prematch-ig .pm-teams{font-size:66px;}
+  #prematch-ig .pm-mid{flex:1;display:flex;flex-direction:column;justify-content:center;}
+  #prematch-ig .pm-stage{padding:52px 46px;}
+  #prematch-ig .pm-bar{height:20px;margin-top:34px;}
+  #prematch-ig .pm-why{margin-top:36px;gap:16px;}
+  #prematch-ig .pm-score{margin-top:34px;}
+  .pm-teams .vs{color:var(--t36);font-weight:600;}
+  .pm-ko{font-family:'IBM Plex Mono',monospace;font-size:20px;color:var(--t60);margin-top:12px;letter-spacing:.1em;}
+  .pm-callrow{display:flex;align-items:baseline;gap:22px;margin-top:30px;flex-wrap:wrap;}
+  .pm-call{font-stretch:116%;font-weight:800;color:var(--ox);}
+  #prematch .pm-call{font-size:54px;}
+  #prematch-ig .pm-call{font-size:56px;}
+  .pm-callpct{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--t92);}
+  #prematch .pm-callpct{font-size:54px;}
+  #prematch-ig .pm-callpct{font-size:56px;}
+  .pm-risk{align-self:center;padding:8px 18px;border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:17px;
+    font-weight:700;letter-spacing:.12em;}
+  .pm-risk.high{background:rgba(234,179,8,.1);border:1.5px solid rgba(234,179,8,.5);color:var(--gold);}
+  .pm-risk.med{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.22);color:var(--t60);}
+  .pm-risk.low{background:rgba(34,197,94,.1);border:1.5px solid rgba(34,197,94,.5);color:var(--green);}
+  .pm-bar{display:flex;height:16px;border-radius:8px;overflow:hidden;margin-top:28px;background:rgba(255,255,255,.06);}
+  .pm-bar .seg{height:100%;}
+  .pm-bar .seg.pick{background:var(--ox);}
+  .pm-bar .seg.other{background:rgba(255,255,255,.16);}
+  .pm-bar .seg + .seg{border-left:2px solid #14161B;}
+  .pm-barlab{display:flex;justify-content:space-between;margin-top:12px;font-family:'IBM Plex Mono',monospace;
+    font-size:19px;color:var(--t60);}
+  .pm-barlab b{color:var(--t92);font-weight:600;}
+  .pm-why{margin-top:30px;display:flex;flex-direction:column;gap:12px;}
+  .pm-why .wline{display:flex;gap:14px;align-items:baseline;font-size:21px;color:var(--t60);line-height:1.45;}
+  #prematch-ig .pm-why .wline{font-size:22px;}
+  .pm-why .wline .arr{font-family:'IBM Plex Mono',monospace;color:var(--ox);font-weight:700;flex-shrink:0;}
+  .pm-why .wline b{color:var(--t92);font-weight:600;}
+  .pm-score{display:inline-flex;align-items:baseline;gap:12px;margin-top:26px;padding:12px 20px;border-radius:12px;
+    background:var(--card2, #181B21);border:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;font-size:19px;color:var(--t60);}
+  .pm-score b{color:var(--t92);font-weight:700;font-size:23px;}
+  .pm-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;}
+  #prematch-ig .pm-foot{flex-direction:column;align-items:center;text-align:center;gap:8px;}
+  .pm-foot .note{font-size:19px;color:var(--t36);line-height:1.5;}
+  .pm-foot .url{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--t60);}
 </style>
 </head>
 <body>
@@ -129,6 +178,8 @@
 <div class="card" id="ledger"></div>
 <div class="card" id="ledger-ig"></div>
 <div class="card" id="receipt-stage"><div class="paper bleedwrap" id="paper"></div></div>
+<div class="card" id="prematch"></div>
+<div class="card" id="prematch-ig"></div>
 
 <script>
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -244,6 +295,59 @@
         <div class="note">${esc(d.note)}</div>
         <div class="url">every call locked before kickoff · oddyessa.com</div>
       </div>`;
+  };
+
+  // d: {kicker, home, away, ko, pick, pickPct, risk:'HIGH'|'MEDIUM'|'LOW',
+  //     probs:{home,draw,away}, homeAbbr, awayAbbr, reasons:[{text}],
+  //     scoreline, scorelinePct, hIso, aIso, note}
+  const pmStage = (d, nReasons) => {
+    const riskCls = d.risk === 'HIGH' ? 'high' : d.risk === 'LOW' ? 'low' : 'med';
+    const riskTxt = d.risk === 'HIGH' ? 'COIN FLIP' : d.risk === 'LOW' ? 'CONFIDENT' : 'OUR LEAN';
+    const pickKey = d.pick === 'Draw' ? 'draw' : (d.pick === d.home ? 'home' : 'away');
+    const seg = (k) => `<div class="seg ${k === pickKey ? 'pick' : 'other'}" style="width:${Math.max(2, d.probs[k])}%"></div>`;
+    const reasons = d.reasons.slice(0, nReasons).map(r =>
+      `<div class="wline"><span class="arr">→</span><span>${r.text}</span></div>`).join('');
+    return `
+      <div class="pm-stage bleedwrap">
+        ${bleed(d.hIso, d.aIso, '.33')}
+        <div class="pm-teams">${esc(d.home)} <span class="vs">v</span> ${esc(d.away)}</div>
+        <div class="pm-ko">${esc(d.ko)}</div>
+        <div class="pm-callrow">
+          <span class="pm-call">${esc(d.pick === 'Draw' ? 'DRAW' : d.pick.toUpperCase() + ' WIN')}</span>
+          <span class="pm-callpct">${Math.round(d.pickPct)}%</span>
+          <span class="pm-risk ${riskCls}">${riskTxt}</span>
+        </div>
+        <div class="pm-bar">${seg('home')}${seg('draw')}${seg('away')}</div>
+        <div class="pm-barlab">
+          <span><b>${esc(d.homeAbbr)}</b> ${Math.round(d.probs.home)}%</span>
+          <span>DRAW ${Math.round(d.probs.draw)}%</span>
+          <span><b>${esc(d.awayAbbr)}</b> ${Math.round(d.probs.away)}%</span>
+        </div>
+        <div class="pm-why">${reasons}</div>
+        ${d.scoreline ? `<div class="pm-score">MOST LIKELY <b>${esc(d.scoreline)}</b> ${d.scorelinePct ? `(${Math.round(d.scorelinePct)}%)` : ''}</div>` : ''}
+      </div>`;
+  };
+  const pmTop = (kicker) => `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <svg width="44" height="44" viewBox="0 0 100 100" style="vertical-align:middle;margin-right:14px">
+            <path d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" stroke-width="9" stroke-linecap="round"/>
+            <circle cx="69.8" cy="30.2" r="8" fill="#A8344A"/>
+          </svg><span class="wordmark"><b>Odd</b>yessa</span>
+        </div>
+        <div class="pm-kicker">${esc(kicker)}</div>
+      </div>`;
+  const pmFoot = `
+      <div class="pm-foot">
+        <div class="note">Numbers can shift until the forecast locks 10 minutes before kickoff —<br>the locked call is what we grade ourselves on, in public.</div>
+        <div class="url">oddyessa.com</div>
+      </div>`;
+
+  window.renderPrematch = (d) => {
+    document.getElementById('prematch').innerHTML = pmTop(d.kicker) + pmStage(d, 2) + pmFoot;
+  };
+  window.renderPrematchIG = (d) => {
+    document.getElementById('prematch-ig').innerHTML = pmTop(d.kicker) + `<div class="pm-mid">${pmStage(d, 3)}</div>` + pmFoot;
   };
 
   window.imagesReady = async () => {

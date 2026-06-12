@@ -1,0 +1,85 @@
+# Matchday automation — the strict schedule.
+# Every ~30 min: engine check → pre-match call card ~3h before each WC
+# kickoff (with reasoning) → post-match receipt as soon as the engine
+# grades a game → red run (email) if a finished game is still ungraded.
+# State (what's already posted) lives on the social-assets branch.
+name: social-matchday
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # cards + state go to the social-assets branch (public URLs for Instagram)
+
+concurrency:
+  group: social-matchday
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+      - name: install renderer + finisher
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          npm i --no-save puppeteer-core@latest
+        working-directory: scripts/social
+      - name: fetch posted-state from social-assets
+        run: |
+          git fetch origin social-assets:social-assets 2>/dev/null || true
+          git show social-assets:state/posted.json > scripts/social/state.json 2>/dev/null \
+            && echo "state loaded" || echo "no state yet — orchestrator will seed a baseline"
+      - name: decide + generate due cards
+        run: node matchday.mjs
+        working-directory: scripts/social
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          STATE_PATH: ${{ github.workspace }}/scripts/social/state.json
+      - name: host cards + commit state (social-assets branch)
+        run: |
+          if [ -f scripts/social/out/state-next.json ]; then
+            DATE=$(date -u +%F)
+            git config user.name "oddyessa-bot"
+            git config user.email "bot@oddyessa.com"
+            git fetch origin social-assets:social-assets 2>/dev/null || git branch social-assets
+            git worktree add /tmp/assets social-assets
+            mkdir -p "/tmp/assets/$DATE" /tmp/assets/state
+            ls scripts/social/out/*.png >/dev/null 2>&1 && cp scripts/social/out/*.png "/tmp/assets/$DATE/" || true
+            cp scripts/social/out/state-next.json /tmp/assets/state/posted.json
+            cd /tmp/assets && git add . \
+              && (git commit -m "matchday tick $(date -u +%FT%H:%M)" && git push origin social-assets) || echo "nothing new to commit"
+            echo "IMAGE_BASE_URL=https://raw.githubusercontent.com/${{ github.repository }}/social-assets/$DATE" >> "$GITHUB_ENV"
+          fi
+      - name: publish whatever is due
+        run: |
+          for k in prematch match; do
+            if [ -f "out/$k.json" ]; then node publish.mjs "$k"; fi
+          done
+        working-directory: scripts/social
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      - name: keep the tick's pack as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matchday-${{ github.run_id }}
+          path: scripts/social/out/
+          retention-days: 3

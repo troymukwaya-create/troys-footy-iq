@@ -287,7 +287,273 @@ async function generatePicks() {
   console.log(`picks generated: ${slate.length} matches`);
 }
 
+// ─── single-match evening receipt ───────────────────────────────────
+// For the result that can't wait for the morning ledger: one settled
+// match, full receipt treatment, evening-voice captions.
+//   node generate.mjs match apf_1539000
+async function generateMatch(externalId) {
+  if (!externalId) { console.error('usage: node generate.mjs match <external_id>'); process.exit(1); }
+  const [recent, stats] = await Promise.all([getJson(`${API}/results/recent`), getLedgerStats()]);
+  const s = (recent.data || []).find(r => r.match_external_id === externalId);
+  if (!s) {
+    writeFileSync(path.join(OUT, 'match.json'), JSON.stringify({ skip: true, reason: `${externalId} not scored yet` }));
+    console.log(`${externalId} is not on the ledger yet — has the scoring run fired?`);
+    return;
+  }
+  let verdict = null;
+  try {
+    const a = await getJson(`${API}/analysis/${externalId}`);
+    verdict = a?.verdict || a?.data?.verdict || null;
+  } catch { /* receipt still works without the verdict extras */ }
+
+  const hit = !!s.prediction_correct;
+  const exact = !!verdict?.scoreline?.exact;
+  const lean = { HOME: s.home_team, DRAW: 'Draw', AWAY: s.away_team }[s.predicted_outcome];
+  const leanP = { HOME: s.prob_home, DRAW: s.prob_draw, AWAY: s.prob_away }[s.predicted_outcome];
+  const ft = `${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals}`;
+  const firstMiss = !hit && stats && (stats.total - stats.correct) === 1;
+
+  const headline = !hit && exact ? { a: 'The call missed.', b: 'The scoreline didn’t.' }
+    : hit && exact ? { a: 'Called it.', b: 'Exact score, again.' }
+    : hit ? { a: 'Called it.', b: 'The ledger grows.' }
+    : { a: 'A miss.', b: 'Printed anyway.' };
+
+  const row = {
+    abbr: `${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)}`,
+    hit,
+    line: `<b>${lean} @ ${pct(leanP)}</b>${exact ? ` · scoreline ${verdict.scoreline.actual} called exact` : ''}`,
+    brier: Number(s.brier_score).toFixed(3),
+    hIso: iso(s.home_team), aIso: iso(s.away_team),
+    hg: s.ft_home_goals ?? s.home_goals, ag: s.ft_away_goals ?? s.away_goals,
+  };
+  const note = stats && stats.total < 20
+    ? `n = ${stats.total}. It’s early. The ledger doesn’t care how it looks.`
+    : 'Every result, in the same font.';
+
+  const items = [
+    { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res: hit ? 'hit' : 'miss' },
+    ...(!hit ? [{ sub: firstMiss ? 'our first miss. it stays on the receipt.' : 'missed. it stays on the receipt.' }] : []),
+    ...(verdict?.scoreline ? [{ lab: `SCORELINE ${verdict.scoreline.predicted}`, val: pct(verdict.scoreline.predictedProb), res: exact ? 'hit' : 'miss' },
+      exact ? { sub: 'top of our grid · exact hit' } : { sub: `actual ${verdict.scoreline.actual}${verdict.scoreline.rankInTop ? ` — sat #${verdict.scoreline.rankInTop} in our grid` : ''}` }] : []),
+    ...((verdict?.marketCalls || []).map(mc => ({ lab: mc.label.toUpperCase(), val: pct(mc.prob), res: mc.hit ? 'hit' : 'miss' }))),
+  ];
+  const he = flagEmoji(s.home_team), ae = flagEmoji(s.away_team);
+
+  await withPage(async (page) => {
+    await page.evaluate((d) => window.renderLedger(d), {
+      results: [row], headline,
+      kicker: `WORLD CUP 2026 · TONIGHT’S RECEIPT · ${new Date().toISOString().slice(0, 10)}`,
+      note, ours: stats ? stats.brier : 0.187,
+    });
+    await page.evaluate(() => window.imagesReady());
+    await (await page.$('#ledger')).screenshot({ path: path.join(OUT, 'match-x.png') });
+
+    await page.evaluate((d) => window.renderLedgerIG(d), {
+      results: [row], headline,
+      kickerShort: 'TONIGHT’S RECEIPT',
+      note: stats && stats.total < 20 ? `n = ${stats.total}. It’s early.` : 'Every result, in the same font.',
+      ours: stats ? stats.brier : 0.187,
+    });
+    await page.evaluate(() => window.imagesReady());
+    await (await page.$('#ledger-ig')).screenshot({ path: path.join(OUT, 'match-ig-raw.png') });
+
+    await page.evaluate((r) => window.renderReceipt(r), {
+      title: `${he} ${s.home_team} v ${s.away_team} ${ae}`,
+      ft,
+      kicker: 'MATCH RECEIPT · WORLD CUP 2026',
+      meta: `${new Date(s.match_date).toISOString().slice(0, 10).toUpperCase()} · LOCKED BEFORE KICKOFF`,
+      items,
+      brier: Number(s.brier_score).toFixed(4),
+      stampText: hit ? (exact ? 'SETTLED · EXACT' : 'SETTLED · CALLED') : (exact ? 'SETTLED · SPLIT' : 'SETTLED · MISSED'),
+      stampMiss: !hit,
+      hIso: iso(s.home_team), aIso: iso(s.away_team),
+    });
+    await page.evaluate(() => window.imagesReady());
+    await (await page.$('#receipt-stage')).screenshot({ path: path.join(OUT, 'match-receipt.png') });
+  });
+
+  // IG-native finishing (exact 1080×1350); local machines without ffmpeg
+  // fall back to the raw render so previews still work.
+  const { execFileSync } = await import('child_process');
+  const { copyFileSync } = await import('fs');
+  const finish = (src_, dst) => {
+    try {
+      execFileSync('ffmpeg', ['-y', '-i', path.join(OUT, src_),
+        '-vf', 'scale=1080:1350:flags=lanczos,unsharp=5:5:0.45,eq=contrast=1.05:saturation=1.06',
+        path.join(OUT, dst)], { stdio: 'pipe' });
+    } catch {
+      copyFileSync(path.join(OUT, src_), path.join(OUT, dst));
+      console.warn(`ffmpeg unavailable — ${dst} is the raw render`);
+    }
+  };
+  finish('match-ig-raw.png', 'match-ig.png');
+  finish('match-receipt.png', 'match-receipt-ig.png');
+
+  // evening-voice captions, platform-adapted
+  const missLine = firstMiss
+    ? 'our first missed call, printed in the same font as the wins.'
+    : 'missed — printed in the same font as the wins.';
+  const marketBits = (verdict?.marketCalls || []).filter(mc => mc.hit).map(mc => `${mc.label} ✓`).join(' · ');
+  const caption = [
+    `Tonight: ${he} ${s.home_team} ${ft} ${s.away_team} ${ae}`,
+    '',
+    hit
+      ? `We said ${lean} (${pct(leanP)}) — and that’s how it went.${exact ? ` We had ${verdict.scoreline.actual} as the most likely score before kickoff, too.` : ''}`
+      : `We said ${lean} (${pct(leanP)}). It finished ${ft} — ${missLine}`,
+    ...(!hit && exact ? ['', `The scoreline, though: ${verdict.scoreline.actual} was the top of our grid before kickoff (${pct(verdict.scoreline.predictedProb)}).${marketBits ? ` ${marketBits}` : ''}`] : (marketBits ? ['', marketBits] : [])),
+    '',
+    stats ? `World Cup so far: ${stats.correct} of ${stats.total} winners called.` : '',
+    'Every call locked before kickoff, graded in public.',
+    'oddyessa.com',
+  ].filter(l => l !== null).join('\n');
+
+  const tags = buildHashtags([[s.home_team, s.away_team]]);
+  let xCap = [
+    `Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}`,
+    '',
+    hit ? `Winner ✓ called — ${lean} ${pct(leanP)}.` : `The call missed — we said ${lean} ${pct(leanP)}. Printed anyway.`,
+    ...(exact ? [`The scoreline ${hit ? 'too' : 'didn’t'} — ${verdict.scoreline.actual} sat top of our grid before kickoff. ✓`] : []),
+    '',
+    'Receipts attached — full ledger in bio.',
+    '',
+    tags.x,
+  ].join('\n');
+  if (xCap.length > 278) xCap = `Tonight: ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} — ${hit ? 'called ✓' : 'the call missed, printed anyway'}${exact ? ' · exact score ✓' : ''}. Receipts attached.\n\n${tags.x}`;
+
+  writeFileSync(path.join(OUT, 'match.json'), JSON.stringify({
+    caption: caption + '\n\n' + tags.tg,
+    captionX: xCap,
+    hashtagsIG: tags.ig,
+    images: ['match-x.png', 'match-receipt.png'],
+    imagesIG: ['match-ig.png', 'match-receipt-ig.png'],
+  }, null, 2));
+  console.log(`match receipt generated for ${externalId}: ${hit ? 'hit' : 'miss'}${exact ? ' + exact scoreline' : ''}`);
+}
+
+// ─── pre-match call card (posted ~3h before kickoff) ────────────────
+//   node generate.mjs prematch apf_1489370
+async function generatePrematch(externalId) {
+  if (!externalId) { console.error('usage: node generate.mjs prematch <external_id>'); process.exit(1); }
+  const up = await getJson(`${API}/fixtures/upcoming`);
+  let f = (up.fixtures || []).find(x => x.id === externalId);
+  if (!f) {
+    const all = await getJson(`${API}/fixtures/all`);
+    f = (all.fixtures || []).find(x => x.id === externalId);
+  }
+  if (!f?.probability?.probabilities) {
+    writeFileSync(path.join(OUT, 'prematch.json'), JSON.stringify({ skip: true, reason: `${externalId} has no live probabilities` }));
+    console.log(`${externalId}: no probabilities — pre-match post skipped`);
+    return;
+  }
+  // the analysis payload carries the plain-words reasoning + scoreline grid
+  let p = f.probability;
+  try {
+    const a = await getJson(`${API}/analysis/${externalId}`);
+    if (a?.probability?.probabilities) p = a.probability;
+  } catch { /* fixture-level probabilities are enough */ }
+
+  const home = f.homeTeam.name, away = f.awayTeam.name;
+  const { home: ph, draw: pd, away: pa } = p.probabilities;
+  const pick = ph >= pd && ph >= pa ? home : (pa >= pd ? away : 'Draw');
+  const pickPct = pick === home ? ph : pick === away ? pa : pd;
+  const risk = p.riskLevel || 'MEDIUM';
+  const top = p.topScorelines?.[0] || null;
+  const pickSide = pick === home ? 'home' : pick === away ? 'away' : 'draw';
+
+  // Reasons, in honesty order: the strongest backing line, then the
+  // strongest counter (the X card shows exactly these two), then the
+  // value flag when the books disagree with the model, then more backing.
+  const all = (p.reasoning?.reasons || []).filter(r => r.text && r.key !== 'goals');
+  const backing = all.filter(r => r.favors === pickSide);
+  const counter = all.filter(r => r.favors !== pickSide && r.favors !== 'even');
+  const reasons = [];
+  if (backing[0]) reasons.push({ text: backing[0].text });
+  if (counter[0]) reasons.push({ text: counter[0].text });
+  const edges = p.valueEdges || {};
+  const [edgeKey, edgeVal] = Object.entries(edges).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0] || [null, 0];
+  if (edgeKey && edgeVal >= 5) {
+    const edgeName = { home, draw: 'the draw', away }[edgeKey];
+    reasons.push({ text: `Value flag: the books underrate ${edgeName} by ${Math.round(edgeVal)} points.` });
+  }
+  if (backing[1]) reasons.push({ text: backing[1].text });
+  if (!reasons.length && p.reasoning?.headline) reasons.push({ text: p.reasoning.headline });
+
+  const hoursToKo = Math.max(1, Math.round((new Date(f.date) - Date.now()) / 3600000));
+  const cardData = {
+    kicker: `THE CALL · KICKS OFF IN ~${hoursToKo}H`,
+    home, away,
+    ko: `${fmtTime(f.date)} · WORLD CUP 2026`,
+    pick, pickPct, risk,
+    probs: { home: ph, draw: pd, away: pa },
+    homeAbbr: abbr(home), awayAbbr: abbr(away),
+    reasons,
+    scoreline: top?.score || null, scorelinePct: top?.probability || null,
+    hIso: iso(home), aIso: iso(away),
+  };
+
+  await withPage(async (page) => {
+    await page.evaluate((d) => window.renderPrematch(d), cardData);
+    await page.evaluate(() => window.imagesReady());
+    await (await page.$('#prematch')).screenshot({ path: path.join(OUT, 'prematch-x.png') });
+    await page.evaluate((d) => window.renderPrematchIG(d), cardData);
+    await page.evaluate(() => window.imagesReady());
+    await (await page.$('#prematch-ig')).screenshot({ path: path.join(OUT, 'prematch-ig-raw.png') });
+  });
+
+  const { execFileSync } = await import('child_process');
+  const { copyFileSync } = await import('fs');
+  try {
+    execFileSync('ffmpeg', ['-y', '-i', path.join(OUT, 'prematch-ig-raw.png'),
+      '-vf', 'scale=1080:1350:flags=lanczos,unsharp=5:5:0.45,eq=contrast=1.05:saturation=1.06',
+      path.join(OUT, 'prematch-ig.png')], { stdio: 'pipe' });
+  } catch {
+    copyFileSync(path.join(OUT, 'prematch-ig-raw.png'), path.join(OUT, 'prematch-ig.png'));
+    console.warn('ffmpeg unavailable — prematch-ig.png is the raw render');
+  }
+
+  const he = flagEmoji(home), ae = flagEmoji(away);
+  const riskLine = RISK_PLAIN[risk] || '';
+  const caption = [
+    `${he} ${home} v ${away} ${ae} — ${fmtTime(f.date)}`,
+    '',
+    `Our call: ${pick === 'Draw' ? 'Draw' : pick} (${pct(pickPct)})${riskLine ? ` — ${riskLine}` : ''}`,
+    `${abbr(home)} ${pct(ph)} · draw ${pct(pd)} · ${abbr(away)} ${pct(pa)}`,
+    '',
+    'Why:',
+    ...reasons.slice(0, 3).map(r => `• ${r.text}`),
+    ...(top ? ['', `Most likely score: ${top.score} (${pct(top.probability)})`] : []),
+    '',
+    'The forecast locks 10 minutes before kickoff — the locked call is what we grade ourselves on, in public.',
+    'oddyessa.com',
+  ].join('\n');
+
+  const tags = buildHashtags([[home, away]]);
+  let xCap = [
+    `${he} ${abbr(home)} v ${abbr(away)} ${ae} · ${fmtTime(f.date)}`,
+    '',
+    `Our call: ${pick === 'Draw' ? 'Draw' : pick} ${pct(pickPct)}${risk === 'HIGH' ? ' (coin flip)' : ''}`,
+    reasons[0] ? `Why: ${reasons[0].text}` : null,
+    top ? `Most likely: ${top.score}` : null,
+    '',
+    'Locks 10 min before KO — graded after. Full reasoning in bio.',
+    '',
+    tags.x,
+  ].filter(l => l !== null).join('\n');
+  if (xCap.length > 278) xCap = `${he} ${abbr(home)} v ${abbr(away)} ${ae} · ${fmtTime(f.date)}\n\nOur call: ${pick === 'Draw' ? 'Draw' : pick} ${pct(pickPct)}${risk === 'HIGH' ? ' (coin flip)' : ''}${top ? ` · most likely ${top.score}` : ''}\n\nLocks 10 min before KO. Reasoning in bio.\n\n${tags.x}`;
+
+  writeFileSync(path.join(OUT, 'prematch.json'), JSON.stringify({
+    caption: caption + '\n\n' + tags.tg,
+    captionX: xCap,
+    hashtagsIG: tags.ig,
+    images: ['prematch-x.png'],
+    imagesIG: ['prematch-ig.png'],
+  }, null, 2));
+  console.log(`prematch generated: ${home} v ${away} — ${pick} ${pct(pickPct)} (${risk})`);
+}
+
 const mode = process.argv[2];
 if (mode === 'ledger') await generateLedger();
 else if (mode === 'picks') await generatePicks();
-else { console.error('usage: node generate.mjs ledger|picks'); process.exit(1); }
+else if (mode === 'match') await generateMatch(process.argv[3]);
+else if (mode === 'prematch') await generatePrematch(process.argv[3]);
+else { console.error('usage: node generate.mjs ledger|picks|match <id>|prematch <id>'); process.exit(1); }
