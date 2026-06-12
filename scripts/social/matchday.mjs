@@ -97,17 +97,35 @@ if (duePre.length) {
 }
 
 // ── 3. receipt due? ──────────────────────────────────────────────────
+// Verdict-wait: the scoreline/market verdict surfaces a few minutes
+// after grading (analysis cache). A receipt without "scoreline called
+// exact" buries the best line of the night — hold it up to two ticks
+// (~1h) for the verdict, then post regardless.
+state.verdictWait = state.verdictWait || {};
 const dueReceipt = settled
   .filter(s => !state.receipts.includes(s.match_external_id)
     && new Date(s.match_date).getTime() > now - 48 * 3600 * 1000)
   .sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
 if (dueReceipt.length) {
   const s = dueReceipt[0];
-  console.log(`receipt due: ${s.home_team} v ${s.away_team} (${s.match_external_id})`);
-  gen(['match', s.match_external_id]);
-  const payload = JSON.parse(readFileSync(path.join(OUT, 'match.json'), 'utf8'));
-  if (!payload.skip) { state.receipts.push(s.match_external_id); actions.push('match'); }
-  if (dueReceipt.length > 1) console.log(`${dueReceipt.length - 1} more receipts due — next tick takes the next one`);
+  const id = s.match_external_id;
+  let verdictReady = false;
+  try {
+    const a = await getJson(`${API}/analysis/${id}`);
+    verdictReady = !!(a?.verdict?.call || a?.verdict?.scoreline || a?.data?.verdict?.scoreline);
+  } catch { /* analysis hiccup — treat as not ready */ }
+  const waited = state.verdictWait[id] || 0;
+  if (!verdictReady && waited < 2) {
+    state.verdictWait[id] = waited + 1;
+    console.log(`receipt for ${id} HELD (verdict not ready yet, hold ${waited + 1}/2) — next tick retries`);
+  } else {
+    console.log(`receipt due: ${s.home_team} v ${s.away_team} (${id})${verdictReady ? '' : ' — posting without verdict after max holds'}`);
+    gen(['match', id]);
+    const payload = JSON.parse(readFileSync(path.join(OUT, 'match.json'), 'utf8'));
+    if (!payload.skip) { state.receipts.push(id); actions.push('match'); }
+    delete state.verdictWait[id];
+    if (dueReceipt.length > 1) console.log(`${dueReceipt.length - 1} more receipts due — next tick takes the next one`);
+  }
 }
 
 writeFileSync(path.join(OUT, 'state-next.json'), JSON.stringify(state, null, 2));
