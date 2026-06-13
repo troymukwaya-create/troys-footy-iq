@@ -1,0 +1,5412 @@
+{
+ "source": "Transfermarkt via Kaggle davidcariboo/player-scores (CC0)",
+ "sourceUrl": "https://www.kaggle.com/datasets/davidcariboo/player-scores",
+ "generatedAt": "2026-06-13T01:09:33.353Z",
+ "notes": "Static quality prior, NOT live data. Keys are engine norm() names. squadValueEur basis differs by method — see each team's method field. Regenerate by re-downloading the Kaggle dataset and re-running scripts/buildSquadValues.js.",
+ "teamCount": 147,
+ "fallbackCount": 29,
+ "teams": {
+  "england": {
+   "displayName": "England",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 1785000000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": "UEFA",
+   "fifaRanking": 4,
+   "squadSize": 35,
+   "averageAge": 27.3,
+   "top26ValueEur": 1785000000,
+   "playersCounted": 422,
+   "topPlayers": [
+    {
+     "name": "Jude Bellingham",
+     "marketValueEur": 160000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Phil Foden",
+     "marketValueEur": 150000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Bukayo Saka",
+     "marketValueEur": 130000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Declan Rice",
+     "marketValueEur": 120000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Cole Palmer",
+     "marketValueEur": 120000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "france": {
+   "displayName": "France",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 1750000000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": "UEFA",
+   "fifaRanking": 1,
+   "squadSize": 25,
+   "averageAge": 26.9,
+   "top26ValueEur": 1750000000,
+   "playersCounted": 536,
+   "topPlayers": [
+    {
+     "name": "Kylian Mbappé",
+     "marketValueEur": 180000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Michael Olise",
+     "marketValueEur": 130000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ousmane Dembélé",
+     "marketValueEur": 100000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Aurélien Tchouaméni",
+     "marketValueEur": 100000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "William Saliba",
+     "marketValueEur": 90000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "spain": {
+   "displayName": "Spain",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 1255000000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": "UEFA",
+   "fifaRanking": 2,
+   "squadSize": 27,
+   "averageAge": 26.7,
+   "top26ValueEur": 1255000000,
+   "playersCounted": 690,
+   "topPlayers": [
+    {
+     "name": "Lamine Yamal",
+     "marketValueEur": 120000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Pedri",
+     "marketValueEur": 80000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Rodri",
+     "marketValueEur": 75000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Dani Olmo",
+     "marketValueEur": 60000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Alejandro Balde",
+     "marketValueEur": 60000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "portugal": {
+   "displayName": "Portugal",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 864500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 864500000,
+   "confederation": "UEFA",
+   "fifaRanking": 5,
+   "squadSize": 26,
+   "averageAge": 27.1,
+   "top26ValueEur": 1186000000,
+   "playersCounted": 418,
+   "topPlayers": [
+    {
+     "name": "Vitinha",
+     "marketValueEur": 110000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "João Neves",
+     "marketValueEur": 110000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Rafael Leão",
+     "marketValueEur": 90000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Nuno Mendes",
+     "marketValueEur": 75000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Rúben Dias",
+     "marketValueEur": 60000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "italy": {
+   "displayName": "Italy",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 833500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 833500000,
+   "confederation": "UEFA",
+   "fifaRanking": 12,
+   "squadSize": 28,
+   "averageAge": 26.6,
+   "top26ValueEur": 968000000,
+   "playersCounted": 342,
+   "topPlayers": [
+    {
+     "name": "Alessandro Bastoni",
+     "marketValueEur": 80000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Sandro Tonali",
+     "marketValueEur": 75000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Nicolò Barella",
+     "marketValueEur": 60000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Federico Dimarco",
+     "marketValueEur": 50000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Riccardo Calafiori",
+     "marketValueEur": 50000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "brazil": {
+   "displayName": "Brazil",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 778500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 778500000,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 6,
+   "squadSize": 24,
+   "averageAge": 27,
+   "top26ValueEur": 1333000000,
+   "playersCounted": 588,
+   "topPlayers": [
+    {
+     "name": "Vinicius Junior",
+     "marketValueEur": 180000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Rodrygo",
+     "marketValueEur": 110000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Gabriel",
+     "marketValueEur": 75000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Bruno Guimarães",
+     "marketValueEur": 75000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "João Pedro",
+     "marketValueEur": 65000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "germany": {
+   "displayName": "Germany",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 773500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 773500000,
+   "confederation": "UEFA",
+   "fifaRanking": 10,
+   "squadSize": 25,
+   "averageAge": 28,
+   "top26ValueEur": 1166000000,
+   "playersCounted": 417,
+   "topPlayers": [
+    {
+     "name": "Jamal Musiala",
+     "marketValueEur": 130000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Florian Wirtz",
+     "marketValueEur": 110000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Nick Woltemade",
+     "marketValueEur": 70000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Aleksandar Pavlovic",
+     "marketValueEur": 65000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Karim Adeyemi",
+     "marketValueEur": 60000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "netherlands": {
+   "displayName": "Netherlands",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 766000000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 766000000,
+   "confederation": "UEFA",
+   "fifaRanking": 7,
+   "squadSize": 25,
+   "averageAge": 27.1,
+   "top26ValueEur": 1099000000,
+   "playersCounted": 449,
+   "topPlayers": [
+    {
+     "name": "Ryan Gravenberch",
+     "marketValueEur": 90000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Xavi Simons",
+     "marketValueEur": 80000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Frenkie de Jong",
+     "marketValueEur": 70000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jurriën Timber",
+     "marketValueEur": 70000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Cody Gakpo",
+     "marketValueEur": 70000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "argentina": {
+   "displayName": "Argentina",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 761200012,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 761200012,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 3,
+   "squadSize": 29,
+   "averageAge": 28,
+   "top26ValueEur": 1006000000,
+   "playersCounted": 258,
+   "topPlayers": [
+    {
+     "name": "Julián Alvarez",
+     "marketValueEur": 100000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Lautaro Martínez",
+     "marketValueEur": 85000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Alexis Mac Allister",
+     "marketValueEur": 85000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Enzo Fernández",
+     "marketValueEur": 85000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Nico Paz",
+     "marketValueEur": 65000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "belgium": {
+   "displayName": "Belgium",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 534200012,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 534200012,
+   "confederation": "UEFA",
+   "fifaRanking": 9,
+   "squadSize": 25,
+   "averageAge": 26.6,
+   "top26ValueEur": 674000000,
+   "playersCounted": 340,
+   "topPlayers": [
+    {
+     "name": "Jérémy Doku",
+     "marketValueEur": 65000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Loïs Openda",
+     "marketValueEur": 60000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Amadou Onana",
+     "marketValueEur": 42000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Youri Tielemans",
+     "marketValueEur": 35000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Charles De Ketelaere",
+     "marketValueEur": 34000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "norway": {
+   "displayName": "Norway",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 504000000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 504000000,
+   "confederation": "UEFA",
+   "fifaRanking": 31,
+   "squadSize": 24,
+   "averageAge": 27,
+   "top26ValueEur": 561500000,
+   "playersCounted": 122,
+   "topPlayers": [
+    {
+     "name": "Erling Haaland",
+     "marketValueEur": 200000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Martin Ødegaard",
+     "marketValueEur": 75000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jørgen Strand Larsen",
+     "marketValueEur": 40000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Antonio Nusa",
+     "marketValueEur": 32000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Sander Berge",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "ivorycoast": {
+   "displayName": "Cote d'Ivoire",
+   "method": "citizenship-top26",
+   "squadValueEur": 487000000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 487000000,
+   "playersCounted": 105,
+   "topPlayers": [
+    {
+     "name": "Amad Diallo",
+     "marketValueEur": 50000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ousmane Diomande",
+     "marketValueEur": 45000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Yan Diomande",
+     "marketValueEur": 45000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Evan Ndicka",
+     "marketValueEur": 30000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Evann Guessand",
+     "marketValueEur": 28000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "senegal": {
+   "displayName": "Senegal",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 474000000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 474000000,
+   "confederation": "CAF",
+   "fifaRanking": 14,
+   "squadSize": 28,
+   "averageAge": 26.9,
+   "top26ValueEur": 448500000,
+   "playersCounted": 99,
+   "topPlayers": [
+    {
+     "name": "Iliman Ndiaye",
+     "marketValueEur": 45000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Nicolas Jackson",
+     "marketValueEur": 45000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ismaïla Sarr",
+     "marketValueEur": 35000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Pape Matar Sarr",
+     "marketValueEur": 35000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Habib Diarra",
+     "marketValueEur": 32000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "morocco": {
+   "displayName": "Morocco",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 456000000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 456000000,
+   "confederation": "CAF",
+   "fifaRanking": 8,
+   "squadSize": 29,
+   "averageAge": 25.2,
+   "top26ValueEur": 546000000,
+   "playersCounted": 135,
+   "topPlayers": [
+    {
+     "name": "Achraf Hakimi",
+     "marketValueEur": 80000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Brahim Díaz",
+     "marketValueEur": 40000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ayyoub Bouaddi",
+     "marketValueEur": 40000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ismael Saibari",
+     "marketValueEur": 32000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Bilal El Khannouss",
+     "marketValueEur": 30000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "turkey": {
+   "displayName": "Turkiye",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 435200012,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 435200012,
+   "confederation": "UEFA",
+   "fifaRanking": 22,
+   "squadSize": 27,
+   "averageAge": 28,
+   "top26ValueEur": 465500000,
+   "playersCounted": 403,
+   "topPlayers": [
+    {
+     "name": "Kenan Yıldız",
+     "marketValueEur": 75000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Can Uzun",
+     "marketValueEur": 45000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Arda Güler",
+     "marketValueEur": 45000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ferdi Kadıoğlu",
+     "marketValueEur": 28000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Orkun Kökçü",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "denmark": {
+   "displayName": "Denmark",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 375000000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 375000000,
+   "confederation": "UEFA",
+   "fifaRanking": 20,
+   "squadSize": 25,
+   "averageAge": 26.5,
+   "top26ValueEur": 527000000,
+   "playersCounted": 393,
+   "topPlayers": [
+    {
+     "name": "Morten Hjulmand",
+     "marketValueEur": 50000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Rasmus Højlund",
+     "marketValueEur": 45000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Andreas Christensen",
+     "marketValueEur": 40000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Patrick Dorgu",
+     "marketValueEur": 30000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mathias Jensen",
+     "marketValueEur": 28000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "ecuador": {
+   "displayName": "Ecuador",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 366730011,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 366730011,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 23,
+   "squadSize": 32,
+   "averageAge": 26,
+   "top26ValueEur": 341600000,
+   "playersCounted": 33,
+   "topPlayers": [
+    {
+     "name": "Moisés Caicedo",
+     "marketValueEur": 110000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Willian Pacho",
+     "marketValueEur": 70000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Piero Hincapié",
+     "marketValueEur": 50000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Pervis Estupiñán",
+     "marketValueEur": 14000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Keny Arroyo",
+     "marketValueEur": 9000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "sweden": {
+   "displayName": "Sweden",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 363980011,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 363980011,
+   "confederation": "UEFA",
+   "fifaRanking": 38,
+   "squadSize": 26,
+   "averageAge": 26.4,
+   "top26ValueEur": 590000000,
+   "playersCounted": 162,
+   "topPlayers": [
+    {
+     "name": "Alexander Isak",
+     "marketValueEur": 120000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Viktor Gyökeres",
+     "marketValueEur": 70000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Anthony Elanga",
+     "marketValueEur": 50000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Dejan Kulusevski",
+     "marketValueEur": 45000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Lucas Bergvall",
+     "marketValueEur": 40000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "uruguay": {
+   "displayName": "Uruguay",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 362450012,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 362450012,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 17,
+   "squadSize": 28,
+   "averageAge": 28.5,
+   "top26ValueEur": 535000000,
+   "playersCounted": 83,
+   "topPlayers": [
+    {
+     "name": "Federico Valverde",
+     "marketValueEur": 120000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ronald Araujo",
+     "marketValueEur": 70000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Darwin Núñez",
+     "marketValueEur": 70000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Manuel Ugarte",
+     "marketValueEur": 30000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Rodrigo Bentancur",
+     "marketValueEur": 27000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "usa": {
+   "displayName": "United States",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 356700012,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 356700012,
+   "confederation": "CONCACAF",
+   "fifaRanking": 16,
+   "squadSize": 27,
+   "averageAge": 26.4,
+   "top26ValueEur": 441500000,
+   "playersCounted": 101,
+   "topPlayers": [
+    {
+     "name": "Christian Pulisic",
+     "marketValueEur": 60000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Malik Tillman",
+     "marketValueEur": 35000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Antonee Robinson",
+     "marketValueEur": 30000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Tyler Adams",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Chris Richards",
+     "marketValueEur": 25000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "switzerland": {
+   "displayName": "Switzerland",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 322100006,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 322100006,
+   "confederation": "UEFA",
+   "fifaRanking": 19,
+   "squadSize": 26,
+   "averageAge": 28,
+   "top26ValueEur": 333200000,
+   "playersCounted": 92,
+   "topPlayers": [
+    {
+     "name": "Gregor Kobel",
+     "marketValueEur": 40000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Dan Ndoye",
+     "marketValueEur": 40000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ardon Jashari",
+     "marketValueEur": 32000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Johan Manzambi",
+     "marketValueEur": 30000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Denis Zakaria",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "colombia": {
+   "displayName": "Colombia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 300500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 300500000,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 13,
+   "squadSize": 26,
+   "averageAge": 29.7,
+   "top26ValueEur": 330500000,
+   "playersCounted": 99,
+   "topPlayers": [
+    {
+     "name": "Luis Díaz",
+     "marketValueEur": 70000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jhon Durán",
+     "marketValueEur": 32000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Daniel Muñoz",
+     "marketValueEur": 27000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Davinson Sánchez",
+     "marketValueEur": 18000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Cucho Hernández",
+     "marketValueEur": 18000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "serbia": {
+   "displayName": "Serbia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 298500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 298500000,
+   "confederation": "UEFA",
+   "fifaRanking": 39,
+   "squadSize": 28,
+   "averageAge": 26.8,
+   "top26ValueEur": 369000000,
+   "playersCounted": 178,
+   "topPlayers": [
+    {
+     "name": "Sergej Milinković-Savić",
+     "marketValueEur": 40000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Mile Svilar",
+     "marketValueEur": 35000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Dušan Vlahović",
+     "marketValueEur": 35000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Nikola Milenković",
+     "marketValueEur": 30000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Aleksandar Mitrović",
+     "marketValueEur": 28000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "greece": {
+   "displayName": "Greece",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 288100006,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 288100006,
+   "confederation": "UEFA",
+   "fifaRanking": 47,
+   "squadSize": 24,
+   "averageAge": 26.6,
+   "top26ValueEur": 275500000,
+   "playersCounted": 253,
+   "topPlayers": [
+    {
+     "name": "Christos Tzolis",
+     "marketValueEur": 30000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Vangelis Pavlidis",
+     "marketValueEur": 25000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Konstantinos Koulierakis",
+     "marketValueEur": 25000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Christos Mouzakitis",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Charalampos Kostoulas",
+     "marketValueEur": 25000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "croatia": {
+   "displayName": "Croatia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 283299988,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 283299988,
+   "confederation": "UEFA",
+   "fifaRanking": 11,
+   "squadSize": 26,
+   "averageAge": 28.3,
+   "top26ValueEur": 379000000,
+   "playersCounted": 149,
+   "topPlayers": [
+    {
+     "name": "Josko Gvardiol",
+     "marketValueEur": 70000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Luka Vuskovic",
+     "marketValueEur": 40000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Josip Stanisic",
+     "marketValueEur": 32000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Petar Sučić",
+     "marketValueEur": 30000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Marcelo Brozović",
+     "marketValueEur": 20000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "japan": {
+   "displayName": "Japan",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 264200012,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 264200012,
+   "confederation": "AFC",
+   "fifaRanking": 18,
+   "squadSize": 27,
+   "averageAge": 26.4,
+   "top26ValueEur": 319500000,
+   "playersCounted": 112,
+   "topPlayers": [
+    {
+     "name": "Takefusa Kubo",
+     "marketValueEur": 30000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kaoru Mitoma",
+     "marketValueEur": 30000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kaishu Sano",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Zion Suzuki",
+     "marketValueEur": 20000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Hiroki Ito",
+     "marketValueEur": 18000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "austria": {
+   "displayName": "Austria",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 263399994,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 263399994,
+   "confederation": "UEFA",
+   "fifaRanking": 24,
+   "squadSize": 28,
+   "averageAge": 28.4,
+   "top26ValueEur": 322000000,
+   "playersCounted": 88,
+   "topPlayers": [
+    {
+     "name": "Konrad Laimer",
+     "marketValueEur": 32000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Xaver Schlager",
+     "marketValueEur": 28000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Carney Chukwuemeka",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Kevin Danso",
+     "marketValueEur": 22000000,
+     "position": "Defender"
+    },
+    {
+     "name": "David Alaba",
+     "marketValueEur": 20000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "ukraine": {
+   "displayName": "Ukraine",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 261700012,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 261700012,
+   "confederation": "UEFA",
+   "fifaRanking": 32,
+   "squadSize": 26,
+   "averageAge": 26.7,
+   "top26ValueEur": 399500000,
+   "playersCounted": 476,
+   "topPlayers": [
+    {
+     "name": "Ilya Zabarnyi",
+     "marketValueEur": 50000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Mykhaylo Mudryk",
+     "marketValueEur": 35000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Georgiy Sudakov",
+     "marketValueEur": 30000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Anatoliy Trubin",
+     "marketValueEur": 28000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Andriy Lunin",
+     "marketValueEur": 25000000,
+     "position": "Goalkeeper"
+    }
+   ]
+  },
+  "cameroon": {
+   "displayName": "Cameroon",
+   "method": "citizenship-top26",
+   "squadValueEur": 243700000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 243700000,
+   "playersCounted": 70,
+   "topPlayers": [
+    {
+     "name": "Carlos Baleba",
+     "marketValueEur": 60000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Bryan Mbeumo",
+     "marketValueEur": 40000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Frank Anguissa",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Enzo Boyomo",
+     "marketValueEur": 20000000,
+     "position": "Defender"
+    },
+    {
+     "name": "André Onana",
+     "marketValueEur": 15000000,
+     "position": "Goalkeeper"
+    }
+   ]
+  },
+  "algeria": {
+   "displayName": "Algeria",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 227750000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 227750000,
+   "confederation": "CAF",
+   "fifaRanking": 28,
+   "squadSize": 26,
+   "averageAge": 25.9,
+   "top26ValueEur": 259000000,
+   "playersCounted": 65,
+   "topPlayers": [
+    {
+     "name": "Rayan Aït-Nouri",
+     "marketValueEur": 40000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Mohamed Amoura",
+     "marketValueEur": 32000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Amine Gouiri",
+     "marketValueEur": 28000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Riyad Mahrez",
+     "marketValueEur": 18000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Farès Chaïbi",
+     "marketValueEur": 15000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "ireland": {
+   "displayName": "Ireland",
+   "method": "citizenship-top26",
+   "squadValueEur": 214700000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 214700000,
+   "playersCounted": 72,
+   "topPlayers": [
+    {
+     "name": "Nathan Collins",
+     "marketValueEur": 25000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Evan Ferguson",
+     "marketValueEur": 25000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Caoimhín Kelleher",
+     "marketValueEur": 22000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Jake O'Brien",
+     "marketValueEur": 16000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Dara O'Shea",
+     "marketValueEur": 15000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "poland": {
+   "displayName": "Poland",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 214500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 214500000,
+   "confederation": "UEFA",
+   "fifaRanking": 35,
+   "squadSize": 25,
+   "averageAge": 27.7,
+   "top26ValueEur": 238000000,
+   "playersCounted": 110,
+   "topPlayers": [
+    {
+     "name": "Jakub Kiwior",
+     "marketValueEur": 27000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Matty Cash",
+     "marketValueEur": 22000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Sebastian Szymanski",
+     "marketValueEur": 19000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Marcin Bulka",
+     "marketValueEur": 17000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Robert Lewandowski",
+     "marketValueEur": 15000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "nigeria": {
+   "displayName": "Nigeria",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 209080002,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 209080002,
+   "confederation": "CAF",
+   "fifaRanking": 26,
+   "squadSize": 23,
+   "averageAge": 27.6,
+   "top26ValueEur": 421500000,
+   "playersCounted": 116,
+   "topPlayers": [
+    {
+     "name": "Victor Osimhen",
+     "marketValueEur": 75000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ademola Lookman",
+     "marketValueEur": 35000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Calvin Bassey",
+     "marketValueEur": 28000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Alex Iwobi",
+     "marketValueEur": 25000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Terem Moffi",
+     "marketValueEur": 25000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "hungary": {
+   "displayName": "Hungary",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 205600006,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 205600006,
+   "confederation": "UEFA",
+   "fifaRanking": 42,
+   "squadSize": 25,
+   "averageAge": 26.5,
+   "top26ValueEur": 169725000,
+   "playersCounted": 25,
+   "topPlayers": [
+    {
+     "name": "Dominik Szoboszlai",
+     "marketValueEur": 85000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Milos Kerkez",
+     "marketValueEur": 40000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Roland Sallai",
+     "marketValueEur": 10000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Bence Dárdai",
+     "marketValueEur": 7000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Willi Orbán",
+     "marketValueEur": 6000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "russia": {
+   "displayName": "Russia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 205300003,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 205300003,
+   "confederation": "UEFA",
+   "fifaRanking": 36,
+   "squadSize": 29,
+   "averageAge": 26.4,
+   "top26ValueEur": 263500000,
+   "playersCounted": 363,
+   "topPlayers": [
+    {
+     "name": "Aleksey Batrakov",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Matvey Kislyak",
+     "marketValueEur": 20000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Aleksandr Golovin",
+     "marketValueEur": 18000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Arsen Zakharyan",
+     "marketValueEur": 18000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Konstantin Tyukavin",
+     "marketValueEur": 16000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "ghana": {
+   "displayName": "Ghana",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 199279999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 199279999,
+   "confederation": "CAF",
+   "fifaRanking": 74,
+   "squadSize": 25,
+   "averageAge": 26.7,
+   "top26ValueEur": 312500000,
+   "playersCounted": 96,
+   "topPlayers": [
+    {
+     "name": "Antoine Semenyo",
+     "marketValueEur": 65000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mohammed Kudus",
+     "marketValueEur": 55000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Iñaki Williams",
+     "marketValueEur": 25000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Abdul Fatawu",
+     "marketValueEur": 20000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kamaldeen Sulemana",
+     "marketValueEur": 18000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "scotland": {
+   "displayName": "Scotland",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 198149994,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 198149994,
+   "confederation": "UEFA",
+   "fifaRanking": 43,
+   "squadSize": 26,
+   "averageAge": 28.7,
+   "top26ValueEur": 290500000,
+   "playersCounted": 219,
+   "topPlayers": [
+    {
+     "name": "Scott McTominay",
+     "marketValueEur": 45000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Andrew Robertson",
+     "marketValueEur": 30000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Aaron Hickey",
+     "marketValueEur": 28000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Billy Gilmour",
+     "marketValueEur": 20000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Lewis Ferguson",
+     "marketValueEur": 20000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "wales": {
+   "displayName": "Wales",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 197949997,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 197949997,
+   "confederation": "UEFA",
+   "fifaRanking": 37,
+   "squadSize": 25,
+   "averageAge": 26.9,
+   "top26ValueEur": 34700000,
+   "playersCounted": 12,
+   "topPlayers": [
+    {
+     "name": "Jordan James",
+     "marketValueEur": 8000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Nathan Broadhead",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Sorba Thomas",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Chris Mepham",
+     "marketValueEur": 3500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Rhys Norrington-Davies",
+     "marketValueEur": 2500000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "georgia": {
+   "displayName": "Georgia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 195300003,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 195300003,
+   "confederation": "UEFA",
+   "fifaRanking": 72,
+   "squadSize": 23,
+   "averageAge": 26.4,
+   "top26ValueEur": 180150000,
+   "playersCounted": 39,
+   "topPlayers": [
+    {
+     "name": "Khvicha Kvaratskhelia",
+     "marketValueEur": 90000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Giorgi Mamardashvili",
+     "marketValueEur": 28000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Georges Mikautadze",
+     "marketValueEur": 28000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Saba Goglichidze",
+     "marketValueEur": 4500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Zuriko Davitashvili",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "republicofireland": {
+   "displayName": "Republic of Ireland",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 185250000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 185250000,
+   "confederation": "UEFA",
+   "fifaRanking": 59,
+   "squadSize": 26,
+   "averageAge": 27.3,
+   "top26ValueEur": 78450000,
+   "playersCounted": 19,
+   "topPlayers": [
+    {
+     "name": "Dara O'Shea",
+     "marketValueEur": 15000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Gavin Bazunu",
+     "marketValueEur": 15000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Chiedozie Ogbene",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Adam Idah",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Will Smallbone",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "czechrepublic": {
+   "displayName": "Czech Republic",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 171500000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 171500000,
+   "confederation": "UEFA",
+   "fifaRanking": 43,
+   "squadSize": 25,
+   "averageAge": 28,
+   "top26ValueEur": 175400000,
+   "playersCounted": 72,
+   "topPlayers": [
+    {
+     "name": "Patrik Schick",
+     "marketValueEur": 25000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ladislav Krejčí",
+     "marketValueEur": 22000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Adam Hlozek",
+     "marketValueEur": 15000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Antonín Kinský",
+     "marketValueEur": 13000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Tomáš Souček",
+     "marketValueEur": 12000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "drcongo": {
+   "displayName": "DR Congo",
+   "method": "citizenship-top26",
+   "squadValueEur": 148900000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 148900000,
+   "playersCounted": 52,
+   "topPlayers": [
+    {
+     "name": "Yoane Wissa",
+     "marketValueEur": 28000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Aaron Wan-Bissaka",
+     "marketValueEur": 22000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Ngal'ayel Mukau",
+     "marketValueEur": 12000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Simon Banza",
+     "marketValueEur": 11000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mario Stroeykens",
+     "marketValueEur": 8000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "mali": {
+   "displayName": "Mali",
+   "method": "citizenship-top26",
+   "squadValueEur": 147900000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 147900000,
+   "playersCounted": 56,
+   "topPlayers": [
+    {
+     "name": "Amadou Haidara",
+     "marketValueEur": 20000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Yves Bissouma",
+     "marketValueEur": 15000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Cheick Doucouré",
+     "marketValueEur": 15000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "El Bilal Touré",
+     "marketValueEur": 15000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mahamadou Doumbia",
+     "marketValueEur": 9000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "slovenia": {
+   "displayName": "Slovenia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 142850006,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 142850006,
+   "confederation": "UEFA",
+   "fifaRanking": 58,
+   "squadSize": 25,
+   "averageAge": 27,
+   "top26ValueEur": 133400000,
+   "playersCounted": 44,
+   "topPlayers": [
+    {
+     "name": "Benjamin Sesko",
+     "marketValueEur": 50000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jaka Bijol",
+     "marketValueEur": 18000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Jan Oblak",
+     "marketValueEur": 17000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Sandi Lovrić",
+     "marketValueEur": 6000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Adam Gnezda Cerin",
+     "marketValueEur": 4500000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "southkorea": {
+   "displayName": "South Korea",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 136750000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 136750000,
+   "confederation": "AFC",
+   "fifaRanking": 25,
+   "squadSize": 26,
+   "averageAge": 28.2,
+   "top26ValueEur": 5500000,
+   "playersCounted": 4,
+   "topPlayers": [
+    {
+     "name": "Min-hyeok Yang",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Hyeok-kyu Kwon",
+     "marketValueEur": 1000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Seung-ho Paik",
+     "marketValueEur": 900000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ji-soo Kim",
+     "marketValueEur": 600000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "paraguay": {
+   "displayName": "Paraguay",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 134699997,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 134699997,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 40,
+   "squadSize": 25,
+   "averageAge": 28.8,
+   "top26ValueEur": 137575000,
+   "playersCounted": 24,
+   "topPlayers": [
+    {
+     "name": "Diego Gómez",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Julio Enciso",
+     "marketValueEur": 20000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Omar Alderete",
+     "marketValueEur": 12000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Ramón Sosa",
+     "marketValueEur": 11000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Miguel Almirón",
+     "marketValueEur": 9000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "slovakia": {
+   "displayName": "Slovakia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 130449997,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 130449997,
+   "confederation": "UEFA",
+   "fifaRanking": 48,
+   "squadSize": 27,
+   "averageAge": 28.6,
+   "top26ValueEur": 128500000,
+   "playersCounted": 42,
+   "topPlayers": [
+    {
+     "name": "Dávid Hancko",
+     "marketValueEur": 30000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Stanislav Lobotka",
+     "marketValueEur": 18000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Milan Škriniar",
+     "marketValueEur": 11000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Dominik Greif",
+     "marketValueEur": 8000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Denis Vavro",
+     "marketValueEur": 7000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "canada": {
+   "displayName": "Canada",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 129380005,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 129380005,
+   "confederation": "CONCACAF",
+   "fifaRanking": 30,
+   "squadSize": 26,
+   "averageAge": 26.5,
+   "top26ValueEur": 172850000,
+   "playersCounted": 35,
+   "topPlayers": [
+    {
+     "name": "Alphonso Davies",
+     "marketValueEur": 50000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Jonathan David",
+     "marketValueEur": 35000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ismaël Koné",
+     "marketValueEur": 14000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Promise David",
+     "marketValueEur": 13000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Stephen Eustaquio",
+     "marketValueEur": 11000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "bosniaherzegovina": {
+   "displayName": "Bosnia-Herzegovina",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 125599998,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 125599998,
+   "confederation": "UEFA",
+   "fifaRanking": 65,
+   "squadSize": 23,
+   "averageAge": 27,
+   "top26ValueEur": 119800000,
+   "playersCounted": 72,
+   "topPlayers": [
+    {
+     "name": "Ermedin Demirovic",
+     "marketValueEur": 22000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Anel Ahmedhodzic",
+     "marketValueEur": 18000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Sead Kolasinac",
+     "marketValueEur": 10000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Kerim Alajbegovic",
+     "marketValueEur": 8000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Rade Krunic",
+     "marketValueEur": 6000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "koreasouth": {
+   "displayName": "Korea, South",
+   "method": "citizenship-top26",
+   "squadValueEur": 115800000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 115800000,
+   "playersCounted": 35,
+   "topPlayers": [
+    {
+     "name": "Min-jae Kim",
+     "marketValueEur": 25000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Kang-in Lee",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Heung-min Son",
+     "marketValueEur": 17000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Hee-chan Hwang",
+     "marketValueEur": 10000000,
+     "position": "Attack"
+    },
+    {
+     "name": "In-beom Hwang",
+     "marketValueEur": 4500000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "kosovo": {
+   "displayName": "Kosovo",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 114279999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 114279999,
+   "confederation": "UEFA",
+   "fifaRanking": 78,
+   "squadSize": 25,
+   "averageAge": 27.6,
+   "top26ValueEur": 78750000,
+   "playersCounted": 36,
+   "topPlayers": [
+    {
+     "name": "Edon Zhegrova",
+     "marketValueEur": 20000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Amir Rrahmani",
+     "marketValueEur": 12000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Arijanet Murić",
+     "marketValueEur": 7500000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Vedat Muriqi",
+     "marketValueEur": 4500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Milot Rashica",
+     "marketValueEur": 4000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "egypt": {
+   "displayName": "Egypt",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 108000000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 108000000,
+   "confederation": "CAF",
+   "fifaRanking": 29,
+   "squadSize": 26,
+   "averageAge": 29,
+   "top26ValueEur": 117550000,
+   "playersCounted": 16,
+   "topPlayers": [
+    {
+     "name": "Omar Marmoush",
+     "marketValueEur": 65000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mohamed Salah",
+     "marketValueEur": 30000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Trezeguet",
+     "marketValueEur": 4500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mostafa Mohamed",
+     "marketValueEur": 4000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mohamed Elneny",
+     "marketValueEur": 3500000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "burkinafaso": {
+   "displayName": "Burkina Faso",
+   "method": "citizenship-top26",
+   "squadValueEur": 102000000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 102000000,
+   "playersCounted": 17,
+   "topPlayers": [
+    {
+     "name": "Edmond Tapsoba",
+     "marketValueEur": 35000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Dango Ouattara",
+     "marketValueEur": 35000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Nasser Djiga",
+     "marketValueEur": 6000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Bertrand Traoré",
+     "marketValueEur": 5000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Issa Kaboré",
+     "marketValueEur": 4000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "romania": {
+   "displayName": "Romania",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 97199997,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 97199997,
+   "confederation": "UEFA",
+   "fifaRanking": 56,
+   "squadSize": 26,
+   "averageAge": 27.8,
+   "top26ValueEur": 104300000,
+   "playersCounted": 74,
+   "topPlayers": [
+    {
+     "name": "Radu Drăgușin",
+     "marketValueEur": 25000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Andrei Rațiu",
+     "marketValueEur": 18000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Nicolae Stanciu",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ionuț Radu",
+     "marketValueEur": 5000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Cristian Manea",
+     "marketValueEur": 3500000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "guinea": {
+   "displayName": "Guinea",
+   "method": "citizenship-top26",
+   "squadValueEur": 96000000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 96000000,
+   "playersCounted": 35,
+   "topPlayers": [
+    {
+     "name": "Serhou Guirassy",
+     "marketValueEur": 40000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mady Camara",
+     "marketValueEur": 7000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Sidiki Chérif",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "François Kamano",
+     "marketValueEur": 4000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Morgan Guilavogui",
+     "marketValueEur": 4000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "israel": {
+   "displayName": "Israel",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 85900002,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 85900002,
+   "confederation": "UEFA",
+   "fifaRanking": 77,
+   "squadSize": 25,
+   "averageAge": 26.3,
+   "top26ValueEur": 55250000,
+   "playersCounted": 29,
+   "topPlayers": [
+    {
+     "name": "Manor Solomon",
+     "marketValueEur": 13000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Anan Khalaili",
+     "marketValueEur": 12000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Liel Abada",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Omri Gandelman",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Daniel Peretz",
+     "marketValueEur": 2000000,
+     "position": "Goalkeeper"
+    }
+   ]
+  },
+  "albania": {
+   "displayName": "Albania",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 81750000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 81750000,
+   "confederation": "UEFA",
+   "fifaRanking": 64,
+   "squadSize": 23,
+   "averageAge": 28.3,
+   "top26ValueEur": 133400000,
+   "playersCounted": 51,
+   "topPlayers": [
+    {
+     "name": "Armando Broja",
+     "marketValueEur": 22000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kristjan Asllani",
+     "marketValueEur": 13000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Berat Djimsiti",
+     "marketValueEur": 10000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Mirlind Daku",
+     "marketValueEur": 10000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ernest Muci",
+     "marketValueEur": 9000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "northernireland": {
+   "displayName": "Northern Ireland",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 80150002,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 80150002,
+   "confederation": "UEFA",
+   "fifaRanking": 70,
+   "squadSize": 28,
+   "averageAge": 25.4,
+   "top26ValueEur": 38600000,
+   "playersCounted": 21,
+   "topPlayers": [
+    {
+     "name": "Shea Charles",
+     "marketValueEur": 12000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Paddy McNair",
+     "marketValueEur": 4500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Ali McCann",
+     "marketValueEur": 2800000,
+     "position": "Midfield"
+    },
+    {
+     "name": "George Saville",
+     "marketValueEur": 2500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jamal Lewis",
+     "marketValueEur": 2000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "mexico": {
+   "displayName": "Mexico",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 79800003,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 79800003,
+   "confederation": "CONCACAF",
+   "fifaRanking": 15,
+   "squadSize": 12,
+   "averageAge": 26.8,
+   "top26ValueEur": 184000000,
+   "playersCounted": 45,
+   "topPlayers": [
+    {
+     "name": "Santiago Gimenez",
+     "marketValueEur": 40000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Edson Álvarez",
+     "marketValueEur": 22000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Julián Araujo",
+     "marketValueEur": 10000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Johan Vásquez",
+     "marketValueEur": 10000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Luis Chávez",
+     "marketValueEur": 9000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "iceland": {
+   "displayName": "Iceland",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 74029999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 74029999,
+   "confederation": "UEFA",
+   "fifaRanking": 75,
+   "squadSize": 23,
+   "averageAge": 27.8,
+   "top26ValueEur": 112500000,
+   "playersCounted": 42,
+   "topPlayers": [
+    {
+     "name": "Albert Gudmundsson",
+     "marketValueEur": 30000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Hákon Arnar Haraldsson",
+     "marketValueEur": 22000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Orri Óskarsson",
+     "marketValueEur": 12000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kristian Hlynsson",
+     "marketValueEur": 7000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Arnór Sigurdsson",
+     "marketValueEur": 4500000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "gambia": {
+   "displayName": "The Gambia",
+   "method": "citizenship-top26",
+   "squadValueEur": 74025000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 74025000,
+   "playersCounted": 28,
+   "topPlayers": [
+    {
+     "name": "Yankuba Minteh",
+     "marketValueEur": 40000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Musa Barrow",
+     "marketValueEur": 9000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ebrima Colley",
+     "marketValueEur": 2600000,
+     "position": "Attack"
+    },
+    {
+     "name": "Alieu Fadera",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ablie Jallow",
+     "marketValueEur": 2000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "chile": {
+   "displayName": "Chile",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 72699997,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 72699997,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 54,
+   "squadSize": 26,
+   "averageAge": 25.3,
+   "top26ValueEur": 62875000,
+   "playersCounted": 28,
+   "topPlayers": [
+    {
+     "name": "Darío Osorio",
+     "marketValueEur": 10000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Gabriel Suazo",
+     "marketValueEur": 7000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Erick Pulgar",
+     "marketValueEur": 6000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ben Brereton Díaz",
+     "marketValueEur": 6000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Víctor Dávila",
+     "marketValueEur": 4500000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "guineabissau": {
+   "displayName": "Guinea-Bissau",
+   "method": "citizenship-top26",
+   "squadValueEur": 68175000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 68175000,
+   "playersCounted": 26,
+   "topPlayers": [
+    {
+     "name": "Franculino",
+     "marketValueEur": 22000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Beto",
+     "marketValueEur": 20000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Álvaro Djaló",
+     "marketValueEur": 4500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mama Baldé",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Fali Candé",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "uzbekistan": {
+   "displayName": "Uzbekistan",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 63750000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 63750000,
+   "confederation": "AFC",
+   "fifaRanking": 50,
+   "squadSize": 26,
+   "averageAge": 27.9,
+   "top26ValueEur": 9950000,
+   "playersCounted": 11,
+   "topPlayers": [
+    {
+     "name": "Jaloliddin Masharipov",
+     "marketValueEur": 1700000,
+     "position": "Attack"
+    },
+    {
+     "name": "Otabek Shukurov",
+     "marketValueEur": 1600000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Oston Urunov",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Bobur Abdikholikov",
+     "marketValueEur": 900000,
+     "position": "Attack"
+    },
+    {
+     "name": "Rustam Ashurmatov",
+     "marketValueEur": 800000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "venezuela": {
+   "displayName": "Venezuela",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 62779999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 62779999,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 49,
+   "squadSize": 28,
+   "averageAge": 26.4,
+   "top26ValueEur": 58400000,
+   "playersCounted": 48,
+   "topPlayers": [
+    {
+     "name": "Yangel Herrera",
+     "marketValueEur": 9000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Cristian Cásseres Jr.",
+     "marketValueEur": 7000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jon Aramburu",
+     "marketValueEur": 5000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Telasco Segovia",
+     "marketValueEur": 4500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Josef Martínez",
+     "marketValueEur": 4000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "montenegro": {
+   "displayName": "Montenegro",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 60130001,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 60130001,
+   "confederation": "UEFA",
+   "fifaRanking": 81,
+   "squadSize": 26,
+   "averageAge": 28.3,
+   "top26ValueEur": 41100000,
+   "playersCounted": 29,
+   "topPlayers": [
+    {
+     "name": "Vasilije Adžić",
+     "marketValueEur": 8000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Nikola Krstović",
+     "marketValueEur": 6000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Adam Marusic",
+     "marketValueEur": 5000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Sead Haksabanovic",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Uros Djurdjevic",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "angola": {
+   "displayName": "Angola",
+   "method": "citizenship-top26",
+   "squadValueEur": 58100000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 58100000,
+   "playersCounted": 34,
+   "topPlayers": [
+    {
+     "name": "David Carmo",
+     "marketValueEur": 10000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Zito Luvumbo",
+     "marketValueEur": 7500000,
+     "position": "Attack"
+    },
+    {
+     "name": "João Batxi",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "M'Bala Nzola",
+     "marketValueEur": 6000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Clinton Mata",
+     "marketValueEur": 4000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "capeverde": {
+   "displayName": "Cape Verde",
+   "method": "citizenship-top26",
+   "squadValueEur": 57600000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 57600000,
+   "playersCounted": 34,
+   "topPlayers": [
+    {
+     "name": "Logan Costa",
+     "marketValueEur": 18000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Wagner Pina",
+     "marketValueEur": 7000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Kevin Lenini",
+     "marketValueEur": 4500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Djaniny",
+     "marketValueEur": 4000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Serginho",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "jamaica": {
+   "displayName": "Jamaica",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 53779999,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 53779999,
+   "confederation": "CONCACAF",
+   "fifaRanking": 71,
+   "squadSize": 27,
+   "averageAge": 27.6,
+   "top26ValueEur": 33050000,
+   "playersCounted": 13,
+   "topPlayers": [
+    {
+     "name": "Demarai Gray",
+     "marketValueEur": 12000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Bobby De Cordova-Reid",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Shamar Nicholson",
+     "marketValueEur": 3200000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mason Holgate",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Dexter Lembikisa",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "haiti": {
+   "displayName": "Haiti",
+   "method": "citizenship-top26",
+   "squadValueEur": 52950000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 52950000,
+   "playersCounted": 12,
+   "topPlayers": [
+    {
+     "name": "Wilson Isidor",
+     "marketValueEur": 18000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jean-Ricner Bellegarde",
+     "marketValueEur": 15000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Hannes Delcroix",
+     "marketValueEur": 4000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Jean-Kévin Duverne",
+     "marketValueEur": 3500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Josué Casimir",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "tunisia": {
+   "displayName": "Tunisia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 52299999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 52299999,
+   "confederation": "CAF",
+   "fifaRanking": 44,
+   "squadSize": 29,
+   "averageAge": 25.5,
+   "top26ValueEur": 55525000,
+   "playersCounted": 27,
+   "topPlayers": [
+    {
+     "name": "Hannibal",
+     "marketValueEur": 9000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Montassar Talbi",
+     "marketValueEur": 7000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Ismaël Gharbi",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ellyes Skhiri",
+     "marketValueEur": 6000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Elias Achouri",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "australia": {
+   "displayName": "Australia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 51230000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 51230000,
+   "confederation": "AFC",
+   "fifaRanking": 27,
+   "squadSize": 26,
+   "averageAge": 27.1,
+   "top26ValueEur": 48000000,
+   "playersCounted": 73,
+   "topPlayers": [
+    {
+     "name": "Harry Souttar",
+     "marketValueEur": 6000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Nestory Irankunda",
+     "marketValueEur": 6000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jordan Bos",
+     "marketValueEur": 5000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Cristian Volpato",
+     "marketValueEur": 4500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Riley McGree",
+     "marketValueEur": 4000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "suriname": {
+   "displayName": "Suriname",
+   "method": "citizenship-top26",
+   "squadValueEur": 50100000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 50100000,
+   "playersCounted": 28,
+   "topPlayers": [
+    {
+     "name": "Joël Piroe",
+     "marketValueEur": 12000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Sheraldo Becker",
+     "marketValueEur": 10000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Virgil Misidjan",
+     "marketValueEur": 3000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Gyrano Kerk",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Dylan Vente",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "finland": {
+   "displayName": "Finland",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 41599998,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 41599998,
+   "confederation": "UEFA",
+   "fifaRanking": 73,
+   "squadSize": 23,
+   "averageAge": 25.9,
+   "top26ValueEur": 34600000,
+   "playersCounted": 31,
+   "topPlayers": [
+    {
+     "name": "Naatan Skyttä",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Joel Pohjanpalo",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Fredrik Jensen",
+     "marketValueEur": 3000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Robin Lod",
+     "marketValueEur": 2500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Glen Kamara",
+     "marketValueEur": 2500000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "southafrica": {
+   "displayName": "South Africa",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 41150002,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 41150002,
+   "confederation": "CAF",
+   "fifaRanking": 60,
+   "squadSize": 23,
+   "averageAge": 26.9,
+   "top26ValueEur": 20000000,
+   "playersCounted": 8,
+   "topPlayers": [
+    {
+     "name": "Lyle Foster",
+     "marketValueEur": 13000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Percy Tau",
+     "marketValueEur": 1500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Gift Links",
+     "marketValueEur": 1500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Keagan Dolly",
+     "marketValueEur": 1400000,
+     "position": "Attack"
+    },
+    {
+     "name": "Shandre Campbell",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "armenia": {
+   "displayName": "Armenia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 40380001,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 40380001,
+   "confederation": "UEFA",
+   "fifaRanking": 106,
+   "squadSize": 25,
+   "averageAge": 24.8,
+   "top26ValueEur": 44600000,
+   "playersCounted": 17,
+   "topPlayers": [
+    {
+     "name": "Eduard Spertsyan",
+     "marketValueEur": 25000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Nair Tiknizyan",
+     "marketValueEur": 6500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Henrikh Mkhitaryan",
+     "marketValueEur": 3500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Edgar Sevikyan",
+     "marketValueEur": 2000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ugochukwu Iwu",
+     "marketValueEur": 1500000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "northmacedonia": {
+   "displayName": "North Macedonia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 38700001,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 38700001,
+   "confederation": "UEFA",
+   "fifaRanking": 67,
+   "squadSize": 26,
+   "averageAge": 28.6,
+   "top26ValueEur": 45650000,
+   "playersCounted": 26,
+   "topPlayers": [
+    {
+     "name": "Eljif Elmas",
+     "marketValueEur": 20000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ezgjan Alioski",
+     "marketValueEur": 4000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Enis Bardhi",
+     "marketValueEur": 3000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Bojan Miovski",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Stefan Ristovski",
+     "marketValueEur": 2000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "gabon": {
+   "displayName": "Gabon",
+   "method": "citizenship-top26",
+   "squadValueEur": 33075000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 33075000,
+   "playersCounted": 10,
+   "topPlayers": [
+    {
+     "name": "Denis Bouanga",
+     "marketValueEur": 8000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Aaron Boupendza",
+     "marketValueEur": 6500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mario Lemina",
+     "marketValueEur": 6000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Pierre-Emerick Aubameyang",
+     "marketValueEur": 5000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Guélor Kanga",
+     "marketValueEur": 2300000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "luxembourg": {
+   "displayName": "Luxembourg",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 32900002,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 32900002,
+   "confederation": "UEFA",
+   "fifaRanking": 98,
+   "squadSize": 24,
+   "averageAge": 26.5,
+   "top26ValueEur": 31325000,
+   "playersCounted": 19,
+   "topPlayers": [
+    {
+     "name": "Leandro Barreiro",
+     "marketValueEur": 15000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Christopher Martins",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Anthony Moris",
+     "marketValueEur": 2000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Mathias Olesen",
+     "marketValueEur": 1500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Tiago Pereira Cardoso",
+     "marketValueEur": 1500000,
+     "position": "Goalkeeper"
+    }
+   ]
+  },
+  "panama": {
+   "displayName": "Panama",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 32400002,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 32400002,
+   "confederation": "CONCACAF",
+   "fifaRanking": 33,
+   "squadSize": 23,
+   "averageAge": 29.6,
+   "top26ValueEur": 18450000,
+   "playersCounted": 8,
+   "topPlayers": [
+    {
+     "name": "Amir Murillo",
+     "marketValueEur": 10000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Eduardo Guerrero",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "José Luis Rodríguez",
+     "marketValueEur": 2000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ismael Díaz",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Andrés Andrade",
+     "marketValueEur": 1000000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "unitedarabemirates": {
+   "displayName": "United Arab Emirates",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 31129999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 31129999,
+   "confederation": "AFC",
+   "fifaRanking": 68,
+   "squadSize": 24,
+   "averageAge": 26.6,
+   "top26ValueEur": 250000,
+   "playersCounted": 2,
+   "topPlayers": [
+    {
+     "name": "Mackenzie Hunt",
+     "marketValueEur": 200000,
+     "position": "Defender"
+    },
+    {
+     "name": "Junior Ndiaye",
+     "marketValueEur": 50000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "indonesia": {
+   "displayName": "Indonesia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 30680000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 30680000,
+   "confederation": "AFC",
+   "fifaRanking": 122,
+   "squadSize": 23,
+   "averageAge": 26.4,
+   "top26ValueEur": 6700000,
+   "playersCounted": 10,
+   "topPlayers": [
+    {
+     "name": "Sandy Walsh",
+     "marketValueEur": 1300000,
+     "position": "Defender"
+    },
+    {
+     "name": "Thom Haye",
+     "marketValueEur": 1000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ole Romeny",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jordi Amat",
+     "marketValueEur": 900000,
+     "position": "Defender"
+    },
+    {
+     "name": "Eliano Reijnders",
+     "marketValueEur": 600000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "bulgaria": {
+   "displayName": "Bulgaria",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 29750000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 29750000,
+   "confederation": "UEFA",
+   "fifaRanking": 86,
+   "squadSize": 24,
+   "averageAge": 25.1,
+   "top26ValueEur": 31850000,
+   "playersCounted": 23,
+   "topPlayers": [
+    {
+     "name": "Kiril Despodov",
+     "marketValueEur": 7000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ilia Gruev",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Filip Krastev",
+     "marketValueEur": 3000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Rosen Bozhinov",
+     "marketValueEur": 2500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Andrian Kraev",
+     "marketValueEur": 1500000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "curacao": {
+   "displayName": "Curacao",
+   "method": "citizenship-top26",
+   "squadValueEur": 29150000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 29150000,
+   "playersCounted": 26,
+   "topPlayers": [
+    {
+     "name": "Juninho Bacuna",
+     "marketValueEur": 4500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Joshua Brenet",
+     "marketValueEur": 3500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Armando Obispo",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Sontje Hansen",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Riechedly Bazoer",
+     "marketValueEur": 2800000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "peru": {
+   "displayName": "Peru",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 28750000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 28750000,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 53,
+   "squadSize": 24,
+   "averageAge": 26.8,
+   "top26ValueEur": 16950000,
+   "playersCounted": 12,
+   "topPlayers": [
+    {
+     "name": "Renato Tapia",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Luis Abram",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Miguel Trauco",
+     "marketValueEur": 1800000,
+     "position": "Defender"
+    },
+    {
+     "name": "Luis Advíncula",
+     "marketValueEur": 1200000,
+     "position": "Defender"
+    },
+    {
+     "name": "Sergio Peña",
+     "marketValueEur": 1200000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "saudiarabia": {
+   "displayName": "Saudi Arabia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 27629999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 27629999,
+   "confederation": "AFC",
+   "fifaRanking": 61,
+   "squadSize": 23,
+   "averageAge": 27.9,
+   "top26ValueEur": 8000000,
+   "playersCounted": 11,
+   "topPlayers": [
+    {
+     "name": "Saud Abdulhamid",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Salem Al-Dawsari",
+     "marketValueEur": 2000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Marwan Al-Sahafi",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Saleh Al-Shehri",
+     "marketValueEur": 650000,
+     "position": "Attack"
+    },
+    {
+     "name": "Fahad Al-Muwallad",
+     "marketValueEur": 350000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "zambia": {
+   "displayName": "Zambia",
+   "method": "citizenship-top26",
+   "squadValueEur": 27250000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 27250000,
+   "playersCounted": 6,
+   "topPlayers": [
+    {
+     "name": "Patson Daka",
+     "marketValueEur": 15000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Fashion Sakala",
+     "marketValueEur": 5500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Lameck Banda",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kingstone Mutandwa",
+     "marketValueEur": 2000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Emmanuel Banda",
+     "marketValueEur": 900000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "togo": {
+   "displayName": "Togo",
+   "method": "citizenship-top26",
+   "squadValueEur": 26410000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 26410000,
+   "playersCounted": 15,
+   "topPlayers": [
+    {
+     "name": "Kévin Denkey",
+     "marketValueEur": 14000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kévin Boma",
+     "marketValueEur": 4000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Khaled Narey",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Dakonam Djené",
+     "marketValueEur": 1600000,
+     "position": "Defender"
+    },
+    {
+     "name": "Dermane Karim",
+     "marketValueEur": 900000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "iran": {
+   "displayName": "Iran",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 23080000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 23080000,
+   "confederation": "AFC",
+   "fifaRanking": 21,
+   "squadSize": 31,
+   "averageAge": 28.3,
+   "top26ValueEur": 34275000,
+   "playersCounted": 21,
+   "topPlayers": [
+    {
+     "name": "Sardar Azmoun",
+     "marketValueEur": 8000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mohammad Mohebi",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Alireza Jahanbakhsh",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mehdi Taremi",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Allahyar Sayyadmanesh",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "mozambique": {
+   "displayName": "Mozambique",
+   "method": "citizenship-top26",
+   "squadValueEur": 22350000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 22350000,
+   "playersCounted": 5,
+   "topPlayers": [
+    {
+     "name": "Geny Catamo",
+     "marketValueEur": 15000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Reinildo Mandava",
+     "marketValueEur": 5000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Bruno Langa",
+     "marketValueEur": 1500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Diogo Calila",
+     "marketValueEur": 500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Witi",
+     "marketValueEur": 350000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "newzealand": {
+   "displayName": "New Zealand",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 22200001,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 22200001,
+   "confederation": "OFC",
+   "fifaRanking": 85,
+   "squadSize": 23,
+   "averageAge": 27.5,
+   "top26ValueEur": 26500000,
+   "playersCounted": 20,
+   "topPlayers": [
+    {
+     "name": "Chris Wood",
+     "marketValueEur": 8000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Liberato Cacace",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Marko Stamenić",
+     "marketValueEur": 3000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Bill Tuiloma",
+     "marketValueEur": 2500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Callum McCowatt",
+     "marketValueEur": 2000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "zimbabwe": {
+   "displayName": "Zimbabwe",
+   "method": "citizenship-top26",
+   "squadValueEur": 22200000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 22200000,
+   "playersCounted": 8,
+   "topPlayers": [
+    {
+     "name": "Marshall Munetsi",
+     "marketValueEur": 10000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jordan Zemura",
+     "marketValueEur": 4000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Teenage Hadebe",
+     "marketValueEur": 2000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Munashe Garananga",
+     "marketValueEur": 2000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Tino Kadewere",
+     "marketValueEur": 1800000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "iraq": {
+   "displayName": "Iraq",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 19180000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 19180000,
+   "confederation": "AFC",
+   "fifaRanking": 57,
+   "squadSize": 28,
+   "averageAge": 26.6,
+   "top26ValueEur": 8250000,
+   "playersCounted": 10,
+   "topPlayers": [
+    {
+     "name": "Zidane Iqbal",
+     "marketValueEur": 3000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ali Al-Hamadi",
+     "marketValueEur": 2000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Aimar Sher",
+     "marketValueEur": 750000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Kevin Yakob",
+     "marketValueEur": 600000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Frans Dhia Putros",
+     "marketValueEur": 400000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "cyprus": {
+   "displayName": "Cyprus",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 19100000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 19100000,
+   "confederation": "UEFA",
+   "fifaRanking": 126,
+   "squadSize": 26,
+   "averageAge": 25.8,
+   "top26ValueEur": 10200000,
+   "playersCounted": 11,
+   "topPlayers": [
+    {
+     "name": "Grigoris Kastanos",
+     "marketValueEur": 1800000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Konstantinos Laifis",
+     "marketValueEur": 1500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Loizos Loizou",
+     "marketValueEur": 1500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Pieros Sotiriou",
+     "marketValueEur": 1400000,
+     "position": "Attack"
+    },
+    {
+     "name": "Charalampos Kyriakou",
+     "marketValueEur": 800000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "costarica": {
+   "displayName": "Costa Rica",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 18700001,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 18700001,
+   "confederation": "CONCACAF",
+   "fifaRanking": 51,
+   "squadSize": 23,
+   "averageAge": 24.8,
+   "top26ValueEur": 36250000,
+   "playersCounted": 20,
+   "topPlayers": [
+    {
+     "name": "Manfred Ugalde",
+     "marketValueEur": 14000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Randall Leal",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Patrick Sequeira",
+     "marketValueEur": 3500000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Josimar Alcócer",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Brandon Aguilera",
+     "marketValueEur": 2000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "bolivia": {
+   "displayName": "Bolivia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 18629999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 18629999,
+   "confederation": "CONMEBOL",
+   "fifaRanking": 76,
+   "squadSize": 28,
+   "averageAge": 24.9,
+   "top26ValueEur": 2850000,
+   "playersCounted": 4,
+   "topPlayers": [
+    {
+     "name": "Roberto Fernández",
+     "marketValueEur": 1500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Ramiro Vaca",
+     "marketValueEur": 650000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Diego Arroyo",
+     "marketValueEur": 500000,
+     "position": "Defender"
+    },
+    {
+     "name": "José Flores",
+     "marketValueEur": 200000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "lithuania": {
+   "displayName": "Lithuania",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 18549999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 18549999,
+   "confederation": "UEFA",
+   "fifaRanking": 148,
+   "squadSize": 23,
+   "averageAge": 27.2,
+   "top26ValueEur": 10525000,
+   "playersCounted": 11,
+   "topPlayers": [
+    {
+     "name": "Gvidas Gineitis",
+     "marketValueEur": 5500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Edgaras Utkus",
+     "marketValueEur": 1800000,
+     "position": "Defender"
+    },
+    {
+     "name": "Vykintas Slivka",
+     "marketValueEur": 600000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Edvinas Gertmonas",
+     "marketValueEur": 600000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Gytis Paulauskas",
+     "marketValueEur": 400000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "qatar": {
+   "displayName": "Qatar",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 18299999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 18299999,
+   "confederation": "AFC",
+   "fifaRanking": 55,
+   "squadSize": 25,
+   "averageAge": 27.9,
+   "top26ValueEur": 11825000,
+   "playersCounted": 8,
+   "topPlayers": [
+    {
+     "name": "Akram Afif",
+     "marketValueEur": 4500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Edmílson Junior",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Guilherme",
+     "marketValueEur": 2000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Abdelkarim Hassan",
+     "marketValueEur": 650000,
+     "position": "Defender"
+    },
+    {
+     "name": "Lucas Mendes",
+     "marketValueEur": 500000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "dominicanrepublic": {
+   "displayName": "Dominican Republic",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 18030001,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 18030001,
+   "confederation": "CONCACAF",
+   "fifaRanking": 143,
+   "squadSize": 23,
+   "averageAge": 24.3,
+   "top26ValueEur": 20025000,
+   "playersCounted": 12,
+   "topPlayers": [
+    {
+     "name": "Pablo Rosario",
+     "marketValueEur": 8000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Junior Firpo",
+     "marketValueEur": 7000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Mariano Díaz",
+     "marketValueEur": 1500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Peter Federico",
+     "marketValueEur": 1500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Juan Familia-Castillo",
+     "marketValueEur": 400000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "kazakhstan": {
+   "displayName": "Kazakhstan",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 17700001,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 17700001,
+   "confederation": "UEFA",
+   "fifaRanking": 110,
+   "squadSize": 27,
+   "averageAge": 26.4,
+   "top26ValueEur": 6550000,
+   "playersCounted": 5,
+   "topPlayers": [
+    {
+     "name": "Bakhtiyor Zaynutdinov",
+     "marketValueEur": 2500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Nuraly Alip",
+     "marketValueEur": 2500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Georgiy Zhukov",
+     "marketValueEur": 700000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Ramazan Orazov",
+     "marketValueEur": 450000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Abat Aymbetov",
+     "marketValueEur": 400000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "latvia": {
+   "displayName": "Latvia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 17680000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 17680000,
+   "confederation": "UEFA",
+   "fifaRanking": 137,
+   "squadSize": 27,
+   "averageAge": 26.9,
+   "top26ValueEur": 6900000,
+   "playersCounted": 8,
+   "topPlayers": [
+    {
+     "name": "Raimonds Krollis",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Dennis Cirkin",
+     "marketValueEur": 2200000,
+     "position": "Defender"
+    },
+    {
+     "name": "Janis Ikaunieks",
+     "marketValueEur": 600000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Roberts Uldrikis",
+     "marketValueEur": 550000,
+     "position": "Attack"
+    },
+    {
+     "name": "Andrejs Ciganiks",
+     "marketValueEur": 400000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "honduras": {
+   "displayName": "Honduras",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 16299999,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 16299999,
+   "confederation": "CONCACAF",
+   "fifaRanking": 66,
+   "squadSize": 26,
+   "averageAge": 25.3,
+   "top26ValueEur": 9750000,
+   "playersCounted": 10,
+   "topPlayers": [
+    {
+     "name": "Luis Palma",
+     "marketValueEur": 3500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Rigoberto Rivas",
+     "marketValueEur": 1900000,
+     "position": "Attack"
+    },
+    {
+     "name": "Choco Lozano",
+     "marketValueEur": 1200000,
+     "position": "Attack"
+    },
+    {
+     "name": "Bryan Acosta",
+     "marketValueEur": 1200000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Andy Nájar",
+     "marketValueEur": 500000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "azerbaijan": {
+   "displayName": "Azerbaijan",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 16230000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 16230000,
+   "confederation": "UEFA",
+   "fifaRanking": 124,
+   "squadSize": 27,
+   "averageAge": 27.6,
+   "top26ValueEur": 7425000,
+   "playersCounted": 10,
+   "topPlayers": [
+    {
+     "name": "Renat Dadashov",
+     "marketValueEur": 1800000,
+     "position": "Attack"
+    },
+    {
+     "name": "Emin Mahmudov",
+     "marketValueEur": 1400000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Mahir Emreli",
+     "marketValueEur": 1200000,
+     "position": "Attack"
+    },
+    {
+     "name": "Shahrudin Mahammadaliyev",
+     "marketValueEur": 900000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Anatoliy Nuriyev",
+     "marketValueEur": 600000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "jordan": {
+   "displayName": "Jordan",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 15980000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 15980000,
+   "confederation": "AFC",
+   "fifaRanking": 63,
+   "squadSize": 26,
+   "averageAge": 27.1,
+   "top26ValueEur": 6250000,
+   "playersCounted": 2,
+   "topPlayers": [
+    {
+     "name": "Mousa Tamari",
+     "marketValueEur": 6000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Tammer Bany",
+     "marketValueEur": 250000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "malta": {
+   "displayName": "Malta",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 14350000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 14350000,
+   "confederation": "UEFA",
+   "fifaRanking": 161,
+   "squadSize": 27,
+   "averageAge": 27.6,
+   "top26ValueEur": 5650000,
+   "playersCounted": 4,
+   "topPlayers": [
+    {
+     "name": "Irvin Cardona",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Teddy Teuma",
+     "marketValueEur": 2500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Zach Muscat",
+     "marketValueEur": 400000,
+     "position": "Defender"
+    },
+    {
+     "name": "Myles Beerman",
+     "marketValueEur": 250000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "belarus": {
+   "displayName": "Belarus",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 14300000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 14300000,
+   "confederation": "UEFA",
+   "fifaRanking": 97,
+   "squadSize": 23,
+   "averageAge": 26.6,
+   "top26ValueEur": 4300000,
+   "playersCounted": 10,
+   "topPlayers": [
+    {
+     "name": "Valeriy Gromyko",
+     "marketValueEur": 800000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Vitaliy Lisakovich",
+     "marketValueEur": 700000,
+     "position": "Attack"
+    },
+    {
+     "name": "Valeriy Bocherov",
+     "marketValueEur": 600000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Vladislav Malkevich",
+     "marketValueEur": 500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Artem Kontsevoy",
+     "marketValueEur": 500000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "equatorialguinea": {
+   "displayName": "Equatorial Guinea",
+   "method": "citizenship-top26",
+   "squadValueEur": 13200000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 13200000,
+   "playersCounted": 9,
+   "topPlayers": [
+    {
+     "name": "Saúl Coco",
+     "marketValueEur": 8000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Luis Asué",
+     "marketValueEur": 1500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Pepín Machín",
+     "marketValueEur": 1000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jesús Owono",
+     "marketValueEur": 1000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Omar Mascarell",
+     "marketValueEur": 800000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "congo": {
+   "displayName": "Congo",
+   "method": "citizenship-top26",
+   "squadValueEur": 12775000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 12775000,
+   "playersCounted": 13,
+   "topPlayers": [
+    {
+     "name": "Antoine Makoumbou",
+     "marketValueEur": 4500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Gaius Makouta",
+     "marketValueEur": 3000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Silvere Ganvoula",
+     "marketValueEur": 1200000,
+     "position": "Attack"
+    },
+    {
+     "name": "Bradley Mazikou",
+     "marketValueEur": 1000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Chandrel Massanga",
+     "marketValueEur": 800000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "china": {
+   "displayName": "China",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 12480000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 12480000,
+   "confederation": "AFC",
+   "fifaRanking": 94,
+   "squadSize": 26,
+   "averageAge": 26.6,
+   "top26ValueEur": 3275000,
+   "playersCounted": 7,
+   "topPlayers": [
+    {
+     "name": "Yuning Zhang",
+     "marketValueEur": 850000,
+     "position": "Attack"
+    },
+    {
+     "name": "Tyias Browning",
+     "marketValueEur": 800000,
+     "position": "Defender"
+    },
+    {
+     "name": "Shangyuan Wang",
+     "marketValueEur": 500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Shaocong Wu",
+     "marketValueEur": 500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Shihao Wei",
+     "marketValueEur": 325000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "libya": {
+   "displayName": "Libya",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 11430000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 11430000,
+   "confederation": "CAF",
+   "fifaRanking": 112,
+   "squadSize": 19,
+   "averageAge": 26.5,
+   "top26ValueEur": 7000000,
+   "playersCounted": 1,
+   "topPlayers": [
+    {
+     "name": "Moatasem Al-Musrati",
+     "marketValueEur": 7000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "guadeloupe": {
+   "displayName": "Guadeloupe",
+   "method": "citizenship-top26",
+   "squadValueEur": 10975000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 10975000,
+   "playersCounted": 9,
+   "topPlayers": [
+    {
+     "name": "Christopher Jullien",
+     "marketValueEur": 2500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Yvann Maçon",
+     "marketValueEur": 2000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Matthias Phaëton",
+     "marketValueEur": 1500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Dimitri Foulquier",
+     "marketValueEur": 1200000,
+     "position": "Defender"
+    },
+    {
+     "name": "Thierry Ambrose",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "moldova": {
+   "displayName": "Moldova",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 10230000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 10230000,
+   "confederation": "UEFA",
+   "fifaRanking": 159,
+   "squadSize": 26,
+   "averageAge": 25.8,
+   "top26ValueEur": 9850000,
+   "playersCounted": 17,
+   "topPlayers": [
+    {
+     "name": "Oleg Reabciuk",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Ion Nicolaescu",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Vladyslav Baboglo",
+     "marketValueEur": 1000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Vitalie Damascan",
+     "marketValueEur": 800000,
+     "position": "Attack"
+    },
+    {
+     "name": "Artur Ioniță",
+     "marketValueEur": 700000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "madagascar": {
+   "displayName": "Madagascar",
+   "method": "citizenship-top26",
+   "squadValueEur": 9550000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 9550000,
+   "playersCounted": 7,
+   "topPlayers": [
+    {
+     "name": "Andy Pelmard",
+     "marketValueEur": 3500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Rayan Raveloson",
+     "marketValueEur": 1800000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Marco Ilaimaharitra",
+     "marketValueEur": 1500000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jean Marcelin",
+     "marketValueEur": 1500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Loïc Lapoussin",
+     "marketValueEur": 800000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "centralafricanrepublic": {
+   "displayName": "Central African Republic",
+   "method": "citizenship-top26",
+   "squadValueEur": 9125000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 9125000,
+   "playersCounted": 5,
+   "topPlayers": [
+    {
+     "name": "Geoffrey Kondogbia",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Goduine Koyalipou",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Hugo Gambor",
+     "marketValueEur": 800000,
+     "position": "Defender"
+    },
+    {
+     "name": "Isaac Solet",
+     "marketValueEur": 750000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Geoffrey Lembet",
+     "marketValueEur": 75000,
+     "position": "Goalkeeper"
+    }
+   ]
+  },
+  "uganda": {
+   "displayName": "Uganda",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 8700000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 8700000,
+   "confederation": "CAF",
+   "fifaRanking": 88,
+   "squadSize": 28,
+   "averageAge": 28,
+   "top26ValueEur": 2775000,
+   "playersCounted": 8,
+   "topPlayers": [
+    {
+     "name": "Toby Sibbick",
+     "marketValueEur": 650000,
+     "position": "Defender"
+    },
+    {
+     "name": "Uche Ikpeazu",
+     "marketValueEur": 600000,
+     "position": "Attack"
+    },
+    {
+     "name": "Moses Opondo",
+     "marketValueEur": 400000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Bevis Mugabi",
+     "marketValueEur": 350000,
+     "position": "Defender"
+    },
+    {
+     "name": "Elio Capradossi",
+     "marketValueEur": 300000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "thailand": {
+   "displayName": "Thailand",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 8700000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 8700000,
+   "confederation": "AFC",
+   "fifaRanking": 93,
+   "squadSize": 26,
+   "averageAge": 29.4,
+   "top26ValueEur": 2000000,
+   "playersCounted": 5,
+   "topPlayers": [
+    {
+     "name": "Suphanat Mueanta",
+     "marketValueEur": 800000,
+     "position": "Attack"
+    },
+    {
+     "name": "Nicholas Mickelson",
+     "marketValueEur": 400000,
+     "position": "Defender"
+    },
+    {
+     "name": "Thanawat Suengchitthawon",
+     "marketValueEur": 300000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jude Soonsup-Bell",
+     "marketValueEur": 300000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jonathan Khemdee",
+     "marketValueEur": 200000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "martinique": {
+   "displayName": "Martinique",
+   "method": "citizenship-top26",
+   "squadValueEur": 8700000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 8700000,
+   "playersCounted": 9,
+   "topPlayers": [
+    {
+     "name": "Janis Antiste",
+     "marketValueEur": 2300000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jérémy Petris",
+     "marketValueEur": 2000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Christophe Hérelle",
+     "marketValueEur": 1500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Brighton Labeau",
+     "marketValueEur": 700000,
+     "position": "Attack"
+    },
+    {
+     "name": "Mickaël Biron",
+     "marketValueEur": 700000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "mauritania": {
+   "displayName": "Mauritania",
+   "method": "citizenship-top26",
+   "squadValueEur": 8500000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 8500000,
+   "playersCounted": 6,
+   "topPlayers": [
+    {
+     "name": "Aboubakary Koita",
+     "marketValueEur": 4500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Papa Ndiaga Yade",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Dawda Camara",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jordan Lefort",
+     "marketValueEur": 900000,
+     "position": "Defender"
+    },
+    {
+     "name": "Djeidi Gassama",
+     "marketValueEur": 800000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "benin": {
+   "displayName": "Benin",
+   "method": "citizenship-top26",
+   "squadValueEur": 8400000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 8400000,
+   "playersCounted": 5,
+   "topPlayers": [
+    {
+     "name": "Aiyegun Tosin",
+     "marketValueEur": 3000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Cédric Hountondji",
+     "marketValueEur": 2000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Steve Mounié",
+     "marketValueEur": 1800000,
+     "position": "Attack"
+    },
+    {
+     "name": "David Kiki",
+     "marketValueEur": 1200000,
+     "position": "Defender"
+    },
+    {
+     "name": "Yohan Roche",
+     "marketValueEur": 400000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "tajikistan": {
+   "displayName": "Tajikistan",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 7780000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 7780000,
+   "confederation": "AFC",
+   "fifaRanking": 103,
+   "squadSize": 25,
+   "averageAge": 25.8,
+   "top26ValueEur": 1700000,
+   "playersCounted": 4,
+   "topPlayers": [
+    {
+     "name": "Alisher Dzhalilov",
+     "marketValueEur": 650000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Parvizdzhon Umarbaev",
+     "marketValueEur": 650000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Oleg Baklov",
+     "marketValueEur": 300000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Khusrav Toirov",
+     "marketValueEur": 100000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "bangladesh": {
+   "displayName": "Bangladesh",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 7740000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 7740000,
+   "confederation": "AFC",
+   "fifaRanking": 181,
+   "squadSize": 23,
+   "averageAge": 25.8,
+   "top26ValueEur": 5000000,
+   "playersCounted": 1,
+   "topPlayers": [
+    {
+     "name": "Hamza Choudhury",
+     "marketValueEur": 5000000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "kyrgyzstan": {
+   "displayName": "Kyrgyzstan",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 7580000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 7580000,
+   "confederation": "AFC",
+   "fifaRanking": 107,
+   "squadSize": 32,
+   "averageAge": 25.5,
+   "top26ValueEur": 800000,
+   "playersCounted": 2,
+   "topPlayers": [
+    {
+     "name": "Valeriy Kichin",
+     "marketValueEur": 500000,
+     "position": "Defender"
+    },
+    {
+     "name": "Beknaz Almazbekov",
+     "marketValueEur": 300000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "malaysia": {
+   "displayName": "Malaysia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 7150000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 7150000,
+   "confederation": "AFC",
+   "fifaRanking": 138,
+   "squadSize": 28,
+   "averageAge": 28.5,
+   "top26ValueEur": 2175000,
+   "playersCounted": 3,
+   "topPlayers": [
+    {
+     "name": "João Figueiredo",
+     "marketValueEur": 1200000,
+     "position": "Attack"
+    },
+    {
+     "name": "Dion Cools",
+     "marketValueEur": 750000,
+     "position": "Defender"
+    },
+    {
+     "name": "Safawi Rasid",
+     "marketValueEur": 225000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "estonia": {
+   "displayName": "Estonia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 7050000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 7050000,
+   "confederation": "UEFA",
+   "fifaRanking": 129,
+   "squadSize": 24,
+   "averageAge": 24.2,
+   "top26ValueEur": 7025000,
+   "playersCounted": 11,
+   "topPlayers": [
+    {
+     "name": "Karl Hein",
+     "marketValueEur": 3000000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Karol Mets",
+     "marketValueEur": 1000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Joonas Tamm",
+     "marketValueEur": 800000,
+     "position": "Defender"
+    },
+    {
+     "name": "Mattias Käit",
+     "marketValueEur": 800000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Henri Anier",
+     "marketValueEur": 350000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "syria": {
+   "displayName": "Syria",
+   "method": "citizenship-top26",
+   "squadValueEur": 7000000,
+   "valueBasis": "citizenship-top26",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": null,
+   "confederation": null,
+   "fifaRanking": null,
+   "squadSize": null,
+   "averageAge": null,
+   "top26ValueEur": 7000000,
+   "playersCounted": 5,
+   "topPlayers": [
+    {
+     "name": "Aiham Ousou",
+     "marketValueEur": 3000000,
+     "position": "Defender"
+    },
+    {
+     "name": "Mahmoud Dahoud",
+     "marketValueEur": 2000000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Pablo Sabbag",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Daleho Irandust",
+     "marketValueEur": 700000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Noah Shamoun",
+     "marketValueEur": 300000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "lebanon": {
+   "displayName": "Lebanon",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 6450000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 6450000,
+   "confederation": "AFC",
+   "fifaRanking": 108,
+   "squadSize": 23,
+   "averageAge": 28.9,
+   "top26ValueEur": 450000,
+   "playersCounted": 1,
+   "topPlayers": [
+    {
+     "name": "Daniel Lajud",
+     "marketValueEur": 450000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "vietnam": {
+   "displayName": "Vietnam",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 6380000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 6380000,
+   "confederation": "AFC",
+   "fifaRanking": 99,
+   "squadSize": 23,
+   "averageAge": 28
+  },
+  "philippines": {
+   "displayName": "Philippines",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 6180000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 6180000,
+   "confederation": "AFC",
+   "fifaRanking": 135,
+   "squadSize": 23,
+   "averageAge": 27.8,
+   "top26ValueEur": 1300000,
+   "playersCounted": 4,
+   "topPlayers": [
+    {
+     "name": "Gerrit Holtmann",
+     "marketValueEur": 700000,
+     "position": "Attack"
+    },
+    {
+     "name": "Kevin Ray Mendoza",
+     "marketValueEur": 250000,
+     "position": "Goalkeeper"
+    },
+    {
+     "name": "Dylan Demuynck",
+     "marketValueEur": 200000,
+     "position": "Attack"
+    },
+    {
+     "name": "Jesse Curran",
+     "marketValueEur": 150000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "oman": {
+   "displayName": "Oman",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 6100000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 6100000,
+   "confederation": "AFC",
+   "fifaRanking": 79,
+   "squadSize": 22,
+   "averageAge": 28.5
+  },
+  "guatemala": {
+   "displayName": "Guatemala",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 5330000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 5330000,
+   "confederation": "CONCACAF",
+   "fifaRanking": 96,
+   "squadSize": 21,
+   "averageAge": 25.2,
+   "top26ValueEur": 1500000,
+   "playersCounted": 2,
+   "topPlayers": [
+    {
+     "name": "Rubio Rubín",
+     "marketValueEur": 1000000,
+     "position": "Attack"
+    },
+    {
+     "name": "Nathaniel Méndez-Laing",
+     "marketValueEur": 500000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "faroeislands": {
+   "displayName": "Faroe Islands",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 4850000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 4850000,
+   "confederation": "UEFA",
+   "fifaRanking": 123,
+   "squadSize": 23,
+   "averageAge": 27.4,
+   "top26ValueEur": 1325000,
+   "playersCounted": 7,
+   "topPlayers": [
+    {
+     "name": "Viljormur Davidsen",
+     "marketValueEur": 250000,
+     "position": "Defender"
+    },
+    {
+     "name": "Brandur Hendriksson",
+     "marketValueEur": 250000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Hallur Hansson",
+     "marketValueEur": 200000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Jóan Símun Edmundsson",
+     "marketValueEur": 200000,
+     "position": "Attack"
+    },
+    {
+     "name": "Petur Knudsen",
+     "marketValueEur": 150000,
+     "position": "Attack"
+    }
+   ]
+  },
+  "india": {
+   "displayName": "India",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 4800000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 4800000,
+   "confederation": "AFC",
+   "fifaRanking": 136,
+   "squadSize": 23,
+   "averageAge": 28.7
+  },
+  "elsalvador": {
+   "displayName": "El Salvador",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 3930000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 3930000,
+   "confederation": "CONCACAF",
+   "fifaRanking": 100,
+   "squadSize": 20,
+   "averageAge": 24.9,
+   "top26ValueEur": 250000,
+   "playersCounted": 2,
+   "topPlayers": [
+    {
+     "name": "Enrico Dueñas",
+     "marketValueEur": 150000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Joshua Pérez",
+     "marketValueEur": 100000,
+     "position": "Midfield"
+    }
+   ]
+  },
+  "singapore": {
+   "displayName": "Singapore",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 3930000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 3930000,
+   "confederation": "AFC",
+   "fifaRanking": 147,
+   "squadSize": 27,
+   "averageAge": 27.7
+  },
+  "hongkong": {
+   "displayName": "Hong Kong",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 3600000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 3600000,
+   "confederation": "AFC",
+   "fifaRanking": 155,
+   "squadSize": 23,
+   "averageAge": 28.5
+  },
+  "andorra": {
+   "displayName": "Andorra",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 3380000,
+   "valueBasis": "official",
+   "detailBasis": "citizenship",
+   "officialSquadValueEur": 3380000,
+   "confederation": "UEFA",
+   "fifaRanking": 173,
+   "squadSize": 26,
+   "averageAge": 29.2,
+   "top26ValueEur": 800000,
+   "playersCounted": 1,
+   "topPlayers": [
+    {
+     "name": "Iker Álvarez",
+     "marketValueEur": 800000,
+     "position": "Goalkeeper"
+    }
+   ]
+  },
+  "comoros": {
+   "displayName": "Comoros",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 3280000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 3280000,
+   "confederation": "CAF",
+   "fifaRanking": 109,
+   "squadSize": 21,
+   "averageAge": 23.9,
+   "top26ValueEur": 6925000,
+   "playersCounted": 17,
+   "topPlayers": [
+    {
+     "name": "Faïz Selemani",
+     "marketValueEur": 2500000,
+     "position": "Attack"
+    },
+    {
+     "name": "Ismaël Boura",
+     "marketValueEur": 1000000,
+     "position": "Defender"
+    },
+    {
+     "name": "El Fardou Ben",
+     "marketValueEur": 700000,
+     "position": "Attack"
+    },
+    {
+     "name": "Youssouf M'Changama",
+     "marketValueEur": 700000,
+     "position": "Midfield"
+    },
+    {
+     "name": "Nassim Ahmed",
+     "marketValueEur": 300000,
+     "position": "Defender"
+    }
+   ]
+  },
+  "myanmar": {
+   "displayName": "Myanmar",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 3100000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 3100000,
+   "confederation": "AFC",
+   "fifaRanking": 158,
+   "squadSize": 23,
+   "averageAge": 25.9
+  },
+  "ethiopia": {
+   "displayName": "Ethiopia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 2780000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 2780000,
+   "confederation": "CAF",
+   "fifaRanking": 144,
+   "squadSize": 23,
+   "averageAge": 27.5
+  },
+  "nicaragua": {
+   "displayName": "Nicaragua",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 2580000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 2580000,
+   "confederation": "CONCACAF",
+   "fifaRanking": 131,
+   "squadSize": 23,
+   "averageAge": 27.6
+  },
+  "fiji": {
+   "displayName": "Fiji",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 2450000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 2450000,
+   "confederation": "OFC",
+   "fifaRanking": 154,
+   "squadSize": 26,
+   "averageAge": 28.2
+  },
+  "cambodia": {
+   "displayName": "Cambodia",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 2380000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 2380000,
+   "confederation": "AFC",
+   "fifaRanking": 177,
+   "squadSize": 23,
+   "averageAge": 25.6
+  },
+  "chinesetaipei": {
+   "displayName": "Chinese Taipei",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 1920000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 1920000,
+   "confederation": "AFC",
+   "fifaRanking": 174,
+   "squadSize": 23,
+   "averageAge": 26.3
+  },
+  "laos": {
+   "displayName": "Laos",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 1300000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 1300000,
+   "confederation": null,
+   "fifaRanking": 185,
+   "squadSize": 23,
+   "averageAge": 23.1
+  },
+  "gibraltar": {
+   "displayName": "Gibraltar",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 1200000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 1200000,
+   "confederation": "UEFA",
+   "fifaRanking": 203,
+   "squadSize": 23,
+   "averageAge": 23.6
+  },
+  "puertorico": {
+   "displayName": "Puerto Rico",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 1180000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 1180000,
+   "confederation": "CONCACAF",
+   "fifaRanking": 156,
+   "squadSize": 24,
+   "averageAge": 23.3
+  },
+  "sanmarino": {
+   "displayName": "San Marino",
+   "method": "transfermarkt-national-team",
+   "squadValueEur": 995000,
+   "valueBasis": "official",
+   "detailBasis": "squad",
+   "officialSquadValueEur": 995000,
+   "confederation": "UEFA",
+   "fifaRanking": 211,
+   "squadSize": 24,
+   "averageAge": 24.9
+  }
+ }
+}
