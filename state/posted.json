@@ -1,6 +1,7 @@
 {
   "prematch": [
-    "apf_1489370"
+    "apf_1489370",
+    "apf_1489373"
   ],
   "receipts": [
     "apf_1538999",
@@ -15,6 +16,12 @@
       "id": "apf_1489370",
       "label": "USA 4–1 Paraguay",
       "at": "2026-06-13T06:25:11.713Z"
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489373",
+      "label": "Qatar v Switzerland",
+      "at": "2026-06-13T16:01:18.404Z"
     }
   ],
   "verdictWait": {}
