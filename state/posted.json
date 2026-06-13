@@ -2,7 +2,8 @@
   "prematch": [
     "apf_1489370",
     "apf_1489373",
-    "apf_1489371"
+    "apf_1489371",
+    "apf_1489372"
   ],
   "receipts": [
     "apf_1538999",
@@ -29,7 +30,15 @@
       "id": "apf_1489371",
       "label": "Brazil v Morocco",
       "at": "2026-06-13T19:48:56.051Z"
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489372",
+      "label": "Haiti v Scotland",
+      "at": "2026-06-13T22:40:46.557Z"
     }
   ],
-  "verdictWait": {}
+  "verdictWait": {
+    "apf_1489373": 1
+  }
 }
