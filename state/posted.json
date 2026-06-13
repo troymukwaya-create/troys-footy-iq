@@ -5,9 +5,17 @@
   "receipts": [
     "apf_1538999",
     "apf_1489369",
-    "apf_1539000"
+    "apf_1539000",
+    "apf_1489370"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
-  "log": [],
+  "log": [
+    {
+      "kind": "match",
+      "id": "apf_1489370",
+      "label": "USA 4–1 Paraguay",
+      "at": "2026-06-13T06:25:11.713Z"
+    }
+  ],
   "verdictWait": {}
 }
