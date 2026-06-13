@@ -1,7 +1,8 @@
 {
   "prematch": [
     "apf_1489370",
-    "apf_1489373"
+    "apf_1489373",
+    "apf_1489371"
   ],
   "receipts": [
     "apf_1538999",
@@ -22,6 +23,12 @@
       "id": "apf_1489373",
       "label": "Qatar v Switzerland",
       "at": "2026-06-13T16:01:18.404Z"
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489371",
+      "label": "Brazil v Morocco",
+      "at": "2026-06-13T19:48:56.051Z"
     }
   ],
   "verdictWait": {}
