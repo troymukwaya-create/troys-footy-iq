@@ -56,18 +56,40 @@ export function adjustExpectedGoals(lambdaHome, lambdaAway, ctx = {}) {
   const homeAvail = resolveAvailability(ctx.homeAvailability);
   const awayAvail = resolveAvailability(ctx.awayAvailability);
 
-  const homeFactor = homeRest * homeAvail;
-  const awayFactor = awayRest * awayAvail;
-  const applied = homeFactor !== 1.0 || awayFactor !== 1.0;
+  // Weather is an environmental factor — it dampens BOTH teams' output
+  // equally (heat slows the whole match). Bounded multiplier (≥0.96) from
+  // services/weather.js; 1.0 (no-op) when no forecast is present.
+  const weatherFactor = (ctx.weather && Number.isFinite(ctx.weather.factor))
+    ? clamp(ctx.weather.factor, 0.9, 1) : 1.0;
+
+  const homeFactor = homeRest * homeAvail * weatherFactor;
+  const awayFactor = awayRest * awayAvail * weatherFactor;
+
+  // Lineups confirm/surface even when they don't move λ — record the flag.
+  const lineupsConfirmed = !!ctx.lineupsConfirmed;
+
+  const applied = homeFactor !== 1.0 || awayFactor !== 1.0 || lineupsConfirmed || weatherFactor !== 1.0;
+
+  const factors = {
+    homeRest, awayRest, homeAvail, awayAvail,
+    homeFactor: parseFloat(homeFactor.toFixed(3)),
+    awayFactor: parseFloat(awayFactor.toFixed(3)),
+  };
+  if (weatherFactor !== 1.0 || ctx.weather) {
+    factors.weather = ctx.weather
+      ? { tempC: ctx.weather.tempC, feelsLike: ctx.weather.feelsLike, effect: ctx.weather.effect ?? 0 }
+      : { effect: 0 };
+  }
+  if (lineupsConfirmed) {
+    factors.lineupsConfirmed = true;
+    if (ctx.homeStarAbsences?.length) factors.homeStarAbsences = ctx.homeStarAbsences;
+    if (ctx.awayStarAbsences?.length) factors.awayStarAbsences = ctx.awayStarAbsences;
+  }
 
   return {
     lambdaHome: parseFloat((lambdaHome * homeFactor).toFixed(3)),
     lambdaAway: parseFloat((lambdaAway * awayFactor).toFixed(3)),
-    factors: {
-      homeRest, awayRest, homeAvail, awayAvail,
-      homeFactor: parseFloat(homeFactor.toFixed(3)),
-      awayFactor: parseFloat(awayFactor.toFixed(3)),
-    },
+    factors,
     applied,
   };
 }

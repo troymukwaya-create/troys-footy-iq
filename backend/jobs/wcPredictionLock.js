@@ -19,6 +19,7 @@
 import api from '../services/apisports.js';
 import * as toa from '../services/sources/theOddsApi.js';
 import { computeWcPrediction, INTL_MODEL_VERSION } from '../services/wcDisplayPrediction.js';
+import { getConfirmedLineups } from '../services/lineups.js';
 import { storePrediction } from '../services/predictionService.js';
 import { upsertFixture } from '../db/upsert.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
@@ -70,10 +71,17 @@ async function lockOneMatch(match, { leagueId, leagueCode, modelVersion, homeFie
     catch (e) { console.warn(`[wcLock] fixture upsert failed for ${match.id}:`, e.message); }
   }
 
+  // Confirmed XIs (~T-60) + match-day weather sharpen the FINAL locked row —
+  // the one the public Brier scores. One lineups call per fixture (both
+  // teams), cached; a strict no-op before the XIs are published (a later
+  // 10-min cycle picks them up). Weather is free + cached.
+  let lineups = null;
+  try { lineups = await getConfirmedLineups(match.id); } catch { lineups = null; }
+
   // 2+3. Predict via the SHARED code path (services/wcDisplayPrediction):
   // the locked row is computed by literally the same function the cards
   // and the analysis page use, so display and scoring can never diverge.
-  const { pred, ev, marketProbs, ctx } = await computeWcPrediction(match, { oddsEvents, homeField });
+  const { pred, ev, marketProbs, ctx } = await computeWcPrediction(match, { oddsEvents, homeField, lineups, withWeather: true });
 
   const best = ev?.markets?.['1X2']?.bestOdds || null;
   const odds = best?.Home && best?.Draw && best?.Away
@@ -114,9 +122,12 @@ async function lockOneMatch(match, { leagueId, leagueCode, modelVersion, homeFie
   // 4. Odds snapshots → closing-line value tracking.
   if (ev && fixtureRowOk) await snapshotOdds(match.id, ev, marketProbs);
 
+  const cf = pred.contextFactors || {};
   console.log(`[wcLock] 🔒 ${match.homeTeam?.name} vs ${match.awayTeam?.name} ` +
     `(${modelVersion}, market:${marketProbs ? marketProbs.source : 'none'}, ` +
-    `form:${pred.nationalStrength?.recentMatchesUsed || 0}g, ko:${ctx.knockout ? 'y' : 'n'})`);
+    `form:${pred.nationalStrength?.recentMatchesUsed || 0}g, ko:${ctx.knockout ? 'y' : 'n'}` +
+    `${cf.lineupsConfirmed ? ', XI✓' : ''}` +
+    `${cf.weather && cf.weather.effect ? `, wx:${cf.weather.effect}%` : ''})`);
 }
 
 export async function runWcPredictionLock() {

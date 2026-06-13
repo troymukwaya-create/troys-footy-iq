@@ -8,6 +8,7 @@
 import { Router } from 'express';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 import { getPredictions, getPredictionByMatch } from '../services/predictionService.js';
+import { computeLedger } from '../services/ledger.js';
 
 const router = Router();
 
@@ -75,6 +76,12 @@ router.get('/', async (req, res) => {
       ORDER BY MAX(mp.created_at) DESC
     `);
 
+    // The two-number ledger (blended vs pure-model vs market-only Brier + CLV).
+    // Additive — the existing fields above are untouched. Never fails the route.
+    let ledger = null;
+    try { ledger = await computeLedger(); }
+    catch (e) { console.warn('[performance] ledger compute failed:', e.message); }
+
     res.json({
       error: false,
       data: {
@@ -82,6 +89,7 @@ router.get('/', async (req, res) => {
         perModel: perModel?.rows || [],
         runs: runs?.rows || [],
         recentPredictions: perLeague?.rows || [],
+        ledger,
       },
     });
   } catch (err) {

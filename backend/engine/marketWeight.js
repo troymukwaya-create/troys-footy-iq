@@ -15,13 +15,28 @@ import { safeQuery, isDbAvailable } from '../db/index.js';
 
 const SETTING_KEY = 'wc_market_weight';
 const DEFAULT_WEIGHT = clamp(Number(process.env.WC_MARKET_WEIGHT) || 0.60, 0.35, 0.85);
-const MIN_SAMPLES = 25;     // scored WC matches before learning kicks in
 const GRID_MIN = 0.30, GRID_MAX = 0.90, GRID_STEP = 0.05;
 
-let current = DEFAULT_WEIGHT;
-let meta = { source: 'default', samples: 0 };
+// ─── TOURNAMENT FREEZE (cross-vendor council verdict, 2026-06-13) ───
+// The daily grid-search re-fit was set to activate at 25 scored matches —
+// which the World Cup reaches mid-tournament (~June 20). All four council
+// models flagged this as the single biggest engine trap: at low n the
+// "optimal" blend weight chases noise and over-fits the last few results,
+// thrashing the published model in the middle of its launch window.
+// So the weight is FROZEN at 0.60 for the tournament. Re-fitting may only
+// be re-enabled DELIBERATELY (MARKET_WEIGHT_FROZEN=false) and then only
+// once there are ≥100 scored matches — never on the WC sample alone.
+const FROZEN = String(process.env.MARKET_WEIGHT_FROZEN ?? 'true').toLowerCase() !== 'false';
+const FROZEN_WEIGHT = DEFAULT_WEIGHT;        // pinned value while frozen (0.60)
+const MIN_SAMPLES = FROZEN ? Infinity : 100; // when unfrozen: ≥100, never 25 again
+
+let current = FROZEN ? FROZEN_WEIGHT : DEFAULT_WEIGHT;
+let meta = { source: FROZEN ? 'frozen' : 'default', samples: 0, frozen: FROZEN };
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+/** Whether the blend weight is frozen for the tournament (sync). */
+export function isMarketWeightFrozen() { return FROZEN; }
 
 /** Current blend weight (sync — used inside predictWorldCupMatch). */
 export function getWcMarketWeight() { return current; }
@@ -31,6 +46,14 @@ export function getWcMarketWeightMeta() { return { weight: current, ...meta }; }
 
 /** Load the learned weight from engine_settings (boot + after optimize). */
 export async function refreshWcMarketWeight() {
+  // Frozen: ignore any previously-learned value in engine_settings and hold
+  // the pinned weight. (A learned 0.75 written before the freeze must not
+  // leak back in on boot.)
+  if (FROZEN) {
+    current = FROZEN_WEIGHT;
+    meta = { source: 'frozen', samples: 0, frozen: true };
+    return current;
+  }
   if (!isDbAvailable()) return current;
   const r = await safeQuery(`SELECT value FROM engine_settings WHERE key = $1`, [SETTING_KEY]);
   const v = r?.rows?.[0]?.value;
@@ -47,6 +70,13 @@ export async function refreshWcMarketWeight() {
  * so every candidate weight can be re-simulated against actual results.
  */
 export async function optimizeWcMarketWeight() {
+  // Tournament freeze: log and skip — never write engine_settings. The 05:15
+  // cron still fires, it just no-ops, so re-enabling is a one-line env flip.
+  if (FROZEN) {
+    console.log(`[marketWeight] FROZEN at ${FROZEN_WEIGHT} for the tournament — skipping daily re-fit ` +
+      `(council verdict; re-enable with MARKET_WEIGHT_FROZEN=false once n≥100).`);
+    return { optimized: false, reason: 'frozen', frozen: true, weight: FROZEN_WEIGHT };
+  }
   if (!isDbAvailable()) return { optimized: false, reason: 'db unavailable' };
 
   const r = await safeQuery(`

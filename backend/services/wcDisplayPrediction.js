@@ -22,6 +22,8 @@ import cacheService from './cache.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import { generateProbabilities } from '../engine/poissonCore.js';
 import { getWcTeamForm, buildWcContext, isKnockoutRound } from './wcForm.js';
+import { getMatchWeather, weatherNote } from './weather.js';
+import { lineupAwareAvailability } from './lineups.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 
 const MODEL_VERSION = 'wc-elo-market-v1';
@@ -53,7 +55,7 @@ export async function getSharedOddsEvents() {
 // ─── Pre-lock compute (identical inputs for every caller) ───────────
 // This is the lock job's exact recipe; the job itself calls this too,
 // so "what the site shows" and "what gets scored" share one code path.
-export async function computeWcPrediction(match, { oddsEvents = null, homeField = false } = {}) {
+export async function computeWcPrediction(match, { oddsEvents = null, homeField = false, lineups = null, withWeather = false } = {}) {
   const events = oddsEvents ?? await getSharedOddsEvents();
   const ev = events?.length
     ? toa.matchEvent(events, match.homeTeam?.name, match.awayTeam?.name)
@@ -62,8 +64,9 @@ export async function computeWcPrediction(match, { oddsEvents = null, homeField 
 
   // Friendlies are hosted, not neutral — and never knockout.
   let ctx = homeField ? { homeField: true } : {};
+  let homeForm = null, awayForm = null;
   try {
-    const [homeForm, awayForm] = await Promise.all([
+    [homeForm, awayForm] = await Promise.all([
       getWcTeamForm(match.homeTeam?.id),
       getWcTeamForm(match.awayTeam?.id),
     ]);
@@ -74,12 +77,40 @@ export async function computeWcPrediction(match, { oddsEvents = null, homeField 
     });
   } catch { /* context is optional — prediction still runs */ }
 
+  // ── Confirmed lineups (lock job only — pre-lock cards pass nothing) ──
+  // Sharpen availability with the real XI: an injured player confirmed OUT
+  // weighs as a KEY absence; one confirmed STARTING has the penalty removed.
+  // Strict no-op when no XI is supplied or published yet.
+  if (lineups?.confirmed) {
+    const sideId = (t) => String(t?.id || '').replace('apf_t_', '');
+    const apply = (side, form) => {
+      const xi = lineups.byTeam?.[sideId(match[side])];
+      const la = lineupAwareAvailability(form?.injuries || [], xi?.starters || null);
+      ctx.lineupsConfirmed = true;
+      if (la.multiplier < 1) ctx[side === 'homeTeam' ? 'homeAvailability' : 'awayAvailability'] = la.multiplier;
+      if (la.absences.length) ctx[side === 'homeTeam' ? 'homeStarAbsences' : 'awayStarAbsences'] = la.absences;
+    };
+    apply('homeTeam', homeForm);
+    apply('awayTeam', awayForm);
+  }
+
+  // ── Weather (lock job / analysis page) ──────────────────────────────
+  // Free + cached; only fetched when asked, so the full-feed batch stays fast.
+  let weather = null;
+  if (withWeather) {
+    try { weather = await getMatchWeather(match); } catch { weather = null; }
+    if (weather) ctx.weather = weather;
+  }
+
   const pred = predictWorldCupMatch(match.homeTeam?.name, match.awayTeam?.name, marketProbs, ctx);
   // Friendlies are a separate public ledger — label them as such on every
   // surface so the displayed model name matches the scored model_version.
   if (homeField && typeof pred.model === 'string') {
     pred.model = pred.model.replace(/^wc-/, 'intl-');
   }
+  // Surface a plain-language weather line for the analysis page.
+  const note = weatherNote(weather);
+  if (note) pred.weatherNote = note;
   return { pred, ev, marketProbs, ctx };
 }
 
@@ -133,6 +164,11 @@ function lockedRowToDisplay(row) {
     advance: f.advance || null,
     locked: true,
     lockedAt: f.lockedAt || null,
+    // Reconstruct the plain-language weather line from the stored factors so
+    // the locked row displays it identically to a fresh compute.
+    weatherNote: (f.contextFactors?.weather && f.contextFactors.weather.effect < 0)
+      ? `${Math.round(f.contextFactors.weather.feelsLike)}°C at kickoff — heat slows tempo`
+      : undefined,
   };
 }
 
@@ -168,17 +204,19 @@ export async function getLockedWcPredictionsMap(externalIds) {
  * Callers that already batch-checked locked rows (fixtures/all does ONE
  * query for the whole feed) pass skipLocked to avoid a per-fixture re-query.
  */
-export async function getWcDisplayPrediction(match, { oddsEvents = null, skipLocked = false, homeField = false } = {}) {
+export async function getWcDisplayPrediction(match, { oddsEvents = null, skipLocked = false, homeField = false, withWeather = false } = {}) {
   if (!skipLocked) {
     const locked = await getLockedWcPredictionsMap([match.id]);
     if (locked.has(String(match.id))) return locked.get(String(match.id));
   }
 
-  const ck = `wc_display_${match.id}`;
+  // Weather is only fetched on the single-match analysis path (withWeather);
+  // the batched feed leaves it off so the full slate stays fast.
+  const ck = `wc_display_${match.id}${withWeather ? '_wx' : ''}`;
   const cached = cacheService.get(ck);
   if (cached) return cached;
 
-  const { pred } = await computeWcPrediction(match, { oddsEvents, homeField });
+  const { pred } = await computeWcPrediction(match, { oddsEvents, homeField, withWeather });
   cacheService.set(ck, pred, PRE_LOCK_TTL_S);
   return pred;
 }

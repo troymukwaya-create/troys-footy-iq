@@ -10,6 +10,26 @@ import apisports from './apisports.js';
 const MODEL_VERSION = 'hybrid-dc-v2';
 
 /**
+ * The 1X2 outcome a prediction is scored against — ALWAYS the 90-minute
+ * (regulation) result. 1X2 / O-U / BTTS are 90-minute markets; a knockout
+ * decided in extra time must still score on the 90' score (a 1-1 that ends
+ * 2-1 in ET is a DRAW for 1X2). ft_* hold the 90' score (API-Football
+ * `score.fulltime` / football-data `regularTime`); we fall back to the final
+ * score only for fixtures ingested before the ft_* columns existed.
+ * P(advance) is a SEPARATE market (features.advance) and never scored here.
+ *
+ * Mirrors the SQL CASE in ingestResults — exported so the contract is tested.
+ */
+export function outcome90(ftHome, ftAway, finalHome = null, finalAway = null) {
+  const h = ftHome != null ? Number(ftHome) : (finalHome != null ? Number(finalHome) : null);
+  const a = ftAway != null ? Number(ftAway) : (finalAway != null ? Number(finalAway) : null);
+  if (h == null || a == null || Number.isNaN(h) || Number.isNaN(a)) return null;
+  if (h > a) return 'HOME';
+  if (h === a) return 'DRAW';
+  return 'AWAY';
+}
+
+/**
  * Ingest results for recently finished matches.
  * Pipeline:
  *   1. Fetch finished matches from football-data.org (last N days)

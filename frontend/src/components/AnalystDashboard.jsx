@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { CalendarX } from 'lucide-react';
 import BrierScoreHero from './BrierScoreHero.jsx';
+import { LedgerBreakdown } from './LedgerBreakdown.jsx';
 import TrackRecord from './TrackRecord.jsx';
 import { EmailCapture } from './EmailCapture.jsx';
 import { flagGradient, getMatchColor } from '../constants/nationColors.js';
@@ -281,6 +282,7 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
           </span>
         </div>
         <BrierScoreHero />
+        <LedgerBreakdown />
         <TrackRecord onSelect={onSelect} />
       </div>
 

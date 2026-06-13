@@ -319,7 +319,7 @@ router.get('/:matchId', async (req, res) => {
       // The deep form + injuries still power the Stats tab and reasoning
       // below; any new signal goes into the SHARED path or not at all.
       dataQuality = 'COMPLETE';
-      probabilityResult = await getWcDisplayPrediction(match, { homeField: match.league?.code === 'FR' });
+      probabilityResult = await getWcDisplayPrediction(match, { homeField: match.league?.code === 'FR', withWeather: true });
       console.log(`[analysis] ${matchId} ${match.league.code} prediction (${probabilityResult?.model}${probabilityResult?.locked ? ', LOCKED' : ''}, form:${probabilityResult?.nationalStrength?.recentMatchesUsed || 0}g)`);
     } else if (validation.valid) {
       // Full data available — run predictions

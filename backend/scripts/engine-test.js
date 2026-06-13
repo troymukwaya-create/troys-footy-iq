@@ -18,6 +18,10 @@ import { updateElo, expectedScore, goalMultiplier } from '../engine/eloLearning.
 import { restDayFactor, availabilityFactor, adjustExpectedGoals } from '../engine/matchContext.js';
 import { predictWorldCupMatch } from '../engine/nationalTeams.js';
 import { playerImportance, availabilityFromInjuredPlayers } from '../engine/playerImpact.js';
+import { getWcMarketWeight, getWcMarketWeightMeta, isMarketWeightFrozen, optimizeWcMarketWeight } from '../engine/marketWeight.js';
+import { weatherGoalFactor } from '../services/weather.js';
+import { lineupAwareAvailability } from '../services/lineups.js';
+import { outcome90 } from '../services/resultService.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -165,6 +169,48 @@ const starInjured = predictWorldCupMatch('France', 'Haiti', null, {
 });
 check('France missing its star scores fewer / lower win prob', starInjured.probabilities.home <= fullStrength.probabilities.home,
   `${fullStrength.probabilities.home}% → ${starInjured.probabilities.home}%`);
+
+// ── 12. Market-weight tournament freeze (council verdict) ──
+console.log('\nMarket-weight freeze:');
+check('weight is frozen by default', isMarketWeightFrozen() === true);
+check('frozen weight pinned at 0.60', getWcMarketWeight() === 0.60, `got ${getWcMarketWeight()}`);
+check('meta reports frozen provenance', getWcMarketWeightMeta().source === 'frozen' && getWcMarketWeightMeta().frozen === true);
+const optResult = await optimizeWcMarketWeight();
+check('daily optimiser no-ops while frozen', optResult.optimized === false && optResult.reason === 'frozen',
+  `got ${JSON.stringify(optResult)}`);
+
+// ── 13. Weather (heat suppresses goals, bounded, no-op when mild) ──
+console.log('\nWeather signal (Open-Meteo heat suppression):');
+check('mild weather is a true no-op', weatherGoalFactor(22) === 1.0 && weatherGoalFactor(29.9) === 1.0,
+  `got ${weatherGoalFactor(22)} / ${weatherGoalFactor(29.9)}`);
+check('≥30°C feels-like → −2%', weatherGoalFactor(31) === 0.98, `got ${weatherGoalFactor(31)}`);
+check('≥35°C feels-like → −4%', weatherGoalFactor(36) === 0.96, `got ${weatherGoalFactor(36)}`);
+check('weather effect is bounded (never below −4%)', weatherGoalFactor(48) >= 0.96, `got ${weatherGoalFactor(48)}`);
+check('missing temperature is a no-op', weatherGoalFactor(null) === 1.0 && weatherGoalFactor(undefined) === 1.0);
+const wcHot = adjustExpectedGoals(1.6, 1.4, { weather: { feelsLike: 36, tempC: 33, factor: weatherGoalFactor(36) } });
+check('heat scales BOTH teams down equally', wcHot.lambdaHome < 1.6 && wcHot.lambdaAway < 1.4 &&
+  Math.abs((wcHot.lambdaHome / 1.6) - (wcHot.lambdaAway / 1.4)) < 1e-6, `λ ${wcHot.lambdaHome}/${wcHot.lambdaAway}`);
+
+// ── 14. Knockout / extra-time market mapping (1X2 scores on 90') ──
+console.log('\nKnockout / extra-time scoring:');
+check('1-1 (90\') decided 2-1 in ET scores as DRAW', outcome90(1, 1, 2, 1) === 'DRAW',
+  `got ${outcome90(1, 1, 2, 1)}`);
+check('0-0 (90\') decided on penalties scores as DRAW', outcome90(0, 0, 0, 0) === 'DRAW');
+check('2-0 (90\') scores HOME', outcome90(2, 0, 2, 0) === 'HOME');
+check('falls back to final score when 90\' missing', outcome90(null, null, 2, 1) === 'HOME');
+check('no score at all → null (not scored)', outcome90(null, null, null, null) === null);
+
+// ── 15. Lineup-aware availability (confirmed XI sharpens injuries) ──
+console.log('\nConfirmed-lineup availability:');
+const noXI = lineupAwareAvailability([{ name: 'Star Striker' }], null);
+check('no XI yet → standard injury multiplier (no-op shape)', noXI.multiplier <= 1 && noXI.absences.length === 0);
+const xi = new Set(['benchedstar', 'playeronea', 'playertwo']); // normalised names
+const confOut = lineupAwareAvailability([{ name: 'Injured Key' }], xi); // not in XI → out
+check('injured player confirmed OUT counts as absence', confOut.absences.length === 1 && confOut.multiplier < 1,
+  `mult ${confOut.multiplier}, abs ${confOut.absences.length}`);
+const confFit = lineupAwareAvailability([{ name: 'Player One A' }], xi); // in XI → fit
+check('injured player confirmed STARTING drops the penalty', confFit.multiplier === 1.0 && confFit.confirmedFit.length === 1,
+  `mult ${confFit.multiplier}`);
 
 // ── Sample report (eyeball) — evidence-based, with rich recent data ──
 console.log('\n─── SAMPLE PREDICTIONS (rich recent data, dataSufficiency = 1) ───');
