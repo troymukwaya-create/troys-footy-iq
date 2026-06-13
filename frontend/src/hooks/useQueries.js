@@ -194,6 +194,23 @@ export function useStandings(leagueCode) {
   });
 }
 
+// ─── PERFORMANCE (the public ledger) ────────────────────────────────
+// Powers the LedgerStrip + receipts. Shape: data.overall = { total_predictions,
+// correct, accuracy, avg_brier, ... } plus perModel / recentPredictions.
+
+export function usePerformance() {
+  return useQuery({
+    queryKey: ['performance'],
+    queryFn: async () => {
+      const { data } = await api.get('/performance');
+      return data?.data || null;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 // ─── STATUS ─────────────────────────────────────────────────────────
 
 export function useStatus() {

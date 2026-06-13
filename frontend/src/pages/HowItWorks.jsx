@@ -131,11 +131,13 @@ const Dashed = () => <div style={{ borderTop: '1px dashed rgba(255,255,255,0.16)
 // GPU layers; statics for reduced-motion.
 function CompanyLights() {
   const reduce = useReducedMotion();
+  // De-vibe discipline (council 2026-06-13): brand colours only — the blue
+  // beam was off-palette — and lower opacity so this reads as light in a
+  // dark room, not aurora blobs.
   const beams = [
-    { color: 'rgba(168,52,74,0.50)', top: '-6%', h: '24vmin', angle: -16, dur: 13, delay: 0 },
-    { color: 'rgba(122,31,43,0.42)', top: '30%', h: '30vmin', angle: -22, dur: 17, delay: -6 },
-    { color: 'rgba(40,90,180,0.30)', top: '58%', h: '26vmin', angle: -14, dur: 21, delay: -11 },
-    { color: 'rgba(247,244,238,0.10)', top: '82%', h: '16vmin', angle: -19, dur: 15, delay: -3 },
+    { color: 'rgba(168,52,74,0.32)', top: '-6%', h: '24vmin', angle: -16, dur: 13, delay: 0 },
+    { color: 'rgba(122,31,43,0.26)', top: '34%', h: '30vmin', angle: -22, dur: 17, delay: -6 },
+    { color: 'rgba(247,244,238,0.07)', top: '78%', h: '16vmin', angle: -19, dur: 15, delay: -3 },
   ];
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
@@ -228,8 +230,8 @@ export default function HowItWorks() {
             <div className="font-display" style={{ fontSize: 'clamp(30px,8vw,40px)', fontWeight: 800, marginTop: 8 }}>
               <span style={{ color: 'var(--accent)' }}>Odd</span>yessa
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '0.26em', color: 'rgba(255,255,255,0.38)', marginTop: 10 }}>
-              FOOTBALL · READ THE GAME
+            <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.55)', marginTop: 10 }}>
+              <span style={{ color: 'var(--accent)' }}>&gt;</span> read the game<span className="terminal-cursor" aria-hidden>_</span>
             </div>
           </motion.div>
 
@@ -310,7 +312,7 @@ export default function HowItWorks() {
           ✂ TEAR HERE
         </span>
         <span className="font-display" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginTop: 12, fontSize: 'clamp(18px,5vw,24px)', fontWeight: 800, color: '#fff' }}>
-          Step inside <ArrowRight size={20} style={{ color: 'var(--accent)' }} />
+          View today's locked calls <ArrowRight size={20} style={{ color: 'var(--accent)' }} />
         </span>
         <span style={{ display: 'block', fontSize: 12.5, color: 'rgba(255,255,255,0.45)', marginTop: 8 }}>
           free · no account needed

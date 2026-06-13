@@ -60,12 +60,83 @@ async function initPostHog() {
   }
 }
 
+// ─── Engagement signals ─────────────────────────────────────────────
+// Without these, a visitor who reads one page for 3 minutes records a
+// 0-second session (first_seen == last_seen). $heartbeat carries the
+// real engaged time; $scroll_depth shows whether anyone reads past the
+// fold. Both flow through the same /api/track → site_events pipe.
+
+const HEARTBEAT_MS = 15000;
+let engagedSeconds = 0;
+let heartbeatTimer = null;
+let lastTick = null;
+
+function startHeartbeat() {
+  if (heartbeatTimer) return;
+  lastTick = Date.now();
+  heartbeatTimer = setInterval(() => {
+    engagedSeconds += Math.round((Date.now() - lastTick) / 1000);
+    lastTick = Date.now();
+    track('$heartbeat', { engaged_seconds: engagedSeconds });
+  }, HEARTBEAT_MS);
+}
+
+function stopHeartbeat() {
+  if (!heartbeatTimer) return;
+  engagedSeconds += Math.round((Date.now() - lastTick) / 1000);
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
+}
+
+function initEngagement() {
+  if (typeof document === 'undefined') return;
+
+  // Heartbeat only while the tab is actually visible.
+  if (document.visibilityState === 'visible') startHeartbeat();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') startHeartbeat();
+    else stopHeartbeat();
+  });
+  // Final flush — sendBeacon survives the page teardown.
+  window.addEventListener('pagehide', () => {
+    stopHeartbeat();
+    if (engagedSeconds > 0) track('$heartbeat', { engaged_seconds: engagedSeconds, final: true });
+  });
+
+  // Scroll depth — fires once per threshold per page load. Capture phase
+  // because the app shell scrolls inner panels (overflow-y-auto), not the
+  // window; e.target is whichever container actually scrolled.
+  const fired = new Set();
+  let scrollRaf = null;
+  const onScroll = (e) => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = null;
+      const el = (e.target === document || !e.target?.scrollHeight)
+        ? document.documentElement
+        : e.target;
+      const scrollable = el.scrollHeight - el.clientHeight;
+      if (scrollable <= 40) return;
+      const depth = ((el.scrollTop ?? window.scrollY) / scrollable) * 100;
+      for (const t of [50, 90]) {
+        if (depth >= t && !fired.has(t)) {
+          fired.add(t);
+          track('$scroll_depth', { depth: t });
+        }
+      }
+      if (fired.size === 2) document.removeEventListener('scroll', onScroll, true);
+    });
+  };
+  document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+}
+
 // ─── Public API ─────────────────────────────────────────────────────
 export function initAnalytics() {
   getVisitorId();
   initPostHog();
   // Fire the first pageview once the app mounts.
   track('$pageview');
+  initEngagement();
 }
 
 export function track(event, props = {}) {

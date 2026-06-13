@@ -64,16 +64,16 @@ export function EmailCapture({ source = 'site', headline, sub, hideIfSubscribed 
           onChange={e => { setEmail(e.target.value); if (state === 'error') setState('idle'); }}
           placeholder="you@email.com"
           style={{
-            flex: 1, minWidth: 180, padding: '13px 16px', borderRadius: 12, fontSize: 16,
+            flex: 1, minWidth: 180, padding: '13px 16px', borderRadius: 4, fontSize: 16,
             background: 'rgba(255,255,255,0.06)',
-            border: `1px solid ${state === 'error' ? '#ef4444' : 'rgba(255,255,255,0.14)'}`,
+            border: `1px solid ${state === 'error' ? '#ef4444' : 'rgba(255,255,255,0.16)'}`,
             color: '#fff', outline: 'none',
           }}
         />
         <button
           type="submit"
           disabled={state === 'loading'}
-          style={{ padding: '13px 22px', borderRadius: 12, border: 'none', cursor: 'pointer', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}
+          style={{ padding: '13px 22px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.12)', cursor: 'pointer', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}
         >
           {state === 'loading' ? 'Joining…' : <>Get the picks <ArrowRight size={16} /></>}
         </button>

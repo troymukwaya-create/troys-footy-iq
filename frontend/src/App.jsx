@@ -8,6 +8,7 @@ import { track } from './lib/analytics.js';
 import { loadSlipFromUrl } from './lib/slipCodec.js';
 
 import { TopNav } from './components/TopNav.jsx';
+import { LedgerStrip } from './components/LedgerStrip.jsx';
 import OrbitMark from './components/OrbitMark.jsx';
 import { MobileNav } from './components/MobileNav.jsx';
 import { HonestBar } from './components/HonestBar.jsx';
@@ -265,6 +266,11 @@ function MainApp() {
       )}
       <AuthModal />
       <SavedSlipsModal />
+      {/* The trust engine, before anything else — every device, every tab. */}
+      <LedgerStrip onJumpToReceipts={() => {
+        setSearchParams({ tab: 'home' });
+        setTimeout(() => document.getElementById('receipts')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+      }} />
       <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
 
       <div className="flex flex-1 overflow-hidden">
