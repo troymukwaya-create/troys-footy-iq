@@ -8,6 +8,7 @@
 import { safeQuery, isDbAvailable } from '../db/index.js';
 import { getLockedWcPredictionsMap } from './wcDisplayPrediction.js';
 import api from './apisports.js';
+import { buildStory, polishStory } from './matchNarrative.js';
 
 // Outcome from a final score, in the same vocabulary the ledger uses.
 function outcomeOf(home, away) {
@@ -42,9 +43,10 @@ export async function buildPostMatchReport(match, matchId) {
     away: match.fullTime?.away ?? result.away,
   };
 
-  const [lockedMap, matchStats] = await Promise.all([
+  const [lockedMap, matchStats, events] = await Promise.all([
     getLockedWcPredictionsMap([matchId]).catch(() => new Map()),
     api.getFixtureStats(matchId).catch(() => null),
+    api.getFixtureEvents(matchId).catch(() => []),
   ]);
   const locked = lockedMap.get(String(matchId)) || null;
 
@@ -109,6 +111,31 @@ export async function buildPostMatchReport(match, matchId) {
     scoredRow = r?.rows?.[0] || null;
   }
 
+  // ── The match story: how the game met or broke our forecast ──────────
+  // Deterministic facts from the goal/red-card timeline, polished into
+  // brand voice (Claude, cached per finished score). Never blocks: any
+  // failure falls back to the deterministic line, and a story is always
+  // present so the receipt can explain the result on every platform.
+  const homeName = match.homeTeam?.name || 'Home';
+  const awayName = match.awayTeam?.name || 'Away';
+  const outcomeCorrect = predictedOutcome === actualOutcome;
+  let story = null;
+  try {
+    const built = buildStory({
+      homeName, awayName, ft,
+      predictedOutcome, predictedProb, outcomeCorrect, scoreline, events,
+    });
+    const pickName = predictedOutcome === 'HOME' ? homeName : predictedOutcome === 'AWAY' ? awayName : 'a draw';
+    const text = await polishStory(
+      built,
+      { homeName, awayName, ft, pickName, pct: `${Math.round(predictedProb)}%`, outcomeCorrect },
+      `${matchId}:${ft.home}-${ft.away}`,
+    );
+    story = { kind: built.kind, tag: built.tag, minute: built.minute, text };
+  } catch (err) {
+    console.error('[postMatchReport] story build failed:', err.message);
+  }
+
   return {
     status: 'FINISHED',
     result,
@@ -120,9 +147,10 @@ export async function buildPostMatchReport(match, matchId) {
       predictedOutcome,
       predictedProb,
       actualOutcome,
-      outcomeCorrect: predictedOutcome === actualOutcome,
+      outcomeCorrect,
       scoreline,
       marketCalls,
+      story,
       brier: scoredRow?.brier_score != null ? Number(scoredRow.brier_score) : brierFor(p, actualOutcome),
       inLedger: !!scoredRow,
       lockedAt: locked.lockedAt || null,

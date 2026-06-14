@@ -389,18 +389,30 @@ async function generateMatch(externalId) {
   finish('match-ig-raw.png', 'match-ig.png');
   finish('match-receipt.png', 'match-receipt-ig.png');
 
-  // evening-voice captions, platform-adapted
+  // evening-voice captions, platform-adapted. The match STORY — how the
+  // game met or broke our call, in our voice — leads when the engine
+  // produced one (it always does for a locked WC fixture). It already
+  // states the call + what happened + the honest framing, so it replaces
+  // the old hit/miss line rather than stacking on top of it.
+  const story = verdict?.story?.text || null;
   const missLine = firstMiss
     ? 'our first missed call, printed in the same font as the wins.'
     : 'missed — printed in the same font as the wins.';
   const marketBits = (verdict?.marketCalls || []).filter(mc => mc.hit).map(mc => `${mc.label} ✓`).join(' · ');
+  const body = story || (hit
+    ? `We said ${lean} (${pct(leanP)}) — and that’s how it went.${exact ? ` We had ${verdict.scoreline.actual} as the most likely score before kickoff, too.` : ''}`
+    : `We said ${lean} (${pct(leanP)}). It finished ${ft} — ${missLine}`);
+  // The exact-scoreline credibility note still earns its place on a miss
+  // (the story explains the outcome; this adds "we still had the score").
+  const scorelineNote = (!hit && exact)
+    ? `The scoreline, though: ${verdict.scoreline.actual} was the top of our grid before kickoff (${pct(verdict.scoreline.predictedProb)}).`
+    : null;
   const caption = [
     `Tonight: ${he} ${s.home_team} ${ft} ${s.away_team} ${ae}`,
     '',
-    hit
-      ? `We said ${lean} (${pct(leanP)}) — and that’s how it went.${exact ? ` We had ${verdict.scoreline.actual} as the most likely score before kickoff, too.` : ''}`
-      : `We said ${lean} (${pct(leanP)}). It finished ${ft} — ${missLine}`,
-    ...(!hit && exact ? ['', `The scoreline, though: ${verdict.scoreline.actual} was the top of our grid before kickoff (${pct(verdict.scoreline.predictedProb)}).${marketBits ? ` ${marketBits}` : ''}`] : (marketBits ? ['', marketBits] : [])),
+    body,
+    ...(scorelineNote ? ['', scorelineNote] : []),
+    ...(marketBits ? ['', marketBits] : []),
     '',
     stats ? `World Cup so far: ${stats.correct} of ${stats.total} winners called.` : '',
     'Every call locked before kickoff, graded in public.',
@@ -408,16 +420,22 @@ async function generateMatch(externalId) {
   ].filter(l => l !== null).join('\n');
 
   const tags = buildHashtags([[s.home_team, s.away_team]]);
+  // X is 280 chars — lead with the first sentence of the story (the
+  // "what happened" line), then trim progressively until it fits.
+  const firstSentence = (t) => (t.split(/(?<=\.)\s+/)[0] || t).trim();
+  const xBody = story
+    ? firstSentence(story)
+    : (hit ? `Winner ✓ called — ${lean} ${pct(leanP)}.` : `The call missed — we said ${lean} ${pct(leanP)}. Printed anyway.`);
   let xCap = [
     `Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}`,
     '',
-    hit ? `Winner ✓ called — ${lean} ${pct(leanP)}.` : `The call missed — we said ${lean} ${pct(leanP)}. Printed anyway.`,
-    ...(exact ? [`The scoreline ${hit ? 'too' : 'didn’t'} — ${verdict.scoreline.actual} sat top of our grid before kickoff. ✓`] : []),
+    xBody,
     '',
-    'Receipts attached — full ledger in bio.',
+    'Receipts attached — full reasoning in bio.',
     '',
     tags.x,
   ].join('\n');
+  if (xCap.length > 278) xCap = [`Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}`, '', xBody, '', tags.x].join('\n');
   if (xCap.length > 278) xCap = `Tonight: ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} — ${hit ? 'called ✓' : 'the call missed, printed anyway'}${exact ? ' · exact score ✓' : ''}. Receipts attached.\n\n${tags.x}`;
 
   writeFileSync(path.join(OUT, 'match.json'), JSON.stringify({

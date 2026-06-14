@@ -8,7 +8,7 @@
 // Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHANNEL
 //          X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import crypto from 'crypto';
@@ -25,10 +25,17 @@ if (payload.skip) { console.log(`nothing to post (${payload.reason})`); process.
 
 const images = (payload.images || []).map(n => path.join(OUT, n)).filter(existsSync);
 
+// Which platforms to (re)post this tick + the item id, stamped by
+// matchday.mjs. Defaults to all platforms for the daily ledger/picks runs
+// (which don't carry per-platform state).
+const ALL_PLATFORMS = ['telegram', 'x', 'instagram'];
+const ONLY = Array.isArray(payload._only) ? payload._only : ALL_PLATFORMS;
+const ITEM_ID = payload._id || null;
+
 // ─── Telegram ───────────────────────────────────────────────────────
 async function postTelegram() {
   const token = process.env.TELEGRAM_BOT_TOKEN, chan = process.env.TELEGRAM_CHANNEL;
-  if (!token || !chan) { console.log('telegram: secrets missing — skipped'); return; }
+  if (!token || !chan) { console.log('telegram: secrets missing — skipped'); return 'skip'; }
   const api = (m) => `https://api.telegram.org/bot${token}/${m}`;
 
   const multipart = (fields, files) => {
@@ -62,6 +69,7 @@ async function postTelegram() {
   const j = await res.json();
   if (!j.ok) throw new Error('telegram failed: ' + JSON.stringify(j).slice(0, 300));
   console.log(`telegram: posted ${kind} (${images.length} images)`);
+  return 'ok';
 }
 
 // ─── X (OAuth 1.0a, no dependencies) ────────────────────────────────
@@ -86,7 +94,7 @@ function oauthHeader(method, url, extraParams = {}) {
 }
 
 async function postX() {
-  if (!process.env.X_API_KEY || !process.env.X_ACCESS_TOKEN) { console.log('x: secrets missing — skipped'); return; }
+  if (!process.env.X_API_KEY || !process.env.X_ACCESS_TOKEN) { console.log('x: secrets missing — skipped'); return 'skip'; }
 
   // 1. upload media (v1.1 endpoint, OAuth1 — body params NOT in signature for multipart)
   const mediaIds = [];
@@ -120,6 +128,7 @@ async function postX() {
   const j = await r.json();
   if (!j.data?.id) throw new Error('x tweet failed: ' + JSON.stringify(j).slice(0, 300));
   console.log(`x: posted ${kind} — tweet ${j.data.id}`);
+  return 'ok';
 }
 
 // ─── Instagram (Graph API — images by public URL only) ──────────────
@@ -128,10 +137,10 @@ async function postX() {
 // (picks) are skipped — Instagram requires media.
 async function postInstagram() {
   const token = process.env.IG_ACCESS_TOKEN, uid = process.env.IG_USER_ID;
-  if (!token || !uid) { console.log('instagram: secrets missing — skipped'); return; }
-  if (!images.length) { console.log('instagram: text-only post — skipped (IG needs media)'); return; }
+  if (!token || !uid) { console.log('instagram: secrets missing — skipped'); return 'skip'; }
+  if (!images.length) { console.log('instagram: text-only post — skipped (IG needs media)'); return 'skip'; }
   const base = process.env.IMAGE_BASE_URL;
-  if (!base) { console.log('instagram: IMAGE_BASE_URL missing — skipped'); return; }
+  if (!base) { console.log('instagram: IMAGE_BASE_URL missing — skipped'); return 'skip'; }
 
   const API = 'https://graph.instagram.com/v23.0';
   const call = async (p, params) => {
@@ -167,11 +176,51 @@ async function postInstagram() {
   }
   const postId = await call(`${uid}/media_publish`, { creation_id: containerId });
   console.log(`instagram: posted ${kind} — ${postId} (${urls.length} images)`);
+  return 'ok';
 }
 
+// ── record per-platform results into the next-state file ─────────────
+// matchday.mjs created state.pending[id]; we update each platform's status
+// and, once nothing is left owed (every platform ok or skip), promote the
+// item into the done-list (state.prematch / state.receipts) and log it.
+function recordResults(results) {
+  if (!ITEM_ID) return; // ledger/picks runs carry no per-item state
+  const SP = path.join(OUT, 'state-next.json');
+  let st;
+  try { st = JSON.parse(readFileSync(SP, 'utf8')); } catch { console.error('state-next.json unreadable — results not recorded'); return; }
+  st.pending = st.pending || {};
+  const entry = st.pending[ITEM_ID] || { kind, label: ITEM_ID, platforms: {} };
+  entry.platforms = entry.platforms || {};
+  for (const [k, v] of Object.entries(results)) entry.platforms[k] = v;
+  st.pending[ITEM_ID] = entry;
+
+  const remaining = ALL_PLATFORMS.filter(k => entry.platforms[k] === 'todo' || entry.platforms[k] === 'failed');
+  const okCount = ALL_PLATFORMS.filter(k => entry.platforms[k] === 'ok').length;
+  if (remaining.length === 0) {
+    const list = kind === 'prematch' ? 'prematch' : 'receipts';
+    st[list] = Array.isArray(st[list]) ? st[list] : [];
+    if (!st[list].includes(ITEM_ID)) st[list].push(ITEM_ID);
+    st.log = Array.isArray(st.log) ? st.log : [];
+    st.log.push({ kind, id: ITEM_ID, label: entry.label, at: new Date().toISOString(), platforms: { ...entry.platforms } });
+    delete st.pending[ITEM_ID];
+    console.log(`${kind} ${ITEM_ID}: delivered on every platform (${okCount} posted) → marked done`);
+  } else {
+    console.log(`${kind} ${ITEM_ID}: still owed [${remaining.join(', ')}] → retries next tick`);
+  }
+  writeFileSync(SP, JSON.stringify(st, null, 2));
+}
+
+const results = {};
 let failed = false;
 for (const [name, fn] of [['telegram', postTelegram], ['x', postX], ['instagram', postInstagram]]) {
-  try { await fn(); }
-  catch (e) { failed = true; console.error(`${name}: ${e.message}`); }
+  if (!ONLY.includes(name)) continue; // not owed this tick — keep prior status
+  try { results[name] = (await fn()) || 'ok'; }
+  catch (e) { results[name] = 'failed'; failed = true; console.error(`${name}: ${e.message}`); }
 }
-process.exit(failed ? 1 : 0);
+recordResults(results);
+// Matchday items (with a stamped id) record failures in state and retry
+// next tick, so they must NOT abort the workflow before state is committed
+// — exit 0. The daily ledger/picks runs have no stateful retry, so keep the
+// red run there as the failure signal.
+if (failed) console.error(`publish ${kind}: one or more platforms failed${ITEM_ID ? ' — recorded for retry' : ''}`);
+process.exit(failed && !ITEM_ID ? 1 : 0);

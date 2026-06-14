@@ -49,13 +49,38 @@ if (health?.status !== 'ok' || !health?.env?.dbConnected) {
 console.log('engine check: green (db connected, status ok)');
 
 // ── data ─────────────────────────────────────────────────────────────
-const [upcoming, recent] = await Promise.all([
+const [upcoming, recent, allFx] = await Promise.all([
   getJson(`${API}/fixtures/upcoming`),
   getJson(`${API}/results/recent`),
+  getJson(`${API}/fixtures/all`).catch(() => ({ fixtures: [] })),
 ]);
 const now = Date.now();
 const wcUpcoming = (upcoming.fixtures || []).filter(f => f.league?.code === 'WC' && f.date);
-const settled = (recent.data || []).filter(r => r.match_external_id);
+let settled = (recent.data || []).filter(r => r.match_external_id);
+
+// ── 1b. force a grade NOW (kills the ~2h wait) ───────────────────────
+// The receipt can only post once a match is GRADED into the ledger. The
+// backend's own ingest cron runs every ~30 min, so a game that ends right
+// after a run waits up to half an hour just to be scored. When a WC game
+// looks finished (FT, or KO > 105 min ago) but isn't on the ledger yet,
+// trigger result ingestion synchronously, then re-read — so this same tick
+// can post its receipt within minutes of the final whistle, not hours.
+const settledIds0 = new Set(settled.map(s => s.match_external_id));
+const minsSince = (d) => (now - new Date(d).getTime()) / 60000;
+const needsGrade = (allFx.fixtures || []).some(f =>
+  f.league?.code === 'WC' && f.date
+  && (['FINISHED', 'FT'].includes(f.status) || minsSince(f.date) > 105)
+  && minsSince(f.date) < 48 * 60
+  && !settledIds0.has(f.id));
+if (needsGrade) {
+  try {
+    const r = await fetch(`${API}/results/update?days=1`, { method: 'POST', headers: { 'User-Agent': 'oddyessa-matchday/1' } });
+    console.log(`force-grade: ${r.status} (a finished WC game was not on the ledger yet)`);
+    if (r.ok) { const re = await getJson(`${API}/results/recent`); settled = (re.data || []).filter(x => x.match_external_id); }
+  } catch (e) { console.log('force-grade skipped:', e.message); }
+} else {
+  console.log('force-grade: not needed (nothing finished-but-ungraded)');
+}
 
 // ── state ────────────────────────────────────────────────────────────
 let state = null;
@@ -70,6 +95,7 @@ if (!state || !Array.isArray(state.prematch) || !Array.isArray(state.receipts)) 
       .filter(f => (new Date(f.date) - now) / 60000 < PRE_MIN)
       .map(f => f.id),
     receipts: settled.map(s => s.match_external_id),
+    pending: {},
     seededAt: new Date().toISOString(),
   };
   writeFileSync(path.join(OUT, 'state-next.json'), JSON.stringify(state, null, 2));
@@ -80,11 +106,43 @@ if (!state || !Array.isArray(state.prematch) || !Array.isArray(state.receipts)) 
 const gen = (args) => execFileSync('node', [path.join(DIR, 'generate.mjs'), ...args], { stdio: 'inherit', cwd: DIR });
 const actions = [];
 // Append-only post log — the CEO dashboard's ops feed reads this off the
-// social-assets branch to show "pre-match posted / receipt posted" events.
+// social-assets branch. publish.mjs appends to it when an item finishes on
+// every platform; we only ensure it exists here.
 state.log = Array.isArray(state.log) ? state.log.slice(-199) : [];
-const logPost = (kind, id, label) => state.log.push({ kind, id, label, at: new Date().toISOString() });
+
+// ── per-platform delivery state ──────────────────────────────────────
+// An item is only "done" (in state.prematch / state.receipts) once it has
+// landed on every configured platform. Until then it lives in state.pending
+// with a per-platform status, and we re-generate + re-post ONLY the owed
+// platforms each tick — so a Telegram-ok / Instagram-failed receipt retries
+// Instagram next tick without double-posting Telegram. publish.mjs records
+// the results and promotes items from pending → done.
+state.pending = state.pending || {};
+const ALL_PLATFORMS = ['telegram', 'x', 'instagram'];
+const owedOf = (id) => {
+  const p = state.pending[id]?.platforms;
+  if (!p) return ALL_PLATFORMS.slice();
+  return ALL_PLATFORMS.filter(k => p[k] === 'todo' || p[k] === 'failed');
+};
+const ensurePending = (id, kind, label) => {
+  if (!state.pending[id]) {
+    state.pending[id] = { kind, label, platforms: Object.fromEntries(ALL_PLATFORMS.map(k => [k, 'todo'])) };
+  } else if (label && !state.pending[id].label) {
+    state.pending[id].label = label;
+  }
+};
+// Stamp the generated payload so publish.mjs knows the item id + which
+// platforms to (re)post this tick.
+const stampPayload = (file, id, only) => {
+  const fp = path.join(OUT, file);
+  const p = JSON.parse(readFileSync(fp, 'utf8'));
+  p._id = id; p._only = only;
+  writeFileSync(fp, JSON.stringify(p, null, 2));
+};
 
 // ── 2. pre-match due? ────────────────────────────────────────────────
+// Due = in the capture band and not yet fully delivered. Items still owed a
+// platform (in state.pending, not in state.prematch) are picked up here too.
 const duePre = wcUpcoming
   .filter(f => {
     const mins = (new Date(f.date) - now) / 60000;
@@ -93,23 +151,25 @@ const duePre = wcUpcoming
   .sort((a, b) => new Date(a.date) - new Date(b.date));
 if (duePre.length) {
   const f = duePre[0];
-  console.log(`pre-match due: ${f.homeTeam?.name} v ${f.awayTeam?.name} (${f.id}), KO ${f.date}`);
+  const owed = owedOf(f.id);
+  console.log(`pre-match due: ${f.homeTeam?.name} v ${f.awayTeam?.name} (${f.id}) → owed: ${owed.join(', ')}`);
   gen(['prematch', f.id]);
   const payload = JSON.parse(readFileSync(path.join(OUT, 'prematch.json'), 'utf8'));
   if (!payload.skip) {
-    state.prematch.push(f.id);
+    ensurePending(f.id, 'prematch', `${f.homeTeam?.name} v ${f.awayTeam?.name}`);
+    stampPayload('prematch.json', f.id, owedOf(f.id));
     actions.push('prematch');
-    logPost('prematch', f.id, `${f.homeTeam?.name} v ${f.awayTeam?.name}`);
   }
   if (duePre.length > 1) console.log(`${duePre.length - 1} more pre-match due — next tick takes the next one`);
 }
 
 // ── 3. receipt due? ──────────────────────────────────────────────────
-// Verdict-wait: the scoreline/market verdict surfaces a few minutes
-// after grading (analysis cache). A receipt without "scoreline called
-// exact" buries the best line of the night — hold it up to two ticks
-// (~1h) for the verdict, then post regardless.
+// Verdict-wait: the scoreline/market verdict + match story are built live
+// from the locked row and the final score, so they are ready as soon as
+// the game is graded. Hold at most ONE tick (~5 min) for any lag, then
+// post regardless — the 15-min target leaves no room for a long hold.
 state.verdictWait = state.verdictWait || {};
+const MAX_VERDICT_HOLDS = 1;
 const dueReceipt = settled
   .filter(s => !state.receipts.includes(s.match_external_id)
     && new Date(s.match_date).getTime() > now - 48 * 3600 * 1000)
@@ -123,17 +183,18 @@ if (dueReceipt.length) {
     verdictReady = !!(a?.verdict?.call || a?.verdict?.scoreline || a?.data?.verdict?.scoreline);
   } catch { /* analysis hiccup — treat as not ready */ }
   const waited = state.verdictWait[id] || 0;
-  if (!verdictReady && waited < 2) {
+  if (!verdictReady && waited < MAX_VERDICT_HOLDS) {
     state.verdictWait[id] = waited + 1;
-    console.log(`receipt for ${id} HELD (verdict not ready yet, hold ${waited + 1}/2) — next tick retries`);
+    console.log(`receipt for ${id} HELD (verdict not ready yet, hold ${waited + 1}/${MAX_VERDICT_HOLDS}) — next tick retries`);
   } else {
-    console.log(`receipt due: ${s.home_team} v ${s.away_team} (${id})${verdictReady ? '' : ' — posting without verdict after max holds'}`);
+    const owed = owedOf(id);
+    console.log(`receipt due: ${s.home_team} v ${s.away_team} (${id})${verdictReady ? '' : ' — posting without verdict after max holds'} → owed: ${owed.join(', ')}`);
     gen(['match', id]);
     const payload = JSON.parse(readFileSync(path.join(OUT, 'match.json'), 'utf8'));
     if (!payload.skip) {
-      state.receipts.push(id);
+      ensurePending(id, 'match', `${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team}`);
+      stampPayload('match.json', id, owedOf(id));
       actions.push('match');
-      logPost('match', id, `${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team}`);
     }
     delete state.verdictWait[id];
     if (dueReceipt.length > 1) console.log(`${dueReceipt.length - 1} more receipts due — next tick takes the next one`);
@@ -145,17 +206,16 @@ writeFileSync(path.join(OUT, 'plan.json'), JSON.stringify({ actions }, null, 2))
 console.log(actions.length ? `due this tick: ${actions.join(' + ')}` : 'nothing due this tick');
 
 // ── 4. scoring alarm (after the useful work, so it never blocks posts) ─
+// Reuses the fixtures feed fetched at the top + the post-grade ledger: if a
+// game is STILL ungraded this long after KO, even the forced grade couldn't
+// score it — that's a real problem worth an email.
 const scoredIds = new Set(settled.map(s => s.match_external_id));
-let overdue = null;
-try {
-  const all = await getJson(`${API}/fixtures/all`);
-  overdue = (all.fixtures || []).find(f =>
-    f.league?.code === 'WC'
-    && ['FINISHED', 'FT'].includes(f.status)
-    && f.date && (now - new Date(f.date).getTime()) / 60000 > SCORING_GRACE_MIN
-    && (now - new Date(f.date).getTime()) / 60000 < 48 * 60
-    && !scoredIds.has(f.id));
-} catch { /* fixtures feed hiccup — alarm skipped this tick */ }
+const overdue = (allFx.fixtures || []).find(f =>
+  f.league?.code === 'WC'
+  && ['FINISHED', 'FT'].includes(f.status)
+  && f.date && (now - new Date(f.date).getTime()) / 60000 > SCORING_GRACE_MIN
+  && (now - new Date(f.date).getTime()) / 60000 < 48 * 60
+  && !scoredIds.has(f.id));
 if (overdue) {
   console.error(`SCORING OVERDUE: ${overdue.homeTeam?.name} v ${overdue.awayTeam?.name} (${overdue.id}) finished ~${Math.round((now - new Date(overdue.date)) / 3600000)}h after KO and is still ungraded — check ingestResults.`);
   process.exit(1);

@@ -240,10 +240,11 @@ export default function initJobs() {
     }
   });
 
-  // Every 2 hours — Fetch results for finished matches + feedback loop.
-  // (Was 4h; during the World Cup the public Brier should update within
-  // a couple of hours of the final whistle.)
-  cron.schedule('0 */2 * * *', async () => {
+  // Every 30 min — Fetch results for finished matches + feedback loop.
+  // (Was 2h; the matchday social tick also force-grades on the public
+  // POST /results/update endpoint within minutes of a final whistle, so
+  // this cron is now the backup that covers non-matchday-window finishes.)
+  cron.schedule('*/30 * * * *', async () => {
     console.log('[SCHEDULER] Running result ingestion + feedback loop...');
     try {
       const result = await ingestResults(3);

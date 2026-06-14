@@ -1,12 +1,13 @@
 # Matchday automation — the strict schedule.
-# Every ~30 min: engine check → pre-match call card ~3h before each WC
-# kickoff (with reasoning) → post-match receipt as soon as the engine
-# grades a game → red run (email) if a finished game is still ungraded.
-# State (what's already posted) lives on the social-assets branch.
+# Every ~5 min: engine check → force a grade if a WC game just finished →
+# pre-match call card ~3h before each kickoff (with reasoning) → post-match
+# receipt within ~15 min of the final whistle (with the match story) →
+# red run (email) if a finished game is still ungraded.
+# State (what's posted, per platform) lives on the social-assets branch.
 name: social-matchday
 on:
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -46,7 +47,9 @@ jobs:
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           STATE_PATH: ${{ github.workspace }}/scripts/social/state.json
-      - name: host cards + commit state (social-assets branch)
+      # Images must be public BEFORE publish (Instagram fetches them by URL).
+      # State is committed AFTER publish so per-platform results are recorded.
+      - name: host cards (images → social-assets) + IMAGE_BASE_URL
         run: |
           if [ -f scripts/social/out/state-next.json ]; then
             DATE=$(date -u +%F)
@@ -54,14 +57,14 @@ jobs:
             git config user.email "bot@oddyessa.com"
             git fetch origin social-assets:social-assets 2>/dev/null || git branch social-assets
             git worktree add /tmp/assets social-assets
-            mkdir -p "/tmp/assets/$DATE" /tmp/assets/state
+            mkdir -p "/tmp/assets/$DATE"
             ls scripts/social/out/*.png >/dev/null 2>&1 && cp scripts/social/out/*.png "/tmp/assets/$DATE/" || true
-            cp scripts/social/out/state-next.json /tmp/assets/state/posted.json
             cd /tmp/assets && git add . \
-              && (git commit -m "matchday tick $(date -u +%FT%H:%M)" && git push origin social-assets) || echo "nothing new to commit"
+              && (git commit -m "matchday images $(date -u +%FT%H:%M)" && git push origin social-assets) || echo "no new images"
+            cd "$GITHUB_WORKSPACE" && git worktree remove /tmp/assets --force || true
             echo "IMAGE_BASE_URL=https://raw.githubusercontent.com/${{ github.repository }}/social-assets/$DATE" >> "$GITHUB_ENV"
           fi
-      - name: publish whatever is due
+      - name: publish whatever is due (records per-platform results)
         run: |
           for k in prematch match; do
             if [ -f "out/$k.json" ]; then node publish.mjs "$k"; fi
@@ -76,6 +79,22 @@ jobs:
           X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      # Always commit state — even if a platform failed — so the per-platform
+      # status (and the retry it implies) survives to the next tick.
+      - name: commit posted-state (social-assets branch)
+        if: always()
+        run: |
+          if [ -f scripts/social/out/state-next.json ]; then
+            git config user.name "oddyessa-bot"
+            git config user.email "bot@oddyessa.com"
+            git fetch origin social-assets:social-assets 2>/dev/null || git branch social-assets
+            git worktree add /tmp/state social-assets
+            mkdir -p /tmp/state/state
+            cp scripts/social/out/state-next.json /tmp/state/state/posted.json
+            cd /tmp/state && git add . \
+              && (git commit -m "matchday state $(date -u +%FT%H:%M)" && git push origin social-assets) || echo "no state change"
+            cd "$GITHUB_WORKSPACE" && git worktree remove /tmp/state --force || true
+          fi
       - name: keep the tick's pack as an artifact
         if: always()
         uses: actions/upload-artifact@v4
