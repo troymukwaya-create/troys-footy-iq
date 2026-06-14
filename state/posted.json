@@ -6,7 +6,8 @@
     "apf_1489372",
     "apf_1489374",
     "apf_1489376",
-    "apf_1489375"
+    "apf_1489375",
+    "apf_1539002"
   ],
   "receipts": [
     "apf_1538999",
@@ -127,8 +128,21 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1539002",
+      "label": "Sweden v Tunisia",
+      "at": "2026-06-14T22:51:37.607Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1489376": 1
+  },
   "pending": {}
 }
