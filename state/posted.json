@@ -18,7 +18,8 @@
     "apf_1489371",
     "apf_1489372",
     "apf_1539001",
-    "apf_1489374"
+    "apf_1489374",
+    "apf_1489376"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -139,10 +140,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489376",
+      "label": "Netherlands 2–2 Japan",
+      "at": "2026-06-14T23:57:17.662Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1489376": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
