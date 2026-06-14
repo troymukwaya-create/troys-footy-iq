@@ -5,7 +5,8 @@
     "apf_1489371",
     "apf_1489372",
     "apf_1489374",
-    "apf_1489376"
+    "apf_1489376",
+    "apf_1489375"
   ],
   "receipts": [
     "apf_1538999",
@@ -103,8 +104,21 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489375",
+      "label": "Ivory Coast v Ecuador",
+      "at": "2026-06-14T20:17:50.871Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1489374": 1
+  },
   "pending": {}
 }
