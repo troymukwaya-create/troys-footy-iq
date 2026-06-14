@@ -4,7 +4,8 @@
     "apf_1489373",
     "apf_1489371",
     "apf_1489372",
-    "apf_1489374"
+    "apf_1489374",
+    "apf_1489376"
   ],
   "receipts": [
     "apf_1538999",
@@ -86,6 +87,17 @@
       "id": "apf_1539001",
       "label": "Australia 2–0 Türkiye",
       "at": "2026-06-14T16:09:27.776Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489376",
+      "label": "Netherlands v Japan",
+      "at": "2026-06-14T17:44:06.304Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
