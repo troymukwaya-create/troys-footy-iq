@@ -3,7 +3,8 @@
     "apf_1489370",
     "apf_1489373",
     "apf_1489371",
-    "apf_1489372"
+    "apf_1489372",
+    "apf_1489374"
   ],
   "receipts": [
     "apf_1538999",
@@ -11,7 +12,8 @@
     "apf_1539000",
     "apf_1489370",
     "apf_1489373",
-    "apf_1489371"
+    "apf_1489371",
+    "apf_1489372"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -50,6 +52,28 @@
       "id": "apf_1489371",
       "label": "Brazil 1–1 Morocco",
       "at": "2026-06-14T12:21:01.849Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489374",
+      "label": "Germany v Curaçao",
+      "at": "2026-06-14T14:35:50.041Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489372",
+      "label": "Haiti 0–1 Scotland",
+      "at": "2026-06-14T14:36:10.213Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
