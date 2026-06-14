@@ -16,7 +16,8 @@
     "apf_1489373",
     "apf_1489371",
     "apf_1489372",
-    "apf_1539001"
+    "apf_1539001",
+    "apf_1489374"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -115,10 +116,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489374",
+      "label": "Germany 7–1 Curaçao",
+      "at": "2026-06-14T21:44:03.539Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1489374": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
