@@ -13,7 +13,8 @@
     "apf_1489370",
     "apf_1489373",
     "apf_1489371",
-    "apf_1489372"
+    "apf_1489372",
+    "apf_1539001"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -74,6 +75,17 @@
       "id": "apf_1489372",
       "label": "Haiti 0–1 Scotland",
       "at": "2026-06-14T14:36:10.213Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539001",
+      "label": "Australia 2–0 Türkiye",
+      "at": "2026-06-14T16:09:27.776Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
