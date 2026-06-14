@@ -10,7 +10,8 @@
     "apf_1489369",
     "apf_1539000",
     "apf_1489370",
-    "apf_1489373"
+    "apf_1489373",
+    "apf_1489371"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -43,9 +44,19 @@
       "id": "apf_1489373",
       "label": "Qatar 1–1 Switzerland",
       "at": "2026-06-14T05:18:41.752Z"
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489371",
+      "label": "Brazil 1–1 Morocco",
+      "at": "2026-06-14T12:21:01.849Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1489371": 1
-  }
+  "verdictWait": {},
+  "pending": {}
 }
