@@ -76,7 +76,9 @@
 }
 
 @layer base {
-  html { scroll-behavior: smooth; }
+  /* Dark behind everything so iOS rubber-band overscroll and the safe-area
+     strips (Dynamic Island / home indicator) show brand black, never white. */
+  html { scroll-behavior: smooth; background-color: var(--bg-surface); }
   body {
     background-color: var(--bg-base);
     color: var(--text-primary);
@@ -85,7 +87,10 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
+    /* clip, not hidden: stops horizontal scroll WITHOUT turning <body> into a
+       scroll container (hidden makes overflow-y compute to auto, which breaks
+       the position:sticky .app-header on mobile document-scroll). */
+    overflow-x: clip;
   }
   /* Headlines speak in the EXPANDED cut — the brand's display voice.
      (Archivo variable width axis; numbers everywhere stay Plex Mono.) */
@@ -112,6 +117,33 @@
 .app-shell {
   height: 100vh;    /* fallback for older browsers */
   height: 100dvh;   /* modern mobile: excludes browser chrome */
+}
+
+/* ── iOS Safari edge-to-edge (mobile only) ──────────────────────────
+   Desktop keeps the fixed three-panel app-shell with inner-scrolling
+   panels. On mobile only ONE panel renders at a time, so we let the
+   DOCUMENT scroll instead of trapping scroll in a panel — that's what
+   lets Safari collapse its URL bar and run the page full-bleed behind
+   the Dynamic Island and the floating toolbar. */
+@media (max-width: 768px) {
+  html, body { height: auto; overflow-x: clip; }
+  .app-shell { height: auto; min-height: 100dvh; overflow: visible; }
+  .panel-row { flex: 1 1 auto; overflow: visible; min-height: 0; }
+  .left-panel, .center-panel, .right-panel {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  /* The trust strip + nav ride together as a pinned glass header that
+     clears the Dynamic Island; content scrolls behind it. */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    padding-top: env(safe-area-inset-top);
+    background: var(--bg-surface);
+  }
+  .top-nav { position: static !important; }
 }
 
 @layer components {

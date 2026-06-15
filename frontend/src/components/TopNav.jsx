@@ -9,7 +9,7 @@ import OrbitMark from './OrbitMark.jsx';
  */
 export function TopNav({ onGoDashboard, fixtureSelected }) {
   return (
-    <nav style={{
+    <nav className="top-nav" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '8px 16px',
       // Upper glass: content scrolls UNDER the chrome, visible through it.
@@ -18,6 +18,8 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
       backdropFilter: 'blur(16px) saturate(1.4)',
       WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
       borderBottom: '1px solid var(--border-subtle)',
+      // Desktop: sticky top bar. On mobile the .app-header wrapper pins
+      // instead (index.css sets .top-nav position:static there).
       position: 'sticky', top: 0,
       zIndex: 30,
     }}>

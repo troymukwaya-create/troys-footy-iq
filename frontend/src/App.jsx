@@ -266,14 +266,18 @@ function MainApp() {
       )}
       <AuthModal />
       <SavedSlipsModal />
-      {/* The trust engine, before anything else — every device, every tab. */}
-      <LedgerStrip onJumpToReceipts={() => {
-        setSearchParams({ tab: 'home' });
-        setTimeout(() => document.getElementById('receipts')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-      }} />
-      <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
+      {/* The trust engine, before anything else — every device, every tab.
+          Wrapped so it can pin as one glass header below the Dynamic Island
+          on mobile (see .app-header in index.css). */}
+      <div className="app-header">
+        <LedgerStrip onJumpToReceipts={() => {
+          setSearchParams({ tab: 'home' });
+          setTimeout(() => document.getElementById('receipts')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        }} />
+        <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
+      </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="panel-row flex flex-1 overflow-hidden">
         {/* ═══ LEFT SIDEBAR ═══ */}
         <aside className="left-panel flex flex-col h-full" style={{ width: 280, minWidth: 280, flexShrink: 0, background: 'var(--bg-surface)', borderRight: '1px solid var(--border-subtle)' }}>
           <LeagueSidebar
