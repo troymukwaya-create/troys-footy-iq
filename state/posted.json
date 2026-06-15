@@ -7,7 +7,8 @@
     "apf_1489374",
     "apf_1489376",
     "apf_1489375",
-    "apf_1539002"
+    "apf_1539002",
+    "apf_1489377"
   ],
   "receipts": [
     "apf_1538999",
@@ -170,6 +171,17 @@
       "id": "apf_1539002",
       "label": "Sweden 5–1 Tunisia",
       "at": "2026-06-15T09:46:01.612Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489377",
+      "label": "Belgium v Egypt",
+      "at": "2026-06-15T15:33:33.689Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
