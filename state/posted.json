@@ -9,7 +9,8 @@
     "apf_1489375",
     "apf_1539002",
     "apf_1489377",
-    "apf_1489379"
+    "apf_1489379",
+    "apf_1489378"
   ],
   "receipts": [
     "apf_1538999",
@@ -23,7 +24,8 @@
     "apf_1489374",
     "apf_1489376",
     "apf_1489375",
-    "apf_1539002"
+    "apf_1539002",
+    "apf_1489380"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -199,10 +201,30 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489378",
+      "label": "Iran v New Zealand",
+      "at": "2026-06-15T22:02:08.878Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489380",
+      "label": "Spain 0–0 Cape Verde Islands",
+      "at": "2026-06-15T22:02:28.934Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1489380": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
