@@ -8,7 +8,8 @@
     "apf_1489376",
     "apf_1489375",
     "apf_1539002",
-    "apf_1489377"
+    "apf_1489377",
+    "apf_1489379"
   ],
   "receipts": [
     "apf_1538999",
@@ -187,8 +188,21 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489379",
+      "label": "Saudi Arabia v Uruguay",
+      "at": "2026-06-15T19:31:31.692Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1489380": 1
+  },
   "pending": {}
 }
