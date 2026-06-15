@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { safe, safeNum } from '../utils/safe.js';
 import { getColor } from '../constants/teamColors.js';
+import Spinner from './Spinner.jsx';
 
 const TABS = ['MATCHES', 'TABLE', 'TOP SCORERS', 'TEAMS', 'HISTORY'];
 
@@ -157,7 +158,7 @@ export function LeagueHub({ leagueCode, allFixtures, onSelectFixture, onSelectTe
       <div className="flex-1 overflow-y-auto px-8 py-6">
         {loading ? (
           <div className="py-24 text-center text-on-surface-variant/30">
-            <div className="text-4xl animate-spin mb-4">⚽</div>
+            <div className="flex justify-center mb-4"><Spinner size={36} /></div>
             Analysing league data...
           </div>
         ) : (

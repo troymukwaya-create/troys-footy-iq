@@ -24,7 +24,7 @@ import { AuthModal } from './components/AuthModal.jsx';
 import { SavedSlipsModal } from './components/SavedSlipsModal.jsx';
 import { useAuth } from './hooks/useAuth.js';
 import { usePullToRefresh } from './hooks/usePullToRefresh.js';
-import { RefreshCw } from 'lucide-react';
+import Spinner from './components/Spinner.jsx';
 
 const MatchAnalysisPanel = React.lazy(() => import('./components/MatchAnalysisPanel.jsx').then(m => ({ default: m.MatchAnalysisPanel })));
 const AIInsightsPanel = React.lazy(() => import('./components/AIInsightsPanel.jsx').then(m => ({ default: m.AIInsightsPanel })));
@@ -362,9 +362,11 @@ function MainApp() {
         <main ref={ptr.ref} className="center-panel flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
           {/* Pull-to-refresh indicator */}
           <div style={{ height: ptr.pull, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: (ptr.pull > 0 && !ptr.refreshing) ? 'none' : 'height 220ms ease' }}>
-            <span className={ptr.refreshing ? 'animate-spin' : ''} style={{ opacity: Math.min(ptr.pull / 70, 1), display: 'flex' }}>
-              <RefreshCw size={18} style={{ color: 'var(--accent)' }} />
-            </span>
+            {ptr.refreshing
+              ? <Spinner size={22} />
+              : <span style={{ opacity: Math.min(ptr.pull / 70, 1), display: 'flex', transform: `rotate(${Math.min(ptr.pull * 2.4, 270)}deg)` }}>
+                  <OrbitMark size={20} />
+                </span>}
           </div>
           <div style={{ maxWidth: 960, margin: '0 auto' }}>
             {fixturesLoading ? (

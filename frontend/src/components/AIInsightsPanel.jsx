@@ -3,6 +3,7 @@ import { Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAIChat } from '../hooks/useQueries.js';
 import { QEDMark } from './QEDMark.jsx';
+import Spinner from './Spinner.jsx';
 
 /**
  * AIInsightsPanel — Right panel showing AI analysis.
@@ -274,7 +275,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
             ))}
             {aiChat.isPending && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, color: 'var(--text-muted)' }}>
-                <div className="w-3 h-3 border rounded-full animate-spin" style={{ borderColor: 'var(--border-default)', borderTopColor: 'var(--accent)' }} />
+                <Spinner size={14} />
                 <span style={{ fontSize: 11 }}>Thinking…</span>
               </div>
             )}

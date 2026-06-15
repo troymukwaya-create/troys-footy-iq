@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDemoDashboard, useDemoPredictions, useDemoStatus, useDemoControls } from '../hooks/useDemoQueries.js';
+import Spinner from './Spinner.jsx';
 
 export function InvestorDashboard({ onClose }) {
   const { data: status, isLoading: statusLoading } = useDemoStatus();
@@ -18,7 +19,7 @@ export function InvestorDashboard({ onClose }) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: '#0a0a0c', color: '#fff' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-t-[#00e5ff] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+          <Spinner size={34} />
           <div className="text-sm font-semibold tracking-widest text-gray-400">INITIALIZING DEMO ENGINE...</div>
         </div>
       </div>
