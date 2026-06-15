@@ -165,22 +165,32 @@ function ProbValue({ label, value }) {
   );
 }
 
-// Settled fixture: did the locked call's most likely outcome happen?
-// Both verdicts render — every ✓ on the feed is backed by visible ✗s.
+// Settled fixture: graded by the probability we gave the actual result, not
+// a binary did-the-favourite-win. Mirrors backend/engine/grading.js (22/13).
+// Both verdicts render — every ✓ on the feed is backed by visible misses.
+const VERDICT_TIER = {
+  ON_READ: { label: '✓ Called it', color: 'var(--success)', bg: 'var(--success-muted)' },
+  IN_RANGE: { label: '≈ In range', color: '#AAB2C0', bg: 'rgba(138,148,166,0.14)' },
+  AGAINST: { label: '± Against', color: '#D99A2B', bg: 'rgba(217,154,43,0.12)' },
+  MISSED: { label: '✗ Missed', color: 'var(--danger)', bg: 'var(--danger-muted)' },
+};
 function VerdictBadge({ prob, scoreHome, scoreAway }) {
   const { home = 0, draw = 0, away = 0 } = prob?.probabilities || {};
+  const p = { HOME: home, DRAW: draw, AWAY: away };
+  const norm = (v) => (v > 1 ? v / 100 : v);
   const predicted = home >= draw && home >= away ? 'HOME' : draw >= home && draw >= away ? 'DRAW' : 'AWAY';
   const actual = scoreHome > scoreAway ? 'HOME' : scoreHome < scoreAway ? 'AWAY' : 'DRAW';
-  const hit = predicted === actual;
-  const color = hit ? 'var(--success)' : 'var(--danger)';
+  const pa = norm(p[actual] || 0);
+  const tier = actual === predicted ? 'ON_READ' : pa >= 0.22 ? 'IN_RANGE' : pa >= 0.13 ? 'AGAINST' : 'MISSED';
+  const t = VERDICT_TIER[tier];
   return (
     <span style={{
       display: 'flex', alignItems: 'center', gap: 4,
-      fontSize: 10, fontWeight: 700, color,
+      fontSize: 10, fontWeight: 700, color: t.color,
       padding: '2px 8px', borderRadius: 10,
-      background: hit ? 'var(--success-muted)' : 'var(--danger-muted)',
+      background: t.bg,
     }}>
-      {hit ? '✓ Called it' : '✗ Missed'}
+      {t.label}
     </span>
   );
 }
