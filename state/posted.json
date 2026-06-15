@@ -20,7 +20,8 @@
     "apf_1539001",
     "apf_1489374",
     "apf_1489376",
-    "apf_1489375"
+    "apf_1489375",
+    "apf_1539002"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -158,6 +159,17 @@
       "id": "apf_1489375",
       "label": "Ivory Coast 1–0 Ecuador",
       "at": "2026-06-15T03:32:55.496Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539002",
+      "label": "Sweden 5–1 Tunisia",
+      "at": "2026-06-15T09:46:01.612Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
