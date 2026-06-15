@@ -9,6 +9,7 @@ import { safeQuery, isDbAvailable } from '../db/index.js';
 import { getLockedWcPredictionsMap } from './wcDisplayPrediction.js';
 import api from './apisports.js';
 import { buildStory, polishStory } from './matchNarrative.js';
+import { gradeOutcome, gradeScoreline, gradeMatch, outcomeBlurb } from '../engine/grading.js';
 
 // Outcome from a final score, in the same vocabulary the ledger uses.
 function outcomeOf(home, away) {
@@ -119,6 +120,17 @@ export async function buildPostMatchReport(match, matchId) {
   const homeName = match.homeTeam?.name || 'Home';
   const awayName = match.awayTeam?.name || 'Away';
   const outcomeCorrect = predictedOutcome === actualOutcome;
+
+  // Graded verdict — the lean judged by the probability we gave the actual
+  // result, the scoreline judged on its own. A leaned-wrong game with an
+  // exact scoreline is a SPLIT, not a flat red. (outcomeCorrect kept above
+  // for back-compat / aggregate accuracy.)
+  const outcomeGrade = gradeOutcome({
+    probHome: p.home, probDraw: p.draw, probAway: p.away, actualResult: actualOutcome,
+  });
+  const scorelineGrade = gradeScoreline(scoreline);
+  const assessment = gradeMatch({ outcome: outcomeGrade, scoreline: scorelineGrade });
+  const gradeBlurb = outcomeBlurb(outcomeGrade, { home: homeName, away: awayName });
   let story = null;
   try {
     const built = buildStory({
@@ -148,6 +160,11 @@ export async function buildPostMatchReport(match, matchId) {
       predictedProb,
       actualOutcome,
       outcomeCorrect,
+      // Graded verdict (the honest replacement for the binary outcomeCorrect).
+      outcomeGrade,
+      scorelineGrade,
+      assessment,
+      gradeBlurb,
       scoreline,
       marketCalls,
       story,

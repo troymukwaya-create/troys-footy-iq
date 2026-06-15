@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
 import { NATION_ISO2 } from '../../backend/constants/nationFlags.js';
+import { gradeRow } from '../../backend/engine/grading.js';
 
 const API = process.env.ODDYESSA_API || 'https://troys-footy-iq-api.onrender.com/api';
 const DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -118,8 +119,6 @@ async function generateLedger() {
     console.log('no settled matches yesterday — ledger post skipped');
     return;
   }
-  const nRight = settled.filter(s => s.prediction_correct).length;
-
   // verdicts give the scoreline + market calls per match
   const verdicts = {};
   for (const s of settled) {
@@ -129,15 +128,30 @@ async function generateLedger() {
     } catch { verdicts[s.match_external_id] = null; }
   }
 
+  // Grade every match the honest way: the lean judged by the probability we
+  // gave the actual result, the scoreline judged on its own. The card uses
+  // the API's grade when present, else recomputes from the same module.
+  const grades = {};
+  for (const s of settled) {
+    grades[s.match_external_id] = s.grade
+      || gradeRow(s, verdicts[s.match_external_id]?.scoreline || null);
+  }
+  const tierOf = (s) => grades[s.match_external_id]?.outcome?.tier || 'IN_RANGE';
+  const nCalled = settled.filter(s => tierOf(s) === 'ON_READ').length;   // top outcome landed
+  const nRange = settled.filter(s => tierOf(s) === 'IN_RANGE').length;   // inside our range
+  const nMissed = settled.filter(s => grades[s.match_external_id]?.stampMiss).length; // genuine reds
+
   const rows = settled.map(s => {
     const v = verdicts[s.match_external_id];
+    const g = grades[s.match_external_id];
     const lean = { HOME: s.home_team, DRAW: 'Draw', AWAY: s.away_team }[s.predicted_outcome];
     const leanP = { HOME: s.prob_home, DRAW: s.prob_draw, AWAY: s.prob_away }[s.predicted_outcome];
     const extra = v?.scoreline?.exact ? ` · scoreline ${v.scoreline.actual} called exact`
+      : tierOf(s) === 'IN_RANGE' ? ` · the ${Math.round((g?.outcome?.pActual || 0) * 100)}% result, inside our range`
       : s.risk_level === 'HIGH' ? ' · a coin flip, called' : '';
     return {
       abbr: `${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)}`,
-      hit: !!s.prediction_correct,
+      res: g?.res || (s.prediction_correct ? 'hit' : 'miss'),
       line: `<b>${lean} @ ${pct(leanP)}</b>${extra}`,
       brier: Number(s.brier_score).toFixed(3),
       hIso: iso(s.home_team), aIso: iso(s.away_team),
@@ -146,11 +160,11 @@ async function generateLedger() {
   });
 
   const n = settled.length;
-  const headline = nRight === n
+  const headline = nCalled === n
     ? { a: `${n === 1 ? 'One call. One green.' : `${n} calls. ${n} greens.`}`, b: 'The ledger grows.' }
-    : nRight === 0
-      ? { a: `${n} calls. ${n} ${n === 1 ? 'miss' : 'misses'}.`, b: 'Printed anyway.' }
-      : { a: `${n} calls. ${nRight} green${nRight === 1 ? '' : 's'}.`, b: 'All of them printed.' };
+    : nMissed === 0
+      ? { a: `${n} calls. Zero misses.`, b: `${nCalled} called, ${nRange} inside the range.` }
+      : { a: `${n} calls. ${nMissed} genuine miss${nMissed === 1 ? '' : 'es'}.`, b: 'Printed in the same font.' };
 
   await withPage(async (page) => {
     await page.evaluate((d) => window.renderLedger(d), {
@@ -175,12 +189,20 @@ async function generateLedger() {
     let i = 0;
     for (const s of settled.slice(0, 3)) {
       const v = verdicts[s.match_external_id];
+      const g = grades[s.match_external_id];
       const lean = { HOME: s.home_team, DRAW: 'Draw', AWAY: s.away_team }[s.predicted_outcome];
       const leanP = { HOME: s.prob_home, DRAW: s.prob_draw, AWAY: s.prob_away }[s.predicted_outcome];
+      // The CALL row carries the graded tone (called / in range / against /
+      // miss), and an in-range/against game gets the honest one-line context
+      // instead of a bare red ✗.
+      const callRes = g?.outcome?.res || (s.prediction_correct ? 'hit' : 'miss');
       const items = [
-        { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res: s.prediction_correct ? 'hit' : 'miss' },
-        ...(v?.scoreline ? [{ lab: `SCORELINE ${v.scoreline.predicted}`, val: pct(v.scoreline.predictedProb), res: v.scoreline.exact ? 'hit' : 'miss' },
-          v.scoreline.exact ? { sub: 'top of our grid · exact hit' } : { sub: `actual ${v.scoreline.actual}${v.scoreline.rankInTop ? ` — sat #${v.scoreline.rankInTop} in our grid` : ''}` }] : []),
+        { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res: callRes },
+        ...(g?.blurb && callRes !== 'hit' ? [{ sub: g.blurb.toLowerCase() }] : []),
+        // Scoreline is its own call: exact = gold hit, otherwise neutral (a
+        // non-exact scoreline is never a "miss" — exact scores are ~1-in-8).
+        ...(v?.scoreline ? [{ lab: `SCORELINE ${v.scoreline.predicted}`, val: pct(v.scoreline.predictedProb), res: v.scoreline.exact ? 'hit' : 'range' },
+          v.scoreline.exact ? { sub: 'top of our grid · exact hit' } : { sub: `actual ${v.scoreline.actual}${v.scoreline.rankInTop ? ` — sat #${v.scoreline.rankInTop} in our grid` : ' — outside our top grid'}` }] : []),
         ...((v?.marketCalls || []).flatMap((mc, idx, arr) => [
           { lab: mc.label.toUpperCase(), val: pct(mc.prob), res: mc.hit ? 'hit' : 'miss' },
           // the first miss gets the honest annotation, like the hand-made cards
@@ -195,8 +217,9 @@ async function generateLedger() {
         meta: `${new Date(s.match_date).toISOString().slice(0, 10).toUpperCase()} · LOCKED BEFORE KICKOFF`,
         items,
         brier: Number(s.brier_score).toFixed(4),
-        stampText: s.prediction_correct ? (v?.scoreline?.exact ? 'SETTLED · EXACT' : 'SETTLED · CALLED') : 'SETTLED · MISSED',
-        stampMiss: !s.prediction_correct,
+        stampText: g?.stampText || 'SETTLED',
+        stampTone: g?.tone || (s.prediction_correct ? 'green' : 'miss'),
+        stampMiss: !!g?.stampMiss,
         hIso: iso(s.home_team), aIso: iso(s.away_team),
       });
       await page.evaluate(() => window.imagesReady());
@@ -204,19 +227,25 @@ async function generateLedger() {
     }
   });
 
+  // ✓ called · ≈ inside our range · ± against the read · ✗ genuine miss
+  const MARK = { hit: ' ✓', range: ' ≈', amber: ' ±', miss: ' ✗' };
   const caption = [
-    nRight === n
+    nCalled === n
       ? `Yesterday: ${n === 1 ? 'one call, one green' : `${n} calls, ${n} greens`}. ${n === 1 ? '' : 'All of them locked before kickoff.'}`
-      : `Yesterday: we got ${nRight} of ${n} right. The misses are printed in the same font.`,
+      : nMissed === 0
+        ? `Yesterday: ${n} calls, zero misses — ${nCalled} called outright, ${nRange} landed inside our range.`
+        : `Yesterday: ${nCalled} called, ${nRange} inside our range, ${nMissed} genuine miss${nMissed === 1 ? '' : 'es'}. The misses are printed in the same font.`,
     '',
     ...settled.map(s => {
       const v = verdicts[s.match_external_id];
+      const g = grades[s.match_external_id];
       const lean = { HOME: s.home_team, DRAW: 'a draw', AWAY: s.away_team }[s.predicted_outcome];
       const leanP = { HOME: s.prob_home, DRAW: s.prob_draw, AWAY: s.prob_away }[s.predicted_outcome];
-      return `${flagEmoji(s.home_team)} ${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team} ${flagEmoji(s.away_team)} — we said ${lean} (${pct(leanP)})${s.prediction_correct ? ' ✓' : ' ✗'}${v?.scoreline?.exact ? ' · exact score called' : ''}`;
+      const mark = MARK[g?.res] ?? (s.prediction_correct ? ' ✓' : ' ✗');
+      return `${flagEmoji(s.home_team)} ${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team} ${flagEmoji(s.away_team)} — we said ${lean} (${pct(leanP)})${mark}${v?.scoreline?.exact ? ' · exact score called' : ''}`;
     }),
     '',
-    stats ? `This World Cup so far: ${stats.correct} of ${stats.total} winners called.` : '',
+    stats ? `This World Cup so far: ${stats.correct} of ${stats.total} winners called outright — every result graded in public.` : '',
     '',
     'Every call locked before kickoff, graded in public.',
     'oddyessa.com',
@@ -237,12 +266,16 @@ async function generateLedger() {
 
   const tags = buildHashtags(settled.map(s => [s.home_team, s.away_team]));
   // X gets a compact, purpose-built caption: result lines + tags ≤ 280
+  const XMARK = { hit: '✓ called', range: '≈ in range', amber: '± against', miss: '✗ missed' };
   const xLines = settled.map(s => {
     const v = verdicts[s.match_external_id];
-    return `${flagEmoji(s.home_team)} ${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)} ${s.prediction_correct ? '✓ called' : '✗ missed'}${v?.scoreline?.exact ? ' · exact score ✓' : ''}`;
+    const g = grades[s.match_external_id];
+    const mark = XMARK[g?.res] ?? (s.prediction_correct ? '✓ called' : '✗ missed');
+    return `${flagEmoji(s.home_team)} ${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)} ${mark}${v?.scoreline?.exact ? ' · exact ✓' : ''}`;
   });
-  let xCap = `Yesterday: ${nRight}/${n} ${nRight === n ? '✓' : ''}\n\n${xLines.join('\n')}\n\nEvery call locked before kickoff. Receipts attached — full reasoning in bio.\n\n${tags.x}`;
-  if (xCap.length > 278) xCap = `Yesterday: ${nRight}/${n} winners called — receipts attached. Every call locked before kickoff.\n\n${tags.x}`;
+  const xHead = nMissed === 0 ? `Yesterday: ${n}/${n} inside our range ✓` : `Yesterday: ${nCalled} called, ${nRange} in range, ${nMissed} miss${nMissed === 1 ? '' : 'es'}`;
+  let xCap = `${xHead}\n\n${xLines.join('\n')}\n\nEvery call locked before kickoff. Receipts attached — full reasoning in bio.\n\n${tags.x}`;
+  if (xCap.length > 278) xCap = `${xHead} — receipts attached. Every call locked before kickoff.\n\n${tags.x}`;
   writeFileSync(path.join(OUT, 'ledger.json'), JSON.stringify({
     caption: caption + '\n\n' + tags.tg,
     captionX: xCap,
@@ -250,7 +283,7 @@ async function generateLedger() {
     images: ['ledger.png', ...settled.slice(0, 3).map((_, j) => `receipt-${j}.png`)],
     imagesIG,
   }, null, 2));
-  console.log(`ledger generated: ${n} matches, ${nRight} right (+${imagesIG.length} IG-native cards)`);
+  console.log(`ledger generated: ${n} matches — ${nCalled} called, ${nRange} in range, ${nMissed} missed (+${imagesIG.length} IG-native cards)`);
 }
 
 async function generatePicks() {
@@ -306,21 +339,29 @@ async function generateMatch(externalId) {
     verdict = a?.verdict || a?.data?.verdict || null;
   } catch { /* receipt still works without the verdict extras */ }
 
-  const hit = !!s.prediction_correct;
+  const g = gradeRow(s, verdict?.scoreline || null);
+  const tier = g?.outcome?.tier;
+  const res = g?.res || (s.prediction_correct ? 'hit' : 'miss');
+  const isMiss = !!g?.stampMiss;          // genuine red only
+  const called = tier === 'ON_READ';      // top outcome landed
   const exact = !!verdict?.scoreline?.exact;
   const lean = { HOME: s.home_team, DRAW: 'Draw', AWAY: s.away_team }[s.predicted_outcome];
   const leanP = { HOME: s.prob_home, DRAW: s.prob_draw, AWAY: s.prob_away }[s.predicted_outcome];
   const ft = `${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals}`;
-  const firstMiss = !hit && stats && (stats.total - stats.correct) === 1;
+  const firstMiss = isMiss && stats && (stats.total - stats.correct) === 1;
 
-  const headline = !hit && exact ? { a: 'The call missed.', b: 'The scoreline didn’t.' }
-    : hit && exact ? { a: 'Called it.', b: 'Exact score, again.' }
-    : hit ? { a: 'Called it.', b: 'The ledger grows.' }
-    : { a: 'A miss.', b: 'Printed anyway.' };
+  const headline = called && exact ? { a: 'Called it.', b: 'Exact score, again.' }
+    : called ? { a: 'Called it.', b: 'The ledger grows.' }
+    : tier === 'IN_RANGE' && exact ? { a: 'Lean broke.', b: 'Scoreline nailed.' }
+    : tier === 'IN_RANGE' ? { a: 'Inside our range.', b: 'The result we priced.' }
+    : tier === 'AGAINST' && exact ? { a: 'Wrong lean.', b: 'Right score.' }
+    : tier === 'AGAINST' ? { a: 'Against the read.', b: 'Printed anyway.' }
+    : exact ? { a: 'The call missed.', b: 'The scoreline didn’t.' }
+    : { a: 'A genuine miss.', b: 'Printed anyway.' };
 
   const row = {
     abbr: `${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)}`,
-    hit,
+    res,
     line: `<b>${lean} @ ${pct(leanP)}</b>${exact ? ` · scoreline ${verdict.scoreline.actual} called exact` : ''}`,
     brier: Number(s.brier_score).toFixed(3),
     hIso: iso(s.home_team), aIso: iso(s.away_team),
@@ -331,10 +372,11 @@ async function generateMatch(externalId) {
     : 'Every result, in the same font.';
 
   const items = [
-    { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res: hit ? 'hit' : 'miss' },
-    ...(!hit ? [{ sub: firstMiss ? 'our first miss. it stays on the receipt.' : 'missed. it stays on the receipt.' }] : []),
-    ...(verdict?.scoreline ? [{ lab: `SCORELINE ${verdict.scoreline.predicted}`, val: pct(verdict.scoreline.predictedProb), res: exact ? 'hit' : 'miss' },
-      exact ? { sub: 'top of our grid · exact hit' } : { sub: `actual ${verdict.scoreline.actual}${verdict.scoreline.rankInTop ? ` — sat #${verdict.scoreline.rankInTop} in our grid` : ''}` }] : []),
+    { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res },
+    ...(isMiss ? [{ sub: firstMiss ? 'our first genuine miss. it stays on the receipt.' : 'a genuine miss. it stays on the receipt.' }]
+      : !called && g?.blurb ? [{ sub: g.blurb.toLowerCase() }] : []),
+    ...(verdict?.scoreline ? [{ lab: `SCORELINE ${verdict.scoreline.predicted}`, val: pct(verdict.scoreline.predictedProb), res: exact ? 'hit' : 'range' },
+      exact ? { sub: 'top of our grid · exact hit' } : { sub: `actual ${verdict.scoreline.actual}${verdict.scoreline.rankInTop ? ` — sat #${verdict.scoreline.rankInTop} in our grid` : ' — outside our top grid'}` }] : []),
     ...((verdict?.marketCalls || []).map(mc => ({ lab: mc.label.toUpperCase(), val: pct(mc.prob), res: mc.hit ? 'hit' : 'miss' }))),
   ];
   const he = flagEmoji(s.home_team), ae = flagEmoji(s.away_team);
@@ -364,8 +406,9 @@ async function generateMatch(externalId) {
       meta: `${new Date(s.match_date).toISOString().slice(0, 10).toUpperCase()} · LOCKED BEFORE KICKOFF`,
       items,
       brier: Number(s.brier_score).toFixed(4),
-      stampText: hit ? (exact ? 'SETTLED · EXACT' : 'SETTLED · CALLED') : (exact ? 'SETTLED · SPLIT' : 'SETTLED · MISSED'),
-      stampMiss: !hit,
+      stampText: g?.stampText || 'SETTLED',
+      stampTone: g?.tone || (called ? 'green' : 'miss'),
+      stampMiss: isMiss,
       hIso: iso(s.home_team), aIso: iso(s.away_team),
     });
     await page.evaluate(() => window.imagesReady());
@@ -399,9 +442,11 @@ async function generateMatch(externalId) {
     ? 'our first missed call, printed in the same font as the wins.'
     : 'missed — printed in the same font as the wins.';
   const marketBits = (verdict?.marketCalls || []).filter(mc => mc.hit).map(mc => `${mc.label} ✓`).join(' · ');
-  const body = story || (hit
+  const body = story || (called
     ? `We said ${lean} (${pct(leanP)}) — and that’s how it went.${exact ? ` We had ${verdict.scoreline.actual} as the most likely score before kickoff, too.` : ''}`
-    : `We said ${lean} (${pct(leanP)}). It finished ${ft} — ${missLine}`);
+    : isMiss
+      ? `We said ${lean} (${pct(leanP)}). It finished ${ft} — ${missLine}`
+      : `We said ${lean} (${pct(leanP)}). It finished ${ft} — ${g?.blurb ? g.blurb.toLowerCase() : 'the result sat inside our range.'}${exact ? ` And we had ${verdict.scoreline.actual} as our most likely score.` : ''}`);
   // The exact-scoreline credibility note still earns its place on a miss
   // (the story explains the outcome; this adds "we still had the score").
   const scorelineNote = (!hit && exact)

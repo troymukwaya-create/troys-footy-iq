@@ -56,6 +56,8 @@
   .tick{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;}
   .tick.hit{background:rgba(34,197,94,.12);border:2px solid var(--green);color:var(--green);}
   .tick.miss{background:rgba(239,68,68,.12);border:2px solid var(--red);color:var(--red);}
+  .tick.range{background:rgba(138,148,166,.14);border:2px solid #8A94A6;color:#AAB2C0;}
+  .tick.amber{background:rgba(234,179,8,.12);border:2px solid var(--gold);color:var(--gold);}
   .track-wrap{margin-top:46px;}
   .track-labels{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:17px;letter-spacing:.1em;color:var(--t36);margin-bottom:14px;}
   .track{position:relative;height:10px;border-radius:5px;
@@ -106,7 +108,7 @@
   .item .dots{flex:1;border-bottom:2px dotted rgba(255,255,255,.14);transform:translateY(-5px);}
   .item .val{color:var(--t92);font-weight:600;}
   .item .res{width:34px;text-align:center;font-weight:700;}
-  .hit{color:var(--green);} .miss{color:var(--red);}
+  .hit{color:var(--green);} .miss{color:var(--red);} .range{color:#AAB2C0;} .amber{color:var(--gold);}
   .item .sub{color:rgba(255,255,255,.5);font-size:19px;}
   .r-total{position:relative;display:flex;align-items:center;justify-content:space-between;padding:28px 0 6px;}
   .r-total .lab{font-family:'IBM Plex Mono',monospace;letter-spacing:.22em;font-size:18px;color:var(--t60);}
@@ -122,6 +124,9 @@
     border-radius:10px;padding:9px 20px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:20px;letter-spacing:.1em;
     background:rgba(34,197,94,.07);z-index:3;}
   .stamp.miss{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.07);}
+  .stamp.range{border-color:#8A94A6;color:#AAB2C0;background:rgba(138,148,166,.07);}
+  .stamp.amber{border-color:var(--gold);color:var(--gold);background:rgba(234,179,8,.07);}
+  .stamp.gold{border-color:var(--gold);color:var(--gold);background:rgba(234,179,8,.09);}
 
   /* ── PRE-MATCH "THE CALL" — X 1600×900 + IG 1080×1350 ── */
   #prematch{width:1600px;height:900px;padding:60px 72px;display:flex;flex-direction:column;background:var(--chrome);}
@@ -183,6 +188,10 @@
 
 <script>
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // Graded ticks: ✓ called · ≈ inside our range · ± against the read · ✗ genuine miss.
+  // Accepts the new 3-state `res` and falls back to the old boolean `hit`.
+  const RES = r => r.res || (r.hit ? 'hit' : 'miss');
+  const GLYPH = { hit: '✓', range: '≈', amber: '±', miss: '✗' };
   const bleed = (hIso, aIso, op) => (hIso && aIso) ? `
     <div class="bleed" style="opacity:${op}">
       <div class="fl" style="background-image:url(https://flagcdn.com/w640/${hIso}.png)"></div>
@@ -196,7 +205,7 @@
     const rows = d.results.map(r => `
       <div class="lrow bleedwrap" style="background:#14161B">
         ${bleed(r.hIso, r.aIso, '.28')}
-        <div class="tick ${r.hit ? 'hit' : 'miss'}">${r.hit ? '✓' : '✗'}</div>
+        <div class="tick ${RES(r)}">${GLYPH[RES(r)]}</div>
         <div class="score">${esc(r.abbr)}</div>
         <div class="call">${r.line}</div>
         <div class="brier">BRIER <b>${r.brier}</b></div>
@@ -226,16 +235,17 @@
       </div>`;
   };
 
-  // r: {title, ft, kicker, meta, items:[{lab,val,res:'hit'|'miss'|null,sub}], brier, stampText, stampMiss, hIso, aIso}
+  // r: {title, ft, kicker, meta, items:[{lab,val,res:'hit'|'range'|'amber'|'miss'|null,sub}], brier, stampText, stampTone, stampMiss, hIso, aIso}
   window.renderReceipt = (r) => {
     const items = r.items.map(it => it.sub
       ? `<div class="item"><span class="sub">↳ ${esc(it.sub)}</span></div>`
-      : `<div class="item"><span class="lab">${esc(it.lab)}</span><span class="dots"></span><span class="val">${esc(it.val)}</span>${it.res ? `<span class="res ${it.res}">${it.res === 'hit' ? '✓' : '✗'}</span>` : ''}</div>`
+      : `<div class="item"><span class="lab">${esc(it.lab)}</span><span class="dots"></span><span class="val">${esc(it.val)}</span>${it.res ? `<span class="res ${it.res}">${GLYPH[it.res] || ''}</span>` : ''}</div>`
     ).join('');
     const [lead, digits] = r.brier.split('.');
+    const stampTone = r.stampTone || (r.stampMiss ? 'miss' : '');
     document.getElementById('paper').innerHTML = `
       ${bleed(r.hIso, r.aIso, '.45')}
-      <div class="stamp ${r.stampMiss ? 'miss' : ''}">${esc(r.stampText)}</div>
+      <div class="stamp ${stampTone}">${esc(r.stampText)}</div>
       <div class="r-head">
         <svg width="56" height="56" viewBox="0 0 100 100" style="display:block;margin:0 auto">
           <path d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" stroke-width="9" stroke-linecap="round"/>
@@ -264,7 +274,7 @@
       <div class="igrow bleedwrap">
         ${bleed(r.hIso, r.aIso, '.3')}
         <div class="line1">
-          <div class="tick ${r.hit ? 'hit' : 'miss'}">${r.hit ? '✓' : '✗'}</div>
+          <div class="tick ${RES(r)}">${GLYPH[RES(r)]}</div>
           <div class="score">${esc(r.abbr)}</div>
           <div class="brier">${r.brier}</div>
         </div>

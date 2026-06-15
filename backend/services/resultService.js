@@ -6,6 +6,7 @@
 import { query, safeQuery, isDbAvailable } from '../db/index.js';
 import * as fd from './footballdata.js';
 import apisports from './apisports.js';
+import { gradeRow } from '../engine/grading.js';
 
 const MODEL_VERSION = 'hybrid-dc-v2';
 
@@ -255,7 +256,11 @@ export async function getRecentResults(limit = 20) {
     LIMIT $1
   `, [limit]);
 
-  return result?.rows || [];
+  // Attach the graded verdict so every consumer (CEO ledger, social cards)
+  // renders the same honest grade instead of the crude prediction_correct
+  // binary. Outcome-only here (scoreline lives on the analysis verdict);
+  // prediction_correct is preserved for back-compat and aggregate accuracy.
+  return (result?.rows || []).map((row) => ({ ...row, grade: gradeRow(row) }));
 }
 
 // ─── Metrics Computation ────────────────────────────────────────────
