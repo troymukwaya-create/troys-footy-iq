@@ -31,6 +31,12 @@ const flagEmoji = (name) => {
   return String.fromCodePoint(...[...c.toUpperCase()].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65));
 };
 const pct = (v) => `${Math.round(Number(v))}%`;
+// Map a grade tone (green/steel/amber/red/gold) to the template's stamp class
+// (base stamp is green; .stamp.{range,amber,gold,miss} exist). Without this,
+// tone 'red' (MISSED) and 'steel' (IN_RANGE) fall through to the green base —
+// i.e. a genuine miss would print a GREEN "SETTLED · MISSED" stamp.
+const STAMP_CLASS = { green: '', steel: 'range', amber: 'amber', red: 'miss', gold: 'gold' };
+const stampClassOf = (g, correct) => (g?.tone ? (STAMP_CLASS[g.tone] ?? '') : (correct ? '' : 'miss'));
 const abbr = (name) => {
   const SPECIAL = { 'South Korea': 'KOR', 'South Africa': 'RSA', 'Czech Republic': 'CZE', Czechia: 'CZE', USA: 'USA', 'United States': 'USA', 'Bosnia & Herzegovina': 'BIH', 'Bosnia and Herzegovina': 'BIH' };
   return SPECIAL[name] || name.slice(0, 3).toUpperCase();
@@ -195,7 +201,7 @@ async function generateLedger() {
       // The CALL row carries the graded tone (called / in range / against /
       // miss), and an in-range/against game gets the honest one-line context
       // instead of a bare red ✗.
-      const callRes = g?.outcome?.res || (s.prediction_correct ? 'hit' : 'miss');
+      const callRes = g?.res || (s.prediction_correct ? 'hit' : 'miss');
       const items = [
         { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res: callRes },
         ...(g?.blurb && callRes !== 'hit' ? [{ sub: g.blurb.toLowerCase() }] : []),
@@ -218,7 +224,7 @@ async function generateLedger() {
         items,
         brier: Number(s.brier_score).toFixed(4),
         stampText: g?.stampText || 'SETTLED',
-        stampTone: g?.tone || (s.prediction_correct ? 'green' : 'miss'),
+        stampTone: stampClassOf(g, s.prediction_correct),
         stampMiss: !!g?.stampMiss,
         hIso: iso(s.home_team), aIso: iso(s.away_team),
       });
@@ -407,7 +413,7 @@ async function generateMatch(externalId) {
       items,
       brier: Number(s.brier_score).toFixed(4),
       stampText: g?.stampText || 'SETTLED',
-      stampTone: g?.tone || (called ? 'green' : 'miss'),
+      stampTone: stampClassOf(g, called),
       stampMiss: isMiss,
       hIso: iso(s.home_team), aIso: iso(s.away_team),
     });

@@ -103,7 +103,22 @@ if (!state || !Array.isArray(state.prematch) || !Array.isArray(state.receipts)) 
   process.exit(0);
 }
 
-const gen = (args) => execFileSync('node', [path.join(DIR, 'generate.mjs'), ...args], { stdio: 'inherit', cwd: DIR });
+// Resilient: a generate crash must NOT take down the rest of the tick (the
+// state write + the SCORING OVERDUE alarm — the only email safety net). Log
+// it, flag it, keep going; the owed item is left untouched for next tick's
+// retry, and the run still exits non-zero at the very end so the failure is
+// surfaced (workflow goes red → email).
+let genFailed = false;
+const gen = (args) => {
+  try {
+    execFileSync('node', [path.join(DIR, 'generate.mjs'), ...args], { stdio: 'inherit', cwd: DIR });
+    return true;
+  } catch (e) {
+    console.error(`generate ${args.join(' ')} FAILED: ${e.message}`);
+    genFailed = true;
+    return false;
+  }
+};
 const actions = [];
 // Append-only post log — the CEO dashboard's ops feed reads this off the
 // social-assets branch. publish.mjs appends to it when an item finishes on
@@ -153,12 +168,13 @@ if (duePre.length) {
   const f = duePre[0];
   const owed = owedOf(f.id);
   console.log(`pre-match due: ${f.homeTeam?.name} v ${f.awayTeam?.name} (${f.id}) → owed: ${owed.join(', ')}`);
-  gen(['prematch', f.id]);
-  const payload = JSON.parse(readFileSync(path.join(OUT, 'prematch.json'), 'utf8'));
-  if (!payload.skip) {
-    ensurePending(f.id, 'prematch', `${f.homeTeam?.name} v ${f.awayTeam?.name}`);
-    stampPayload('prematch.json', f.id, owedOf(f.id));
-    actions.push('prematch');
+  if (gen(['prematch', f.id])) {
+    const payload = JSON.parse(readFileSync(path.join(OUT, 'prematch.json'), 'utf8'));
+    if (!payload.skip) {
+      ensurePending(f.id, 'prematch', `${f.homeTeam?.name} v ${f.awayTeam?.name}`);
+      stampPayload('prematch.json', f.id, owedOf(f.id));
+      actions.push('prematch');
+    }
   }
   if (duePre.length > 1) console.log(`${duePre.length - 1} more pre-match due — next tick takes the next one`);
 }
@@ -189,14 +205,15 @@ if (dueReceipt.length) {
   } else {
     const owed = owedOf(id);
     console.log(`receipt due: ${s.home_team} v ${s.away_team} (${id})${verdictReady ? '' : ' — posting without verdict after max holds'} → owed: ${owed.join(', ')}`);
-    gen(['match', id]);
-    const payload = JSON.parse(readFileSync(path.join(OUT, 'match.json'), 'utf8'));
-    if (!payload.skip) {
-      ensurePending(id, 'match', `${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team}`);
-      stampPayload('match.json', id, owedOf(id));
-      actions.push('match');
+    if (gen(['match', id])) {
+      const payload = JSON.parse(readFileSync(path.join(OUT, 'match.json'), 'utf8'));
+      if (!payload.skip) {
+        ensurePending(id, 'match', `${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team}`);
+        stampPayload('match.json', id, owedOf(id));
+        actions.push('match');
+      }
+      delete state.verdictWait[id];
     }
-    delete state.verdictWait[id];
     if (dueReceipt.length > 1) console.log(`${dueReceipt.length - 1} more receipts due — next tick takes the next one`);
   }
 }
@@ -220,3 +237,7 @@ if (overdue) {
   console.error(`SCORING OVERDUE: ${overdue.homeTeam?.name} v ${overdue.awayTeam?.name} (${overdue.id}) finished ~${Math.round((now - new Date(overdue.date)) / 3600000)}h after KO and is still ungraded — check ingestResults.`);
   process.exit(1);
 }
+
+// A card generation failed this tick (logged above). State + the overdue alarm
+// have already run; now surface the failure so the run goes red (email).
+if (genFailed) process.exit(1);

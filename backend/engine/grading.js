@@ -180,8 +180,13 @@ export function gradeRow(row, scoreline = null) {
     stampMiss: match.stampMiss,
     tone: match.tone,
     headline: match.headline,
-    // back-compat: a coarse 3-state for surfaces not yet graded-aware
-    res: outcome.tier === 'ON_READ' ? 'hit' : outcome.isMiss ? 'miss' : 'range',
+    // 4-state tick token consumed by the social cards/captions (maps to the
+    // template's ✓ / ≈ / ± / ✗ glyphs). AGAINST is its own amber state — must
+    // not collapse into 'range', or the amber glyph is unreachable.
+    res: outcome.tier === 'ON_READ' ? 'hit'
+      : outcome.tier === 'MISSED' ? 'miss'
+      : outcome.tier === 'AGAINST' ? 'amber'
+      : 'range',
   };
 }
 

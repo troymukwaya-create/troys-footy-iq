@@ -55,9 +55,9 @@ export async function evaluateStoredPredictions() {
     const result = await query(`
       UPDATE predictions p
       SET actual_result = CASE
-        WHEN f.home_goals > f.away_goals THEN 'HOME'
-        WHEN f.home_goals = f.away_goals THEN 'DRAW'
-        WHEN f.home_goals < f.away_goals THEN 'AWAY'
+        WHEN COALESCE(f.ft_home_goals, f.home_goals) > COALESCE(f.ft_away_goals, f.away_goals) THEN 'HOME'
+        WHEN COALESCE(f.ft_home_goals, f.home_goals) = COALESCE(f.ft_away_goals, f.away_goals) THEN 'DRAW'
+        ELSE 'AWAY'
       END,
       evaluated_at = NOW()
       FROM fixtures f
@@ -78,9 +78,9 @@ export async function evaluateStoredPredictions() {
     let correct = 0;
 
     for (const pred of evaluated) {
-      const pH = pred.prob_home / 100;
-      const pD = pred.prob_draw / 100;
-      const pA = pred.prob_away / 100;
+      const pH = (pred.prob_home || 33.3) / 100;
+      const pD = (pred.prob_draw || 33.3) / 100;
+      const pA = (pred.prob_away || 33.3) / 100;
 
       const yH = pred.actual_result === 'HOME' ? 1 : 0;
       const yD = pred.actual_result === 'DRAW' ? 1 : 0;
