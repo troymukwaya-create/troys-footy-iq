@@ -27,7 +27,8 @@
     "apf_1539002",
     "apf_1489380",
     "apf_1489377",
-    "apf_1489379"
+    "apf_1489379",
+    "apf_1489378"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -242,6 +243,17 @@
       "id": "apf_1489379",
       "label": "Saudi Arabia 1–1 Uruguay",
       "at": "2026-06-16T12:32:24.829Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489378",
+      "label": "Iran 2–2 New Zealand",
+      "at": "2026-06-16T17:35:36.840Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
