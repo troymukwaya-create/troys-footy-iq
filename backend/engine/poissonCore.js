@@ -234,12 +234,24 @@ export function generateProbabilities(lambdaHome, lambdaAway, rho = -0.08) {
     }
   }
 
-  // Normalize to ensure sum = 1.0 (correction can cause drift)
+  // Normalize EVERY market by the total probability mass. The 1X2 outcomes,
+  // the over/under thresholds and BTTS are all subsets of the same truncated
+  // Dixon-Coles matrix (cap MAX_GOALS, plus tau drift), so they must be divided
+  // by the SAME mass. Previously only 1X2 was normalized, leaving Over/Under +
+  // BTTS as raw truncated sums — systematically understated on high-scoring
+  // games (the dropped tail is entirely high-total outcomes; up to ~16pp on
+  // lopsided λ).
   const totalMass = homeWin + draw + awayWin;
-  if (totalMass > 0 && Math.abs(totalMass - 1.0) > 0.001) {
+  if (totalMass > 0) {
     homeWin /= totalMass;
     draw /= totalMass;
     awayWin /= totalMass;
+    over05 /= totalMass;
+    over15 /= totalMass;
+    over25 /= totalMass;
+    over35 /= totalMass;
+    over45 /= totalMass;
+    bttsYes /= totalMass;
   }
 
   matrix.sort((a, b) => b.probability - a.probability);
