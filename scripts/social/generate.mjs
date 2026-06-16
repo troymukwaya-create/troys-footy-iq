@@ -449,7 +449,7 @@ async function generateMatch(externalId) {
       : `We said ${lean} (${pct(leanP)}). It finished ${ft} — ${g?.blurb ? g.blurb.toLowerCase() : 'the result sat inside our range.'}${exact ? ` And we had ${verdict.scoreline.actual} as our most likely score.` : ''}`);
   // The exact-scoreline credibility note still earns its place on a miss
   // (the story explains the outcome; this adds "we still had the score").
-  const scorelineNote = (!hit && exact)
+  const scorelineNote = (!called && exact)
     ? `The scoreline, though: ${verdict.scoreline.actual} was the top of our grid before kickoff (${pct(verdict.scoreline.predictedProb)}).`
     : null;
   const caption = [
@@ -470,7 +470,9 @@ async function generateMatch(externalId) {
   const firstSentence = (t) => (t.split(/(?<=\.)\s+/)[0] || t).trim();
   const xBody = story
     ? firstSentence(story)
-    : (hit ? `Winner ✓ called — ${lean} ${pct(leanP)}.` : `The call missed — we said ${lean} ${pct(leanP)}. Printed anyway.`);
+    : (called ? `Winner ✓ called — ${lean} ${pct(leanP)}.`
+      : isMiss ? `The call missed — we said ${lean} ${pct(leanP)}. Printed anyway.`
+      : `We said ${lean} ${pct(leanP)}. The result sat inside our range.`);
   let xCap = [
     `Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}`,
     '',
@@ -481,7 +483,7 @@ async function generateMatch(externalId) {
     tags.x,
   ].join('\n');
   if (xCap.length > 278) xCap = [`Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}`, '', xBody, '', tags.x].join('\n');
-  if (xCap.length > 278) xCap = `Tonight: ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} — ${hit ? 'called ✓' : 'the call missed, printed anyway'}${exact ? ' · exact score ✓' : ''}. Receipts attached.\n\n${tags.x}`;
+  if (xCap.length > 278) xCap = `Tonight: ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} — ${called ? 'called ✓' : isMiss ? 'the call missed, printed anyway' : 'inside our range'}${exact ? ' · exact score ✓' : ''}. Receipts attached.\n\n${tags.x}`;
 
   writeFileSync(path.join(OUT, 'match.json'), JSON.stringify({
     caption: caption + '\n\n' + tags.tg,
@@ -490,7 +492,7 @@ async function generateMatch(externalId) {
     images: ['match-x.png', 'match-receipt.png'],
     imagesIG: ['match-ig.png', 'match-receipt-ig.png'],
   }, null, 2));
-  console.log(`match receipt generated for ${externalId}: ${hit ? 'hit' : 'miss'}${exact ? ' + exact scoreline' : ''}`);
+  console.log(`match receipt generated for ${externalId}: ${res}${exact ? ' + exact scoreline' : ''}`);
 }
 
 // ─── pre-match call card (posted ~3h before kickoff) ────────────────
