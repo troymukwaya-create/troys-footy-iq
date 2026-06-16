@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, CircleDot, AlertCircle } from 'lucide-react';
 import api from '../api/client.js';
+import DecryptedText from './reactbits/DecryptedText.jsx';
 
 // ─── SETTLED CALLS — THE RECEIPTS ───────────────────────────────────
 // Every scored prediction, graded in public, newest first. Each row links
@@ -74,7 +75,7 @@ export default function TrackRecord({ onSelect }) {
     <div className="card" style={{ padding: 18, marginTop: 16 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
         <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
-          SETTLED CALLS — EVERY ONE, GRADED IN PUBLIC
+          <DecryptedText text="SETTLED CALLS — EVERY ONE, GRADED IN PUBLIC" speed={22} />
         </span>
         <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
           <strong style={{ ...mono, color: 'var(--success)' }}>{called}</strong> called

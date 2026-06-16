@@ -12,6 +12,7 @@ import { LedgerStrip } from './components/LedgerStrip.jsx';
 import OrbitMark from './components/OrbitMark.jsx';
 import { MobileNav } from './components/MobileNav.jsx';
 import { HonestBar } from './components/HonestBar.jsx';
+import LiquidBackground from './components/LiquidBackground.jsx';
 import { LeagueSidebar } from './components/LeagueSidebar.jsx';
 import { GoalFlash } from './components/GoalFlash.jsx';
 import { AnalystDashboard } from './components/AnalystDashboard.jsx';
@@ -257,6 +258,8 @@ function MainApp() {
 
   return (
     <div className="flex flex-col app-shell overflow-hidden" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '14px' }}>
+      {/* Living oxblood fluid (LiquidEther) as the page background. */}
+      <LiquidBackground />
       <GoalFlash flashes={goalFlashes} />
       {slipToast && (
         <div style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 340, display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 999, background: 'rgba(11,11,13,0.92)', border: '1px solid rgba(168,52,74,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', boxShadow: '0 10px 30px rgba(0,0,0,0.45)' }}>
@@ -279,7 +282,7 @@ function MainApp() {
 
       <div className="panel-row flex flex-1 overflow-hidden">
         {/* ═══ LEFT SIDEBAR ═══ */}
-        <aside className="left-panel flex flex-col h-full" style={{ width: 280, minWidth: 280, flexShrink: 0, background: 'var(--bg-surface)', borderRight: '1px solid var(--border-subtle)' }}>
+        <aside className="left-panel flex flex-col h-full" style={{ width: 280, minWidth: 280, flexShrink: 0, background: 'var(--bg-surface)', borderRight: '1px solid var(--border-subtle)', position: 'relative', zIndex: 1 }}>
           <LeagueSidebar
             fixtures={fixtures}
             liveMatches={liveMatches}
@@ -359,7 +362,9 @@ function MainApp() {
         </aside>
 
         {/* ═══ CENTER PANEL ═══ */}
-        <main ref={ptr.ref} className="center-panel flex-1 overflow-y-auto" style={{ background: 'var(--bg-base)' }}>
+        {/* transparent + above the gradient so the moving oxblood background
+            shows through the gray "page" behind Today's board. */}
+        <main ref={ptr.ref} className="center-panel flex-1 overflow-y-auto" style={{ background: 'transparent', position: 'relative', zIndex: 1 }}>
           {/* Pull-to-refresh indicator */}
           <div style={{ height: ptr.pull, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: (ptr.pull > 0 && !ptr.refreshing) ? 'none' : 'height 220ms ease' }}>
             {ptr.refreshing
@@ -385,7 +390,7 @@ function MainApp() {
         {/* ═══ RIGHT PANEL — "The Edge", told as ONE story:
              what the edge is → the ranked calls → ready-made slips →
              build your own. (Was three unconnected widgets.) ═══ */}
-        <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto' }}>
+        <aside className="right-panel flex flex-col" style={{ width: 320, minWidth: 320, flexShrink: 0, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', overflowY: 'auto', position: 'relative', zIndex: 1 }}>
           {!selectedFixture && <EdgeExplainer />}
           <React.Suspense fallback={<div className="p-4"><SkeletonCard /></div>}>
             <AIInsightsPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading || aiLoading} fixtures={filteredFixtures} onSelect={handleSelectFixture} />
@@ -409,9 +414,9 @@ function MainApp() {
           .right-panel { display: flex !important; }
         }
         @media (max-width: 768px) {
-          .left-panel { display: ${mobileTab === 'leagues' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-right: none !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
-          .center-panel { display: ${mobileTab === 'home' || mobileTab === 'match' ? 'flex' : 'none'} !important; width: 100% !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
-          .right-panel { display: ${mobileTab === 'ai' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-left: none !important; padding-bottom: calc(56px + env(safe-area-inset-bottom) + 8px); }
+          .left-panel { display: ${mobileTab === 'leagues' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-right: none !important; padding-bottom: calc(80px + env(safe-area-inset-bottom) + 8px); }
+          .center-panel { display: ${mobileTab === 'home' || mobileTab === 'match' ? 'flex' : 'none'} !important; width: 100% !important; padding-bottom: calc(80px + env(safe-area-inset-bottom) + 8px); }
+          .right-panel { display: ${mobileTab === 'ai' ? 'flex' : 'none'} !important; width: 100% !important; min-width: 100% !important; border-left: none !important; padding-bottom: calc(80px + env(safe-area-inset-bottom) + 8px); }
           .honest-bar { display: none !important; }
         }
       `}</style>

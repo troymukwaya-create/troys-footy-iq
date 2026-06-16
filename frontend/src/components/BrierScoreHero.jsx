@@ -3,6 +3,9 @@ import { motion, useMotionValue, useTransform, animate } from 'motion/react';
 import { TrendingDown, Info, Activity } from 'lucide-react';
 import api from '../api/client.js';
 import { barFill, numberRoll } from '../lib/motion.js';
+import DotGrid from './reactbits/DotGrid.jsx';
+import DecryptedText from './reactbits/DecryptedText.jsx';
+import CountUp from './reactbits/CountUp.jsx';
 
 // ─── BENCHMARKS ─────────────────────────────────────────────────────
 // Brier score (proper scoring rule for probabilistic forecasts).
@@ -116,7 +119,10 @@ export default function BrierScoreHero() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', damping: 26, stiffness: 240 }}
       className="w-full rounded-2xl border border-outline-variant/30 bg-gradient-to-br from-surface-container to-surface-container-low p-6 sm:p-8 shadow-lg shadow-black/20"
+      style={{ position: 'relative', overflow: 'hidden' }}
     >
+      <DotGrid gap={22} dot={1.1} color="rgba(168,52,74,0.11)" />
+      <div style={{ position: 'relative', zIndex: 1 }}>
       {/* Top row: label + last updated */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -149,7 +155,7 @@ export default function BrierScoreHero() {
           <div className="flex items-center gap-2 mt-2">
             <span className="inline-flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--accent)' }}>
               <TrendingDown size={14} />
-              {headline}
+              <DecryptedText key={headline} text={headline} speed={26} />
             </span>
             <span className="text-xs text-on-surface-variant">
               · {data.sampleSize.toLocaleString()} {isBacktest ? 'backtested (PL)' : 'scored live'}
@@ -216,26 +222,30 @@ export default function BrierScoreHero() {
 
       {/* Sub-row: callouts */}
       <div className="grid grid-cols-3 gap-3 mt-3 pt-4 border-t border-outline-variant/20">
-        <Stat label="vs Random"      value={`+${((BENCHMARKS.random.value - data.brier) * 1000).toFixed(0)}`} good={beatsRandom}      unit="pts better" />
-        <Stat label="vs Avg Tipster" value={`+${((BENCHMARKS.tipster.value - data.brier) * 1000).toFixed(0)}`} good={beatsTipster}     unit="pts better" />
-        <Stat label="vs Sharp Market"value={beatsSharpMarket
-          ? `+${((BENCHMARKS.sharpMarket.value - data.brier) * 1000).toFixed(0)}`
-          : `−${((data.brier - BENCHMARKS.sharpMarket.value) * 1000).toFixed(0)}`}
-          good={beatsSharpMarket} unit={beatsSharpMarket ? 'pts better' : 'pts behind'} />
+        <Stat label="vs Random"       points={(BENCHMARKS.random.value - data.brier) * 1000} />
+        <Stat label="vs Avg Tipster"  points={(BENCHMARKS.tipster.value - data.brier) * 1000} />
+        <Stat label="vs Sharp Market" points={(BENCHMARKS.sharpMarket.value - data.brier) * 1000} />
+      </div>
       </div>
     </motion.section>
   );
 }
 
-function Stat({ label, value, unit, good }) {
+// `points` is the signed Brier-points difference (positive = we're better).
+// Sign + label are derived from it, so we never render the old "+-12" bug.
+function Stat({ label, points }) {
+  const better = points >= 0;
   return (
     <div className="flex flex-col">
       <span className="text-[10px] uppercase tracking-wider text-on-surface-variant/70 mb-1">{label}</span>
       <div className="flex items-baseline gap-1.5">
-        <span className={`text-lg font-bold tabular-nums ${good ? 'text-calibration-cyan' : 'text-error'}`}>
-          {value}
-        </span>
-        <span className="text-[10px] text-on-surface-variant/60">{unit}</span>
+        <CountUp
+          value={Math.abs(points)}
+          prefix={better ? '+' : '−'}
+          duration={1100}
+          className={`text-lg font-bold tabular-nums ${better ? 'text-calibration-cyan' : 'text-error'}`}
+        />
+        <span className="text-[10px] text-on-surface-variant/60">{better ? 'pts better' : 'pts behind'}</span>
       </div>
     </div>
   );

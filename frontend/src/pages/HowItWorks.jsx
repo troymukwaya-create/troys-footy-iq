@@ -18,6 +18,8 @@ import FlagBleed from '../components/FlagBleed.jsx';
 import { EmailCapture } from '../components/EmailCapture.jsx';
 import { getMatchColor } from '../constants/nationColors.js';
 import { flagUrl } from '../constants/nationFlags.js';
+import DecryptedText from '../components/reactbits/DecryptedText.jsx';
+import LiquidBackground from '../components/LiquidBackground.jsx';
 
 const RAW_BASE = import.meta.env.VITE_API_URL || '/api';
 const API_BASE = RAW_BASE.endsWith('/api') ? RAW_BASE : `${RAW_BASE.replace(/\/+$/, '')}/api`;
@@ -115,58 +117,15 @@ function ExhibitTile({ m }) {
 function LineItem({ left, right, color }) {
   return (
     <motion.div {...print} style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '9px 0', fontFamily: MONO, fontSize: 'clamp(12px,3.4vw,15px)', letterSpacing: '0.04em' }}>
-      <span style={{ color: 'rgba(255,255,255,0.6)' }}>{left}</span>
+      <span style={{ color: 'rgba(255,255,255,0.6)' }}><DecryptedText text={left} speed={26} /></span>
       <span aria-hidden style={{ flex: 1, borderBottom: '2px dotted rgba(255,255,255,0.14)', transform: 'translateY(-4px)' }} />
-      <span style={{ color: color || 'rgba(255,255,255,0.92)', fontWeight: 600, textAlign: 'right' }}>{right}</span>
+      <span style={{ color: color || 'rgba(255,255,255,0.92)', fontWeight: 600, textAlign: 'right' }}><DecryptedText text={right} speed={26} startDelay={140} /></span>
     </motion.div>
   );
 }
 
 const Dashed = () => <div style={{ borderTop: '1px dashed rgba(255,255,255,0.16)', margin: '30px 0' }} />;
 
-// ─── COMPANY LIGHTS ──────────────────────────────────────────────────
-// The room the receipt prints in. Big blurred light beams in the brand
-// colours sweep slowly across the dark — GTA-loading-screen energy, but
-// oxblood instead of police blue. Pure transform animations on their own
-// GPU layers; statics for reduced-motion.
-function CompanyLights() {
-  const reduce = useReducedMotion();
-  // De-vibe discipline (council 2026-06-13): brand colours only — the blue
-  // beam was off-palette — and lower opacity so this reads as light in a
-  // dark room, not aurora blobs.
-  const beams = [
-    { color: 'rgba(168,52,74,0.32)', top: '-6%', h: '24vmin', angle: -16, dur: 13, delay: 0 },
-    { color: 'rgba(122,31,43,0.26)', top: '34%', h: '30vmin', angle: -22, dur: 17, delay: -6 },
-    { color: 'rgba(247,244,238,0.07)', top: '78%', h: '16vmin', angle: -19, dur: 15, delay: -3 },
-  ];
-  return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-      <style>{`
-        @keyframes beamSweep {
-          0%   { transform: translate3d(-38vw,0,0) rotate(var(--a)); }
-          100% { transform: translate3d(38vw,0,0) rotate(var(--a)); }
-        }
-      `}</style>
-      {beams.map((b, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute', left: '-30vmax', top: b.top,
-            width: '160vmax', height: b.h, borderRadius: 999,
-            background: `linear-gradient(90deg, transparent 8%, ${b.color} 50%, transparent 92%)`,
-            filter: 'blur(clamp(36px, 5vw, 70px))',
-            '--a': `${b.angle}deg`,
-            transform: `rotate(${b.angle}deg)`,
-            willChange: 'transform',
-            animation: reduce ? 'none' : `beamSweep ${b.dur}s ease-in-out ${b.delay}s infinite alternate`,
-          }}
-        />
-      ))}
-      {/* gentle vignette keeps the centre calm so the paper stays the hero */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 60% at 50% 38%, rgba(11,11,13,0.42), transparent 75%)' }} />
-    </div>
-  );
-}
 
 // Faint printed marginalia — desktop only, so the wide canvas reads as a
 // composed page rather than empty space around a narrow receipt.
@@ -206,7 +165,7 @@ export default function HowItWorks() {
 
   return (
     <div style={{ minHeight: '100dvh', background: '#0B0B0D', color: 'var(--text-primary)', overflowX: 'hidden', fontFamily: "'Archivo', system-ui, sans-serif" }}>
-      <CompanyLights />
+      <LiquidBackground />
       <Marginalia />
 
       {/* the printer slot — part of the page, scrolls away with the paper */}
@@ -223,26 +182,26 @@ export default function HowItWorks() {
         {/* header zone gets the subtlest hint of the day's flags */}
         <div style={{ textAlign: 'center' }}>
           <motion.div {...print}>
-            <svg width="58" height="58" viewBox="0 0 100 100" aria-label="Oddyessa" style={{ display: 'block', margin: '0 auto' }}>
-              <path d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" strokeWidth="9" strokeLinecap="round" />
-              <circle cx="69.8" cy="30.2" r="8" fill="#A8344A" />
+            <svg width="58" height="58" viewBox="0 0 100 100" aria-label="Oddyessa" style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
+              <path className="hiw-logo-ring" pathLength="100" d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" strokeWidth="9" strokeLinecap="round" />
+              <circle className="hiw-logo-dot" cx="69.8" cy="30.2" r="8" fill="#A8344A" />
             </svg>
             <div className="font-display" style={{ fontSize: 'clamp(30px,8vw,40px)', fontWeight: 800, marginTop: 8 }}>
               <span style={{ color: 'var(--accent)' }}>Odd</span>yessa
             </div>
             <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.55)', marginTop: 10 }}>
-              <span style={{ color: 'var(--accent)' }}>&gt;</span> read the game<span className="terminal-cursor" aria-hidden>_</span>
+              <span style={{ color: 'var(--accent)' }}>&gt;</span> <DecryptedText text="read the game" speed={42} startDelay={260} /><span className="terminal-cursor" aria-hidden>_</span>
             </div>
           </motion.div>
 
           <Dashed />
 
-          <motion.h1 {...print} className="font-display" style={{ fontSize: 'clamp(28px,7vw,38px)', fontWeight: 800, lineHeight: 1.14, letterSpacing: '-0.01em', margin: 0 }}>
-            Football predictions that <span style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>show their work.</span>
+          <motion.h1 {...print} style={{ fontFamily: MONO, fontSize: 'clamp(21px,5.4vw,30px)', fontWeight: 700, lineHeight: 1.28, letterSpacing: '-0.01em', margin: 0 }}>
+            <DecryptedText text="Football predictions that " speed={28} startDelay={420} />
+            <span style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}><DecryptedText text="show their work." speed={28} startDelay={780} /></span>
           </motion.h1>
-          <motion.p {...print} style={{ fontSize: 'clamp(14px,3.8vw,17px)', lineHeight: 1.6, color: 'rgba(255,255,255,0.6)', maxWidth: 430, margin: '16px auto 0' }}>
-            Before every match we work out who should win, the likely score,
-            and why — and put it on the record before kickoff.
+          <motion.p {...print} style={{ fontFamily: MONO, fontSize: 'clamp(12.5px,3.4vw,15px)', lineHeight: 1.7, color: 'rgba(255,255,255,0.6)', maxWidth: 460, margin: '16px auto 0' }}>
+            <DecryptedText text="Before every match we work out who should win, the likely score, and why — and put it on the record before kickoff." speed={14} revealEvery={1} startDelay={1100} />
           </motion.p>
         </div>
 
@@ -250,7 +209,7 @@ export default function HowItWorks() {
 
         {/* EXHIBIT A — a real call */}
         <motion.div {...print} style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.38)', textAlign: 'center', marginBottom: 14 }}>
-          EXHIBIT A · {exhibit.settled ? 'A CALL THAT LANDED' : 'A LIVE CALL, BEFORE KICKOFF'}
+          <DecryptedText text={`EXHIBIT A · ${exhibit.settled ? 'A CALL THAT LANDED' : 'A LIVE CALL, BEFORE KICKOFF'}`} speed={24} />
         </motion.div>
         <motion.div {...print}>
           <ExhibitTile m={exhibit} />
@@ -272,7 +231,7 @@ export default function HowItWorks() {
         {/* tomorrow's paper — the email is the same object as this page */}
         <motion.div {...print}>
           <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: '0.22em', color: 'rgba(255,255,255,0.38)', textAlign: 'center' }}>
-            DAILY EDITION
+            <DecryptedText text="DAILY EDITION" speed={26} />
           </div>
           <p style={{ fontSize: 'clamp(15px,4vw,17px)', fontWeight: 700, textAlign: 'center', margin: '10px 0 14px' }}>
             Get tomorrow’s paper in your inbox — every morning, before kickoff.

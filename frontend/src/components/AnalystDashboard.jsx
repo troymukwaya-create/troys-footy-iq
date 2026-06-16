@@ -9,6 +9,9 @@ import FlagBleed, { hasFlags } from './FlagBleed.jsx';
 import MatchdayBoard from './MatchdayBoard.jsx';
 import { motion } from 'motion/react';
 import TeamMark from './TeamMark.jsx';
+import ScrollReveal from './reactbits/ScrollReveal.jsx';
+import GlassSurface from './reactbits/GlassSurface.jsx';
+import DecryptedText from './reactbits/DecryptedText.jsx';
 
 const MONO = 'var(--font-mono)';
 
@@ -256,7 +259,7 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
       )}
 
       {/* ── DAILY RETURN HOOK — email, one thumb-scroll from the top ── */}
-      <div style={{ marginTop: 18, padding: 'clamp(14px, 4vw, 20px)', borderRadius: 6, background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+      <GlassSurface radius={10} blur={20} style={{ marginTop: 18, padding: 'clamp(14px, 4vw, 20px)' }}>
         <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: '0.16em', color: 'var(--text-tertiary)', marginBottom: 8 }}>
           DAILY EDITION
         </div>
@@ -266,7 +269,7 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
           headline="Tomorrow's locked calls, in your inbox at 08:00"
           sub="Every morning of the World Cup: the day's calls before kickoff, yesterday's receipts — hits and misses both. Free."
         />
-      </div>
+      </GlassSurface>
       <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginTop: 10, textAlign: 'center' }}>
         NEXT RECEIPTS PRINT ~2H AFTER FULL TIME · GRADED BY MACHINE, PUBLISHED EITHER WAY
       </div>
@@ -278,12 +281,12 @@ export function AnalystDashboard({ fixtures = [], onSelect, activeLeague = 'ALL'
             The receipts
           </h2>
           <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.12em', color: 'var(--danger)', textTransform: 'uppercase' }}>
-            our misses, printed too
+            <DecryptedText text="our misses, printed too" speed={26} />
           </span>
         </div>
-        <BrierScoreHero />
-        <LedgerBreakdown />
-        <TrackRecord onSelect={onSelect} />
+        <ScrollReveal><BrierScoreHero /></ScrollReveal>
+        <ScrollReveal delay={70} style={{ marginTop: 16 }}><LedgerBreakdown /></ScrollReveal>
+        <ScrollReveal delay={140} style={{ marginTop: 16 }}><TrackRecord onSelect={onSelect} /></ScrollReveal>
       </div>
 
       {/* ── MORE FIXTURES HINT ────────────────────────────────────── */}

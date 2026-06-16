@@ -10,6 +10,7 @@
 import React from 'react';
 import { usePerformance } from '../hooks/useQueries.js';
 import { track } from '../lib/analytics.js';
+import CountUp from './reactbits/CountUp.jsx';
 
 const MONO = 'var(--font-mono)';
 
@@ -47,9 +48,9 @@ export function LedgerStrip({ onJumpToReceipts }) {
       <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>LEDGER</span>
       {brier != null && n > 0 ? (
         <>
-          <span>{n} GRADED</span>
+          <span><CountUp value={n} /> GRADED</span>
           <span aria-hidden style={{ color: 'var(--text-muted)' }}>·</span>
-          <span>BRIER <strong style={{ color: 'var(--accent)', fontWeight: 600 }}>{brier.toFixed(3)}</strong></span>
+          <span>BRIER <strong style={{ color: 'var(--accent)', fontWeight: 600 }}><CountUp value={brier} decimals={3} /></strong></span>
           <span aria-hidden style={{ color: 'var(--text-muted)' }}>·</span>
           <span>COIN-FLIP 0.222</span>
           <span aria-hidden style={{ color: 'var(--text-muted)' }}>·</span>

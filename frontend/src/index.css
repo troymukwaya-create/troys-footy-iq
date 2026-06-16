@@ -106,6 +106,18 @@
   letter-spacing: -0.015em;
 }
 
+/* HowItWorks logo reveal — the ring draws, the oxblood dot pops in, the same
+   way the boot splash plays. Runs once on mount. */
+.hiw-logo-ring { stroke-dasharray: 100; stroke-dashoffset: 100; animation: hiwLogoDraw 1s cubic-bezier(.65,0,.35,1) .3s forwards; }
+.hiw-logo-dot { transform-box: fill-box; transform-origin: center; opacity: 0; animation: hiwLogoPop .5s cubic-bezier(.34,1.7,.5,1) .15s forwards; }
+@keyframes hiwLogoDraw { to { stroke-dashoffset: 0; } }
+@keyframes hiwLogoPop { 0% { opacity: 0; transform: scale(0); } 60% { opacity: 1; transform: scale(1.45); } 100% { opacity: 1; transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hiw-logo-ring { stroke-dashoffset: 0; animation: none; }
+  .hiw-logo-dot { opacity: 1; animation: none; }
+}
+
 /* Orbit spinner — the brand loading mark (see components/Spinner.jsx). */
 @keyframes orbitSpin { to { transform: rotate(360deg); } }
 .orbit-spinner { animation: orbitSpin 0.95s linear infinite; transform-origin: 50% 50%; }
