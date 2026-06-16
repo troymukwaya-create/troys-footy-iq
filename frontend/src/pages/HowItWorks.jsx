@@ -82,7 +82,7 @@ function ExhibitTile({ m }) {
   const a = Math.max(4, Math.round(m.probs.away));
   return (
     <div style={{ position: 'relative', isolation: 'isolate', overflow: 'hidden', borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', padding: '16px 18px', background: '#101114' }}>
-      <FlagBleed home={m.home} away={m.away} opacity={0.45} />
+      <FlagBleed home={m.home} away={m.away} opacity={0.6} />
       <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.55)', marginBottom: 6 }}>{m.kickoffLabel}</div>
       <div style={{ fontSize: 'clamp(16px,4.2vw,20px)', fontWeight: 800, color: '#fff', lineHeight: 1.35 }}>
         <span style={{ whiteSpace: 'nowrap' }}>

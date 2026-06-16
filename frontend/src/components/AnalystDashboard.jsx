@@ -99,7 +99,7 @@ function InsightCard({ fixture, onSelect }) {
         <FlagBleed
           home={fixture.homeTeam?.name}
           away={fixture.awayTeam?.name}
-          opacity={hovered ? 0.72 : 0.6}
+          opacity={hovered ? 0.85 : 0.72}
         />
       )}
       {/* Top Row: Competition + Status */}

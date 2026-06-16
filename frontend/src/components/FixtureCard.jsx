@@ -72,7 +72,7 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
         isolation: 'isolate',
       }}
     >
-      {useFlagBleed && <FlagBleed home={home} away={away} opacity={0.45} />}
+      {useFlagBleed && <FlagBleed home={home} away={away} opacity={0.6} />}
       {/* League + Status */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontSize: 10, color: 'var(--text-muted)', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

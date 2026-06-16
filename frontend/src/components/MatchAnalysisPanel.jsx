@@ -54,7 +54,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
     >
       {/* ─── Sticky compact header — back + match identity while scrolling ─── */}
       <div style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px', marginBottom: 8, background: hasFlags(home, away) ? 'rgba(11,11,13,0.82)' : flagGradient(home, away, 'rgba(11,11,13,0.82)', '26'), backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderRadius: 12, overflow: 'hidden', isolation: 'isolate' }}>
-        {hasFlags(home, away) && <FlagBleed home={home} away={away} opacity={0.4} />}
+        {hasFlags(home, away) && <FlagBleed home={home} away={away} opacity={0.56} />}
         {onBack && (
           <button onClick={onBack} aria-label="Back" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 10, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0 }}>
             <ChevronLeft size={18} />
@@ -67,7 +67,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
 
       {/* ─── Match Header — each team's REAL flag bleeding across, like the home cards ─── */}
       <div className="card" style={{ padding: 24, marginBottom: 16, background: hasFlags(home, away) ? 'var(--bg-surface)' : flagGradient(home, away, 'var(--bg-surface)'), border: '1px solid var(--border-subtle)', position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
-        {hasFlags(home, away) && <FlagBleed home={home} away={away} opacity={0.7} />}
+        {hasFlags(home, away) && <FlagBleed home={home} away={away} opacity={0.85} />}
         {/* League */}
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{league}</span>

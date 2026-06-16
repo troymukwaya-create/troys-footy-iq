@@ -192,7 +192,7 @@ function BoardRow({ f, now, onSelect }) {
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}
         style={{ position: 'relative', isolation: 'isolate', padding: '12px 14px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10 }}
       >
-        {useBleed && <FlagBleed home={f.homeTeam?.name} away={f.awayTeam?.name} opacity={open ? 0.5 : 0.42} />}
+        {useBleed && <FlagBleed home={f.homeTeam?.name} away={f.awayTeam?.name} opacity={open ? 0.66 : 0.56} />}
 
         {/* status line */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, ...mono, fontSize: 10, letterSpacing: '0.1em', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>

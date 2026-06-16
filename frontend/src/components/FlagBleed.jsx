@@ -40,7 +40,9 @@ export default function FlagBleed({ home, away, opacity = 0.55 }) {
     backgroundPosition: 'center',
     // Light blur only — the flag should be recognisable at a glance, just
     // soft enough not to read as a sticker. Slight scale hides soft edges.
-    filter: 'blur(4px) saturate(1.05) brightness(1.0)',
+    // Brightness + saturation lifted so the flag reads vivid, not behind a
+    // smoke film; blur eased to 3px so the colours stay clean.
+    filter: 'blur(3px) saturate(1.3) brightness(1.28) contrast(1.04)',
     transform: 'scale(1.15)',
     pointerEvents: 'none',
   };
@@ -75,13 +77,14 @@ export default function FlagBleed({ home, away, opacity = 0.55 }) {
         }}
       />
       {/* Dark veil: keeps the terminal-dark brand + guarantees legibility.
-          Heavier at the bottom where probabilities and insights live. */}
+          Heavier at the bottom where probabilities and insights live, but the
+          top is now nearly clear so the flag colours come through bright. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'linear-gradient(180deg, rgba(11,11,13,0.28) 0%, rgba(11,11,13,0.46) 55%, rgba(11,11,13,0.68) 100%)',
+            'linear-gradient(180deg, rgba(11,11,13,0.08) 0%, rgba(11,11,13,0.26) 55%, rgba(11,11,13,0.56) 100%)',
         }}
       />
     </div>
