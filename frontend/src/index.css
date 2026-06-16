@@ -110,7 +110,8 @@
 @keyframes orbitSpin { to { transform: rotate(360deg); } }
 .orbit-spinner { animation: orbitSpin 0.95s linear infinite; transform-origin: 50% 50%; }
 @media (prefers-reduced-motion: reduce) {
-  .orbit-spinner { animation-duration: 2.6s; }
+  /* !important so it wins over the per-instance inline animation-duration. */
+  .orbit-spinner { animation-duration: 2.6s !important; }
 }
 
 /* ── Mobile readability + stop iOS input-zoom ─────────────────────── */

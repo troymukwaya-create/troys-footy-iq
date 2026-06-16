@@ -175,10 +175,14 @@ const VERDICT_TIER = {
   MISSED: { label: '✗ Missed', color: 'var(--danger)', bg: 'var(--danger-muted)' },
 };
 function VerdictBadge({ prob, scoreHome, scoreAway }) {
-  const { home = 0, draw = 0, away = 0 } = prob?.probabilities || {};
+  // Number() so a stringified prob can't trigger lexicographic comparison
+  // (would silently disagree with the ledger/receipt). Tie-break mirrors
+  // backend/engine/grading.js + the sibling fallbacks exactly.
+  const pr = prob?.probabilities || {};
+  const home = Number(pr.home) || 0, draw = Number(pr.draw) || 0, away = Number(pr.away) || 0;
   const p = { HOME: home, DRAW: draw, AWAY: away };
-  const norm = (v) => (v > 1 ? v / 100 : v);
-  const predicted = home >= draw && home >= away ? 'HOME' : draw >= home && draw >= away ? 'DRAW' : 'AWAY';
+  const norm = (v) => { const n = Number(v) || 0; return n > 1 ? n / 100 : n; };
+  const predicted = home >= draw && home >= away ? 'HOME' : draw >= away ? 'DRAW' : 'AWAY';
   const actual = scoreHome > scoreAway ? 'HOME' : scoreHome < scoreAway ? 'AWAY' : 'DRAW';
   const pa = norm(p[actual] || 0);
   const tier = actual === predicted ? 'ON_READ' : pa >= 0.22 ? 'IN_RANGE' : pa >= 0.13 ? 'AGAINST' : 'MISSED';
