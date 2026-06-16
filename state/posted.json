@@ -25,7 +25,8 @@
     "apf_1489376",
     "apf_1489375",
     "apf_1539002",
-    "apf_1489380"
+    "apf_1489380",
+    "apf_1489377"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -218,6 +219,17 @@
       "id": "apf_1489380",
       "label": "Spain 0–0 Cape Verde Islands",
       "at": "2026-06-15T22:02:28.934Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489377",
+      "label": "Belgium 1–1 Egypt",
+      "at": "2026-06-16T08:26:38.003Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
