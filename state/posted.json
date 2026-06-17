@@ -32,7 +32,8 @@
     "apf_1489378",
     "apf_1489383",
     "apf_1539016",
-    "apf_1489381"
+    "apf_1489381",
+    "apf_1489382"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -302,6 +303,17 @@
       "id": "apf_1489381",
       "label": "Argentina 3–0 Algeria",
       "at": "2026-06-17T12:43:38.327Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489382",
+      "label": "Austria 3–1 Jordan",
+      "at": "2026-06-17T16:29:28.826Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
