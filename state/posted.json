@@ -285,6 +285,8 @@
       }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1539016": 1
+  },
   "pending": {}
 }
