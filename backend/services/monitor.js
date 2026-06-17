@@ -16,6 +16,17 @@ const THRESHOLDS = {
   predictionVolume: { warning: 0 }, // 0 predictions in 48h
 };
 
+// Model-QUALITY alerts (accuracy / Brier / log-loss) are statistically
+// meaningless on a handful of matches — a hot or cold run in a tournament's
+// opening days is luck, not degradation. Don't raise a CRITICAL (or trigger an
+// auto-rollback) until at least this many matches have been scored. This is the
+// same small-sample philosophy the public ledger uses (n<20 = "early days") and
+// the council's freeze-until-n decision. Previously these fired at n>=5 / n>=15,
+// which produced false "critical errors" on the dashboard during the World Cup
+// opening days. Infra alerts (DB, API latency/failure, data staleness) are NOT
+// sample-gated — those are real the moment they happen.
+const MIN_SAMPLE_FOR_QUALITY_ALERT = 30;
+
 // Per-source response-time thresholds. football-data.org's free tier
 // routinely takes 5-8s on multi-competition queries — that's its normal,
 // not an incident. Alerting at 5s generated a steady drip of WARNING
@@ -217,6 +228,14 @@ async function checkModelAccuracy() {
   const accuracy = parseFloat(row.accuracy);
   const brier = parseFloat(row.brier);
 
+  // Small live sample → surface the numbers but never raise a quality alert.
+  // A hot/cold Brier on a few matches is luck, not degradation (see the
+  // MIN_SAMPLE_FOR_QUALITY_ALERT note). This is what stopped the false
+  // "N critical errors" banner during the World Cup's opening days.
+  if (parseInt(row.n) < MIN_SAMPLE_FOR_QUALITY_ALERT) {
+    return { status: 'calibrating', message: `Calibrating — ${row.n} scored (quality alerts start at ${MIN_SAMPLE_FOR_QUALITY_ALERT})`, accuracy, brier, sampleSize: parseInt(row.n) };
+  }
+
   let status = 'HEALTHY';
   if (accuracy < THRESHOLDS.accuracy.critical || brier > THRESHOLDS.brierScore.critical) {
     status = 'CRITICAL';
@@ -316,8 +335,10 @@ export async function checkForModelDegradation() {
   `, [version.version]);
 
   const row = result?.rows?.[0];
-  if (!row || parseInt(row.n) < 15) {
-    return { shouldRollback: false, reason: `Insufficient live data (${row?.n || 0}/15)` };
+  if (!row || parseInt(row.n) < MIN_SAMPLE_FOR_QUALITY_ALERT) {
+    // Don't raise MODEL_DEGRADATION or auto-rollback on a tiny sample — a noisy
+    // log-loss on the opening matches must never swap the live model.
+    return { shouldRollback: false, reason: `Insufficient live data (${row?.n || 0}/${MIN_SAMPLE_FOR_QUALITY_ALERT})` };
   }
 
   const liveLogLoss = parseFloat(row.avg_log_loss);
