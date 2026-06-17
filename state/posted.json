@@ -30,7 +30,8 @@
     "apf_1489377",
     "apf_1489379",
     "apf_1489378",
-    "apf_1489383"
+    "apf_1489383",
+    "apf_1539016"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -283,10 +284,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539016",
+      "label": "Iraq 1–4 Norway",
+      "at": "2026-06-17T08:51:07.919Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1539016": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
