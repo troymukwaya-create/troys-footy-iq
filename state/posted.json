@@ -361,6 +361,15 @@
         "x": "ok",
         "instagram": "failed"
       }
+    },
+    "apf_1489388": {
+      "kind": "prematch",
+      "label": "Mexico v South Korea",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      }
     }
   }
 }
