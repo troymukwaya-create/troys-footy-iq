@@ -333,7 +333,9 @@
       }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1539003": 1
+  },
   "pending": {
     "apf_1489386": {
       "kind": "prematch",
@@ -347,6 +349,15 @@
     "apf_1539003": {
       "kind": "match",
       "label": "Portugal 1–1 Congo DR",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      }
+    },
+    "apf_1539004": {
+      "kind": "prematch",
+      "label": "Czechia v South Africa",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
