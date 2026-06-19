@@ -38,7 +38,8 @@
     "apf_1539016",
     "apf_1489381",
     "apf_1489382",
-    "apf_1539003"
+    "apf_1539003",
+    "apf_1489384"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -383,13 +384,24 @@
         "instagram": "gaveup"
       },
       "note": "manual unblock — IG blocked, delivered on tg+x"
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489384",
+      "label": "England 4–2 Croatia",
+      "at": "2026-06-19T16:02:06.356Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1489384": {
-      "kind": "match",
-      "label": "England 4–2 Croatia",
+    "apf_1489391": {
+      "kind": "prematch",
+      "label": "USA v Australia",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
