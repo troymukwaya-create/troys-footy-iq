@@ -21,6 +21,7 @@ import { sendDailyPicks, catchUpDailyPicks } from '../services/dailyPicksEmail.j
 import { runWcPredictionLock } from './wcPredictionLock.js';
 import { refreshWcTeamForms } from '../services/wcForm.js';
 import { refreshWcMarketWeight, optimizeWcMarketWeight } from '../engine/marketWeight.js';
+import { dispatchWorkflow, hasGithubToken } from '../services/githubDispatch.js';
 
 let previousScores = {};
 
@@ -402,5 +403,27 @@ export default function initJobs() {
     }
   });
 
-  console.log('✅ Scheduler initialized: live poll, fixtures, results, predictions, evaluation, feedback, optimization, AI insights, monitoring, auto-rollback');
+  // ─── SOCIAL MATCHDAY HEARTBEAT ─────────────────────────────────────
+  // GitHub throttles the social-matchday `*/5` schedule to ~every few HOURS,
+  // so pre-match cards miss their T-3h window and receipts land late. This
+  // always-on backend cron drives the real 5-minute tick by dispatching the
+  // workflow via the GitHub API. Registered unconditionally but a strict
+  // no-op until GITHUB_TOKEN is set in Render (so it's safe to ship now);
+  // kill switch SOCIAL_HEARTBEAT=off. The workflow itself decides what (if
+  // anything) is due each tick, so an empty tick is cheap.
+  console.log(hasGithubToken()
+    ? '[SCHEDULER] Social heartbeat ON — dispatching social-matchday every 5 min.'
+    : '[SCHEDULER] Social heartbeat dormant — set GITHUB_TOKEN in Render to enable the 5-min matchday tick.');
+  cron.schedule('*/5 * * * *', async () => {
+    if (String(process.env.SOCIAL_HEARTBEAT ?? 'on').toLowerCase() === 'off') return;
+    if (!hasGithubToken()) return; // dormant until the token is configured
+    try {
+      const out = await dispatchWorkflow('social-matchday.yml');
+      if (!out.ok) console.warn('[SCHEDULER] social heartbeat dispatch failed:', out.message);
+    } catch (err) {
+      console.warn('[SCHEDULER] social heartbeat error:', err.message);
+    }
+  });
+
+  console.log('✅ Scheduler initialized: live poll, fixtures, results, predictions, evaluation, feedback, optimization, AI insights, monitoring, auto-rollback, social heartbeat');
 }

@@ -13,6 +13,7 @@ import { Router } from 'express';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 import { requireAuth } from '../services/adminAuth.js';
 import { ingestResults } from '../services/resultService.js';
+import { dispatchWorkflow, ALLOWED_WORKFLOWS } from '../services/githubDispatch.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -205,26 +206,15 @@ router.get('/ops-config', (_req, res) => {
 });
 
 // ─── POST /dispatch-workflow — push a GitHub Actions button ──────────
-const ALLOWED_WORKFLOWS = new Set(['social-matchday.yml', 'social-ledger.yml', 'social-picks.yml']);
+// Shares services/githubDispatch.js with the social heartbeat cron.
 router.post('/dispatch-workflow', async (req, res) => {
   try {
-    const token = process.env.GITHUB_TOKEN;
-    if (!token) return res.status(400).json({ error: true, message: 'GITHUB_TOKEN not set in backend env' });
+    if (!process.env.GITHUB_TOKEN) return res.status(400).json({ error: true, message: 'GITHUB_TOKEN not set in backend env' });
     const { workflow, inputs } = req.body || {};
     if (!ALLOWED_WORKFLOWS.has(workflow)) return res.status(400).json({ error: true, message: 'unknown workflow' });
-    const r = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${workflow}/dispatches`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-        'User-Agent': 'oddyessa-admin',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ref: 'main', inputs: inputs || {} }),
-    });
-    if (r.status === 204) return res.json({ error: false, ok: true });
-    const body = await r.text();
-    res.status(502).json({ error: true, message: `github ${r.status}: ${body.slice(0, 200)}` });
+    const out = await dispatchWorkflow(workflow, inputs || {});
+    if (out.ok) return res.json({ error: false, ok: true });
+    res.status(502).json({ error: true, message: out.message });
   } catch (err) { res.status(500).json({ error: true, message: err.message }); }
 });
 
