@@ -43,7 +43,8 @@
     "apf_1539003",
     "apf_1489384",
     "apf_1489385",
-    "apf_1489386"
+    "apf_1489386",
+    "apf_1539004"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -443,6 +444,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539004",
+      "label": "Czechia 1–1 South Africa",
+      "at": "2026-06-19T23:17:10.115Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -450,18 +462,6 @@
     "apf_1489390": {
       "kind": "prematch",
       "label": "Scotland v Morocco",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1539004": {
-      "kind": "match",
-      "label": "Czechia 1–1 South Africa",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
