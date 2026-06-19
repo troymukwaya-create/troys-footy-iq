@@ -14,9 +14,12 @@ import { MobileNav } from './components/MobileNav.jsx';
 import { HonestBar } from './components/HonestBar.jsx';
 import LiquidBackground from './components/LiquidBackground.jsx';
 import { LeagueSidebar } from './components/LeagueSidebar.jsx';
+import { SearchBar } from './components/SearchBar.jsx';
+import { FixtureList } from './components/FixtureList.jsx';
 import { GoalFlash } from './components/GoalFlash.jsx';
 import { AnalystDashboard } from './components/AnalystDashboard.jsx';
-import { FixtureCard } from './components/FixtureCard.jsx';
+
+const TeamPanel = React.lazy(() => import('./components/TeamPanel.jsx').then(m => ({ default: m.TeamPanel })));
 import { SkeletonDashboard, SkeletonCard } from './components/ui/SkeletonLoader.jsx';
 import { SuggestedSlips } from './components/SuggestedSlips.jsx';
 import { EdgeExplainer } from './components/EdgeExplainer.jsx';
@@ -120,6 +123,7 @@ function MainApp() {
   // Replaces CSS display-none toggling — now the browser back button works on mobile.
   const [searchParams, setSearchParams] = useSearchParams();
   const mobileTab = searchParams.get('tab') ?? 'home';
+  const teamParam = searchParams.get('team');
 
   // ─── Fixture filtering ─────────────────────────────────────────
   const allFixtures = useMemo(() => {
@@ -140,17 +144,6 @@ function MainApp() {
     }
     return allFixtures.filter(f => f.league?.code === activeLeague);
   }, [allFixtures, activeLeague]);
-
-  // ─── Group by date ────────────────────────────────────────────
-  const groupedByDate = useMemo(() => {
-    const byDate = {};
-    filteredFixtures.forEach(f => {
-      const key = f.date ? new Date(f.date).toDateString() : 'Unknown';
-      if (!byDate[key]) byDate[key] = [];
-      byDate[key].push(f);
-    });
-    return Object.entries(byDate).sort(([a], [b]) => new Date(a) - new Date(b));
-  }, [filteredFixtures]);
 
   // ─── Shared-slip deep links ───────────────────────────────────
   // ?slip=CODE (server short code) or #slip=od1.… (self-contained)
@@ -182,7 +175,13 @@ function MainApp() {
   // refresh restores it. The store is synced FROM the URL below.
   const handleSelectFixture = useCallback((fixture) => {
     if (!fixture?.id) return;
-    setSearchParams({ tab: 'home', match: String(fixture.id) });
+    // Set the fixture directly too — a fixture opened from a team page isn't in
+    // the main feed, so the URL→store effect (which scans the feed) can't find it.
+    setSelectedFixture(fixture);
+    setSearchParams(prev => {
+      const team = prev.get('team');
+      return team ? { tab: 'home', team, match: String(fixture.id) } : { tab: 'home', match: String(fixture.id) };
+    });
     // CEO dashboard engagement signal
     track('prediction_viewed', {
       fixture_id: fixture.id,
@@ -190,10 +189,26 @@ function MainApp() {
       away_team: fixture.away?.name || fixture.awayTeam?.name || fixture.away_team,
       league_code: fixture.league?.code,
     });
-  }, [setSearchParams]);
+  }, [setSearchParams, setSelectedFixture]);
 
   const handleDeselectFixture = useCallback(() => {
-    setSearchParams({ tab: 'home' }); // drop ?match= → feed shows
+    // Drop ?match= but keep a team page open if we came from one.
+    setSearchParams(prev => {
+      const team = prev.get('team');
+      return team ? { tab: 'home', team } : { tab: 'home' };
+    });
+  }, [setSearchParams]);
+
+  // Search → a team's page (center panel). Clears any open match.
+  const handleSelectTeam = useCallback((team) => {
+    if (!team?.id) return;
+    setSelectedFixture(null);
+    setSearchParams({ tab: 'home', team: String(team.id) });
+    track('team_searched', { team_id: team.id, team_name: team.name });
+  }, [setSearchParams, setSelectedFixture]);
+
+  const handleCloseTeam = useCallback(() => {
+    setSearchParams({ tab: 'home' });
   }, [setSearchParams]);
 
   // Mobile bottom-nav handler — tapping "Home" clears any open match so the
@@ -235,16 +250,6 @@ function MainApp() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleDeselectFixture]);
 
-  const getDateLabel = (dateStr) => {
-    const d = new Date(dateStr);
-    const now = new Date();
-    const diff = Math.round((new Date(d.toDateString()) - new Date(now.toDateString())) / 86400000);
-    if (diff === 0) return 'Today';
-    if (diff === 1) return 'Tomorrow';
-    if (diff === -1) return 'Yesterday';
-    return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
-  };
-
   // First-visit gate: new visitors pass through the cinematic intro once —
   // but NEVER when they followed a link to a specific match or a shared
   // slip. Someone who clicked a shared call must land on that call, and
@@ -283,6 +288,9 @@ function MainApp() {
       <div className="panel-row flex flex-1 overflow-hidden">
         {/* ═══ LEFT SIDEBAR ═══ */}
         <aside className="left-panel flex flex-col h-full" style={{ width: 280, minWidth: 280, flexShrink: 0, background: 'var(--bg-surface)', borderRight: '1px solid var(--border-subtle)', position: 'relative', zIndex: 1 }}>
+          {/* Global team / country search — find ANY team, then their page */}
+          <SearchBar onSelectTeam={handleSelectTeam} />
+
           <LeagueSidebar
             fixtures={fixtures}
             liveMatches={liveMatches}
@@ -291,7 +299,7 @@ function MainApp() {
             onGoDashboard={handleDeselectFixture}
           />
 
-          {/* Fixture List */}
+          {/* Fixture List — freshness-first: Live → Up next → Results collapsed */}
           <div className="flex-1 overflow-y-auto" style={{ padding: '8px' }}>
             {dataMode === 'demo' && (
               <div id="demo-data-banner" style={{ margin: '0 4px 12px', padding: '10px 12px', borderRadius: 8, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: 11, color: '#F59E0B', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -314,44 +322,15 @@ function MainApp() {
               </div>
             )}
 
-            {!fixturesLoading && !fixturesError && filteredFixtures.length === 0 && (
-              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>No fixtures found</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                  {activeLeague !== 'ALL' ? `No matches for ${activeLeague}` : 'Check backend is running'}
-                </div>
-              </div>
+            {!fixturesLoading && !fixturesError && (
+              <FixtureList
+                fixtures={filteredFixtures}
+                selectedId={selectedFixture?.id}
+                onSelect={handleSelectFixture}
+                onPrefetch={prefetchAnalysis}
+                emptyLabel={activeLeague !== 'ALL' ? `No matches for ${activeLeague}` : 'No fixtures found'}
+              />
             )}
-
-            {groupedByDate.map(([dateStr, dayFixtures]) => {
-              const label = getDateLabel(dateStr);
-              const liveCount = dayFixtures.filter(f => f.status === 'IN_PLAY' || f.status === 'PAUSED').length;
-              return (
-                <div key={dateStr} className="animate-fade-in" style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: label === 'Today' ? 'var(--accent)' : 'var(--text-tertiary)', letterSpacing: '0.02em' }}>
-                      {label}
-                    </span>
-                    {liveCount > 0 && (
-                      <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 10, background: 'var(--success-muted)', color: 'var(--success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
-                        {liveCount} Live
-                      </span>
-                    )}
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>{dayFixtures.length}</span>
-                  </div>
-                  {dayFixtures.map(f => (
-                    <FixtureCard
-                      key={f.id}
-                      fixture={f}
-                      isSelected={selectedFixture?.id === f.id}
-                      onClick={() => handleSelectFixture(f)}
-                      onMouseEnter={() => prefetchAnalysis(f.id)}
-                    />
-                  ))}
-                </div>
-              );
-            })}
 
             {!fixturesLoading && fixtures.length > 0 && (
               <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>
@@ -374,12 +353,16 @@ function MainApp() {
                 </span>}
           </div>
           <div style={{ maxWidth: 960, margin: '0 auto' }}>
-            {fixturesLoading ? (
-              <SkeletonDashboard />
-            ) : selectedFixture ? (
+            {selectedFixture ? (
               <React.Suspense fallback={<SkeletonDashboard />}>
                 <MatchAnalysisPanel fixture={selectedFixture} analysis={analysisWithAI} isLoading={analysisLoading} onBack={handleDeselectFixture} />
               </React.Suspense>
+            ) : teamParam ? (
+              <React.Suspense fallback={<SkeletonDashboard />}>
+                <TeamPanel teamId={teamParam} onSelectFixture={handleSelectFixture} onBack={handleCloseTeam} />
+              </React.Suspense>
+            ) : fixturesLoading ? (
+              <SkeletonDashboard />
             ) : (
               <AnalystDashboard fixtures={filteredFixtures} onSelect={handleSelectFixture} activeLeague={activeLeague} />
             )}

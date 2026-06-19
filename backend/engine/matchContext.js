@@ -62,19 +62,34 @@ export function adjustExpectedGoals(lambdaHome, lambdaAway, ctx = {}) {
   const weatherFactor = (ctx.weather && Number.isFinite(ctx.weather.factor))
     ? clamp(ctx.weather.factor, 0.9, 1) : 1.0;
 
-  const homeFactor = homeRest * homeAvail * weatherFactor;
-  const awayFactor = awayRest * awayAvail * weatherFactor;
+  // Stakes / motivation — a PER-TEAM bounded nudge from the group standing
+  // (engine/stakes.js, ±4%): a team chasing qualification pushes for goals,
+  // a team already through may coast. 1.0 (no-op) when no standing is present.
+  const homeStakes = Number.isFinite(ctx.homeStakes) ? clamp(ctx.homeStakes, 0.96, 1.04) : 1.0;
+  const awayStakes = Number.isFinite(ctx.awayStakes) ? clamp(ctx.awayStakes, 0.96, 1.04) : 1.0;
+
+  const homeFactor = homeRest * homeAvail * weatherFactor * homeStakes;
+  const awayFactor = awayRest * awayAvail * weatherFactor * awayStakes;
 
   // Lineups confirm/surface even when they don't move λ — record the flag.
   const lineupsConfirmed = !!ctx.lineupsConfirmed;
 
-  const applied = homeFactor !== 1.0 || awayFactor !== 1.0 || lineupsConfirmed || weatherFactor !== 1.0;
+  const applied = homeFactor !== 1.0 || awayFactor !== 1.0 || lineupsConfirmed ||
+    weatherFactor !== 1.0 || homeStakes !== 1.0 || awayStakes !== 1.0;
 
   const factors = {
     homeRest, awayRest, homeAvail, awayAvail,
     homeFactor: parseFloat(homeFactor.toFixed(3)),
     awayFactor: parseFloat(awayFactor.toFixed(3)),
   };
+  if (homeStakes !== 1.0 || awayStakes !== 1.0) {
+    factors.stakes = {
+      home: parseFloat(homeStakes.toFixed(3)),
+      away: parseFloat(awayStakes.toFixed(3)),
+    };
+    if (ctx.homeStakesTag) factors.stakes.homeTag = ctx.homeStakesTag;
+    if (ctx.awayStakesTag) factors.stakes.awayTag = ctx.awayStakesTag;
+  }
   if (weatherFactor !== 1.0 || ctx.weather) {
     factors.weather = ctx.weather
       ? { tempC: ctx.weather.tempC, feelsLike: ctx.weather.feelsLike, effect: ctx.weather.effect ?? 0 }

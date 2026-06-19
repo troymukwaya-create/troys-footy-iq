@@ -7,10 +7,12 @@
 // row itself. Deep page stays one tap away inside the expanded panel.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, ArrowRight, Star } from 'lucide-react';
 import FlagBleed, { hasFlags } from './FlagBleed.jsx';
 import { getMatchColor } from '../constants/nationColors.js';
 import { track } from '../lib/analytics.js';
+import { scorelineSummary } from '../lib/scoreline.js';
+import TeamMark from './TeamMark.jsx';
 
 const MONO = 'var(--font-mono)';
 const mono = { fontFamily: MONO, fontVariantNumeric: 'tabular-nums' };
@@ -240,48 +242,213 @@ function BoardRow({ f, now, onSelect }) {
   );
 }
 
+// Largest model-vs-market disagreement on a fixture (our "edge"), in points.
+function bestEdgeOf(f) {
+  const ve = f.probability?.valueEdges;
+  return ve ? Math.max(ve.home ?? -99, ve.draw ?? -99, ve.away ?? -99) : -99;
+}
+
+function greetingFor(now) {
+  const h = now.getHours();
+  if (h < 12) return 'Good morning.';
+  if (h < 18) return 'Good afternoon.';
+  return 'Good evening.';
+}
+
+// ─── MATCH OF THE DAY (featured hero) ────────────────────────────────
+// The one game to look at — our biggest market disagreement, or the next
+// to kick off when nothing stands out. Bigger than a board row, flag-bled,
+// opens the full analysis on click.
+function HeroMatch({ f, now, onSelect }) {
+  const live = isLiveStatus(f.status);
+  const locked = !!f.probability?.locked;
+  const until = untilLabel(f.date, now);
+  const ko = f.date ? new Date(f.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  const useBleed = hasFlags(f.homeTeam?.name, f.awayTeam?.name);
+  const bestEdge = bestEdgeOf(f);
+  const sl = scorelineSummary(f.probability);
+
+  return (
+    <div
+      role="button" tabIndex={0}
+      onClick={() => onSelect?.(f)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(f); } }}
+      style={{
+        position: 'relative', isolation: 'isolate', overflow: 'hidden', cursor: 'pointer',
+        border: '1px solid rgba(168,52,74,0.45)', borderRadius: 10, padding: 'clamp(15px, 4vw, 20px)',
+        background: '#0B0B0D', display: 'flex', flexDirection: 'column', gap: 13, marginBottom: 22,
+      }}
+    >
+      {useBleed && <FlagBleed home={f.homeTeam?.name} away={f.awayTeam?.name} opacity={0.5} />}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...mono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--accent)', fontWeight: 600 }}>
+          <Star size={11} fill="var(--accent)" /> Match of the day
+        </span>
+        <span style={{ color: 'var(--text-tertiary)' }}>
+          {live
+            ? <span style={{ color: 'var(--success)', fontWeight: 600 }}>LIVE {f.minute ? `${f.minute}′` : ''}</span>
+            : `Kickoff ${ko}${until ? ` · ${until}` : ''}`}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <TeamMark name={f.homeTeam?.name} crest={f.homeTeam?.crest} size={34} />
+        <div style={{ flex: 1, fontSize: 'clamp(17px, 4.6vw, 23px)', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15 }}>
+          {f.homeTeam?.name} <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '0.7em' }}>v</span> {f.awayTeam?.name}
+        </div>
+        <TeamMark name={f.awayTeam?.name} crest={f.awayTeam?.crest} size={34} />
+      </div>
+
+      <ProbBars f={f} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {bestEdge >= 5 && (
+          <span style={{ ...mono, fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 3, color: 'var(--success)', border: '1px solid rgba(34,197,94,0.35)' }}>
+            +{Math.round(bestEdge)} PTS VS MARKET
+          </span>
+        )}
+        {sl.confident
+          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 3, color: 'var(--accent)', background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.30)' }}>{sl.score} likely</span>
+          : <span style={{ ...mono, fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 3, color: 'var(--text-tertiary)', border: '1px solid var(--border-default)' }}>OPEN GAME</span>}
+        {!live && (locked
+          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 600, color: 'var(--accent)', border: '1px solid rgba(168,52,74,0.45)', padding: '3px 8px', borderRadius: 3 }}>LOCKED</span>
+          : <span style={{ ...mono, fontSize: 10.5, color: 'var(--text-tertiary)' }}>LOCKS T-10</span>)}
+      </div>
+
+      {verdictLine(f) && (
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          <span style={{ color: 'var(--accent)', marginRight: 7 }}>›</span>{verdictLine(f)}.
+        </div>
+      )}
+
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, ...mono, fontSize: 10.5, letterSpacing: '0.08em', color: 'var(--accent)' }}>
+        FULL ANALYSIS <ArrowRight size={13} />
+      </div>
+    </div>
+  );
+}
+
+// ─── THE HOME BOARD ──────────────────────────────────────────────────
+// Welcoming + freshness-first: greeting → Match of the day → Live now →
+// Up next → Today's results (collapsed). The old board sorted ascending so
+// games finished earlier today (and stale-cached past games) sat on top;
+// now what's live or next always leads, and finished games tuck away.
 export function MatchdayBoard({ fixtures = [], onSelect }) {
   const [now, setNow] = useState(() => new Date());
+  const [showResults, setShowResults] = useState(false);
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(t);
   }, []);
 
-  const { rows, isToday } = useMemo(() => {
+  const { live, slate, hero, finishedToday, isToday, slateDayLabel } = useMemo(() => {
     const usable = (fixtures || []).filter(f => f.homeTeam?.name && f.awayTeam?.name && f.date && f.probability?.probabilities);
-    const today = usable
-      .filter(f => sameLocalDay(f.date) || isLiveStatus(f.status))
+    const live = usable.filter(f => isLiveStatus(f.status)).sort((a, b) => new Date(a.date) - new Date(b.date));
+    const todayUp = usable.filter(f => sameLocalDay(f.date) && !isDoneStatus(f.status) && !isLiveStatus(f.status))
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-    if (today.length) return { rows: today, isToday: true };
-    // Quiet day → show the next matchday so the board is never empty.
-    const future = usable
-      .filter(f => new Date(f.date) > new Date() && !isDoneStatus(f.status))
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-    const firstDay = future[0] ? new Date(future[0].date) : null;
-    return {
-      rows: firstDay ? future.filter(f => sameLocalDay(f.date, firstDay)) : [],
-      isToday: false,
-    };
+    const finishedToday = usable.filter(f => sameLocalDay(f.date) && isDoneStatus(f.status))
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    let slate = todayUp, isToday = true, slateDayLabel = null;
+    if (!slate.length) {
+      // Quiet day → look ahead to the next matchday so Home is never empty.
+      const future = usable.filter(f => new Date(f.date) > now && !isDoneStatus(f.status))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      const firstDay = future[0] ? new Date(future[0].date) : null;
+      slate = firstDay ? future.filter(f => sameLocalDay(f.date, firstDay)) : [];
+      isToday = false;
+      slateDayLabel = firstDay ? firstDay.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : null;
+    }
+
+    // Match of the day: biggest edge among what's still to come (or live);
+    // if nothing stands out, the next game to kick off.
+    const candidates = [...live, ...slate];
+    let hero = null;
+    if (candidates.length) {
+      const byEdge = candidates.slice().sort((a, b) => bestEdgeOf(b) - bestEdgeOf(a));
+      hero = bestEdgeOf(byEdge[0]) >= 5 ? byEdge[0] : (slate[0] || live[0]);
+    }
+    return { live, slate, hero, finishedToday, isToday, slateDayLabel };
   }, [fixtures, now]);
 
-  if (!rows.length) return null;
+  if (!live.length && !slate.length && !finishedToday.length) return null;
 
-  const dayLabel = new Date(rows[0].date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const heroId = hero?.id;
+  const liveRows = live.filter(f => f.id !== heroId);
+  const slateRows = slate.filter(f => f.id !== heroId);
+  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const statusBits = [];
+  if (live.length) statusBits.push(`${live.length} live now`);
+  if (isToday && slate.length) statusBits.push(`${slate.length} still to come`);
+  if (!isToday && slateDayLabel) statusBits.push(`next games ${slateDayLabel}`);
+  statusBits.push('read the game.');
 
   return (
-    <section aria-label="Matchday board">
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-        <h1 className="font-display" style={{ fontSize: 'clamp(19px, 5vw, 24px)', fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>
-          {isToday ? "Today's board" : 'Next matchday'}
+    <section aria-label="Home board">
+      <div className="animate-fade-in" style={{ marginBottom: 18 }}>
+        <h1 className="font-display" style={{ fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, lineHeight: 1.1 }}>
+          {greetingFor(now)}
         </h1>
-        <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '0.1em', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-          {dayLabel} · {rows.length} {rows.length === 1 ? 'match' : 'matches'} · every call locked T-10
-        </span>
+        <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.04em', color: 'var(--text-tertiary)', margin: '6px 0 0' }}>
+          {dateStr} · {statusBits.join(' · ')}
+        </p>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {rows.map(f => <BoardRow key={f.id} f={f} now={now} onSelect={onSelect} />)}
-      </div>
+
+      {hero && <HeroMatch f={hero} now={now} onSelect={onSelect} />}
+
+      {liveRows.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <SectionHead live>Live now</SectionHead>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {liveRows.map(f => <BoardRow key={f.id} f={f} now={now} onSelect={onSelect} />)}
+          </div>
+        </div>
+      )}
+
+      {slateRows.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <SectionHead>{isToday ? 'Up next today' : `Next matchday · ${slateDayLabel}`}</SectionHead>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {slateRows.map(f => <BoardRow key={f.id} f={f} now={now} onSelect={onSelect} />)}
+          </div>
+        </div>
+      )}
+
+      {finishedToday.length > 0 && (
+        <div style={{ marginBottom: 4 }}>
+          <button
+            onClick={() => setShowResults(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+              padding: '11px 13px', background: 'var(--bg-raised)', border: '1px solid var(--border-default)',
+              borderRadius: 6, cursor: 'pointer', color: 'var(--text-secondary)', ...mono, fontSize: 11, letterSpacing: '0.06em',
+            }}
+          >
+            {showResults ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            TODAY'S RESULTS
+            <span style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }}>{finishedToday.length} played</span>
+          </button>
+          {showResults && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              {finishedToday.map(f => <BoardRow key={f.id} f={f} now={now} onSelect={onSelect} />)}
+            </div>
+          )}
+        </div>
+      )}
     </section>
+  );
+}
+
+function SectionHead({ children, live }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      {live && <span className="animate-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />}
+      <span style={{ ...mono, fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: live ? 'var(--success)' : 'var(--text-tertiary)' }}>
+        {children}
+      </span>
+    </div>
   );
 }
 

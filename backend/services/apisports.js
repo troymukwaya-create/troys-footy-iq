@@ -177,7 +177,12 @@ async function getTeamRecentForm(teamId, last = 10) {
     const res = my > opp ? 'W' : my < opp ? 'L' : 'D';
     if (res === 'W') w++; else if (res === 'L') l++; else d++;
     form.push(res);
-    recentResults.push({ opponent: oppName, score: `${my}-${opp}`, result: res, competition: m.league?.name || '', date: m.date });
+    recentResults.push({
+      id: m.id,                                   // fixture id — lets enrichers pull events/stats
+      opponent: oppName, score: `${my}-${opp}`, result: res,
+      competition: m.league?.name || '', leagueCode: m.league?.code || null,
+      date: m.date,
+    });
   }
   const played = w + d + l;
   if (!played) return null;
@@ -243,6 +248,31 @@ async function getStandings(leagueCode) {
   return raw[0] || null;
 }
 
+// World Cup group standings (season 2026 — getStandings() uses the club
+// SEASON constant). Flattened to one row per team across all groups, with the
+// fields the stakes/motivation signal needs. Empty array before any results.
+async function getWcStandings() {
+  if (!hasKey()) return [];
+  const raw = await safeFetch('standings', { league: LEAGUES.WC, season: 2026 });
+  const groups = raw?.[0]?.league?.standings || [];
+  const out = [];
+  for (const group of groups) {
+    for (const row of group || []) {
+      if (!row?.team?.id) continue;
+      out.push({
+        teamId: 'apf_t_' + row.team.id,
+        teamName: row.team.name,
+        group: row.group || row.team.group || null,
+        points: Number(row.points) || 0,
+        played: Number(row.all?.played) || 0,
+        goalsDiff: Number(row.goalsDiff) || 0,
+        rank: Number(row.rank) || null,
+      });
+    }
+  }
+  return out;
+}
+
 // ── TEAMS ────────────────────────────────────────────
 async function getTeamInfo(teamId) {
   const numId = String(teamId).replace('apf_t_', '');
@@ -276,11 +306,36 @@ async function getSquad(teamId) {
 
 async function getTeamFixtures(teamId, last = 10, next = 10) {
   const numId = String(teamId).replace('apf_t_', '');
+  // NO season pin: API-Football's last/next params return a team's most-recent
+  // and upcoming fixtures across ALL competitions and seasons. Pinning the club
+  // SEASON (2025) returned almost nothing in the offseason — exactly when you
+  // search a team to see when they next play.
   const [past, upcoming] = await Promise.all([
-    safeFetch('fixtures', { team: numId, last, season: SEASON }),
-    safeFetch('fixtures', { team: numId, next, season: SEASON })
+    safeFetch('fixtures', { team: numId, last }),
+    safeFetch('fixtures', { team: numId, next })
   ]);
   return [...past, ...upcoming].map(normalise);
+}
+
+// Search teams by name / country (clubs AND national teams) across the whole
+// API-Football database — powers the global search bar so any team is findable,
+// not just those with a fixture in the current feed. API-Football requires the
+// search term to be ≥ 3 characters.
+async function searchTeams(query) {
+  if (!hasKey()) return [];
+  const q = String(query || '').trim();
+  if (q.length < 3) return [];
+  const raw = await safeFetch('teams', { search: q });
+  return (raw || [])
+    .filter(r => r?.team?.id && r.team.name)
+    .slice(0, 12)
+    .map(r => ({
+      id: 'apf_t_' + r.team.id,             // matches getTeamFixtures / getTeamInfo (they strip the prefix)
+      name: r.team.name,
+      country: r.team.country || null,
+      logo: r.team.logo || null,
+      national: !!r.team.national,          // true for national teams
+    }));
 }
 
 async function getTeamStats(teamId, leagueCode) {
@@ -398,7 +453,7 @@ export default {
   getLiveFixtures, getTodayFixtures, getUpcomingFixtures,
   getRecentFixtures, getLeagueSeasonFixtures, getTeamRecentForm, getSquadList, getFixture,
   getFixtureStats, getFixtureEvents, getFixtureLineups, getFixturePlayers,
-  getStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures,
+  getStandings, getWcStandings, getTeamInfo, getTeamStats, getSquad, getTeamFixtures, searchTeams,
   getTopScorers, getPlayerStats,
   getH2H, getPredictions, getInjuries, getTeamInjuries,
   getInternationalResults, getInternationalFixtures,

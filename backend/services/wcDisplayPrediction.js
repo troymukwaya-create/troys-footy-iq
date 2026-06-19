@@ -24,6 +24,7 @@ import { generateProbabilities } from '../engine/poissonCore.js';
 import { getWcTeamForm, buildWcContext, isKnockoutRound } from './wcForm.js';
 import { getMatchWeather, weatherNote } from './weather.js';
 import { lineupAwareAvailability } from './lineups.js';
+import { motivationFactor, stakesTag } from '../engine/stakes.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 
 const MODEL_VERSION = 'wc-elo-market-v1';
@@ -85,13 +86,32 @@ export async function computeWcPrediction(match, { oddsEvents = null, homeField 
     const sideId = (t) => String(t?.id || '').replace('apf_t_', '');
     const apply = (side, form) => {
       const xi = lineups.byTeam?.[sideId(match[side])];
-      const la = lineupAwareAvailability(form?.injuries || [], xi?.starters || null);
+      // Suspended players (red cards last match) are definitely out — evaluate
+      // them through the same XI check as injuries so the absence survives lock.
+      const unavailable = [...(form?.injuries || []), ...(form?.suspensions || [])];
+      const la = lineupAwareAvailability(unavailable, xi?.starters || null);
       ctx.lineupsConfirmed = true;
       if (la.multiplier < 1) ctx[side === 'homeTeam' ? 'homeAvailability' : 'awayAvailability'] = la.multiplier;
       if (la.absences.length) ctx[side === 'homeTeam' ? 'homeStarAbsences' : 'awayStarAbsences'] = la.absences;
     };
     apply('homeTeam', homeForm);
     apply('awayTeam', awayForm);
+  }
+
+  // ── Stakes / motivation (group standing) ────────────────────────────
+  // Only present when ENABLE_STAKES attached a `standing` to the cached form.
+  // Bounded ±4%, group stage only (knockouts are max-stakes for everyone).
+  const isGroupStage = !ctx.knockout;
+  for (const [side, form] of [['home', homeForm], ['away', awayForm]]) {
+    const st = form?.standing;
+    if (!st) continue;
+    const args = { isGroupStage, points: st.points, played: st.played };
+    const f = motivationFactor(args);
+    if (f !== 1.0) {
+      ctx[side + 'Stakes'] = f;
+      const tag = stakesTag(args);
+      if (tag) ctx[side + 'StakesTag'] = tag;
+    }
   }
 
   // ── Weather (lock job / analysis page) ──────────────────────────────

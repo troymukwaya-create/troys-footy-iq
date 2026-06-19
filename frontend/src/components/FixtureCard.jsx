@@ -2,6 +2,7 @@ import React from 'react';
 import { flagGradient } from '../constants/nationColors.js';
 import FlagBleed, { hasFlags } from './FlagBleed.jsx';
 import TeamMark from './TeamMark.jsx';
+import { scorelineSummary } from '../lib/scoreline.js';
 
 /**
  * FixtureCard — Compact sidebar match card.
@@ -106,26 +107,17 @@ export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
             <ProbValue label="A" value={prob.probabilities.away} />
           </div>
 
-          {/* Risk (upcoming) or verdict (settled) + Scorelines */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Risk (upcoming) or verdict (settled) + the scoreline call.
+              Settled: the top scorelines with a ✓ on a hit. Upcoming: a
+              specific score ONLY when there's a clear favourite — otherwise
+              "Open" + the spread, so even games never assert a single 1-1. */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
             {isFinished && scoreHome != null && scoreAway != null
               ? <VerdictBadge prob={prob} scoreHome={scoreHome} scoreAway={scoreAway} />
               : <RiskBadge level={prob.riskLevel} />}
-            <div style={{ display: 'flex', gap: 4 }}>
-              {prob.topScorelines?.slice(0, 2).map((sl, i) => {
-                const slHit = isFinished && sl.score === `${scoreHome}-${scoreAway}`;
-                return (
-                  <span key={i} style={{
-                    fontSize: 10, fontWeight: slHit ? 700 : 600, padding: '2px 6px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: slHit ? 'var(--success-muted)' : 'var(--bg-raised)',
-                    border: `1px solid ${slHit ? 'var(--success)' : 'var(--border-subtle)'}`,
-                    color: slHit ? 'var(--success)' : 'var(--text-secondary)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>{sl.score}{slHit ? ' ✓' : ''}</span>
-                );
-              })}
-            </div>
+            {isFinished && scoreHome != null && scoreAway != null
+              ? <FinishedScorelines sls={prob.topScorelines} scoreHome={scoreHome} scoreAway={scoreAway} />
+              : <ScorelineCall prob={prob} />}
           </div>
         </div>
       ) : null}
@@ -196,6 +188,58 @@ function VerdictBadge({ prob, scoreHome, scoreAway }) {
     }}>
       {t.label}
     </span>
+  );
+}
+
+// Settled: the predicted scorelines, with a ✓ on the one that actually landed.
+function FinishedScorelines({ sls, scoreHome, scoreAway }) {
+  return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {(sls || []).slice(0, 2).map((sl, i) => {
+        const hit = sl.score === `${scoreHome}-${scoreAway}`;
+        return (
+          <span key={i} style={{
+            fontSize: 10, fontWeight: hit ? 700 : 600, padding: '2px 6px',
+            borderRadius: 'var(--radius-sm)',
+            background: hit ? 'var(--success-muted)' : 'var(--bg-raised)',
+            border: `1px solid ${hit ? 'var(--success)' : 'var(--border-subtle)'}`,
+            color: hit ? 'var(--success)' : 'var(--text-secondary)',
+            fontVariantNumeric: 'tabular-nums',
+          }}>{sl.score}{hit ? ' ✓' : ''}</span>
+        );
+      })}
+    </div>
+  );
+}
+
+// Upcoming: name a score only when there's a clear favourite ("2-0 likely").
+// Otherwise the game is OPEN — show the spread of most-likely scores so even
+// matchups read as individually judged, never a copy-paste 1-1.
+function ScorelineCall({ prob }) {
+  const { confident, score, spread } = scorelineSummary(prob);
+  if (confident) {
+    return (
+      <span style={{
+        fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-sm)',
+        background: 'var(--accent-muted)', color: 'var(--accent)',
+        border: '1px solid rgba(168,52,74,0.30)', fontVariantNumeric: 'tabular-nums',
+      }}>{score} likely</span>
+    );
+  }
+  if (!spread.length) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--text-muted)' }}>OPEN</span>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {spread.slice(0, 2).map((s, i) => (
+          <span key={i} style={{
+            fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 'var(--radius-sm)',
+            background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
+            color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums',
+          }}>{s.score}</span>
+        ))}
+      </div>
+    </div>
   );
 }
 

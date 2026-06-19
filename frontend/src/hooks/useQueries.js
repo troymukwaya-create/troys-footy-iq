@@ -82,6 +82,53 @@ export function useLiveMatches() {
   });
 }
 
+// ─── TEAM SEARCH + TEAM FIXTURES ────────────────────────────────────
+
+// Global team/country search — hits /fixtures/search?q= (API-Football's full
+// team database), so any team is findable, not just those in the current feed.
+export function useTeamSearch(query) {
+  const q = String(query || '').trim();
+  return useQuery({
+    queryKey: ['team-search', q],
+    queryFn: async () => {
+      const { data } = await api.get('/fixtures/search', { params: { q } });
+      return Array.isArray(data?.results) ? data.results : [];
+    },
+    enabled: q.length >= 3,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+// A single team's recent + upcoming fixtures (across all competitions).
+export function useTeamFixtures(teamId) {
+  return useQuery({
+    queryKey: ['team-fixtures', teamId],
+    queryFn: async () => {
+      const { data } = await api.get(`/fixtures/team-fixtures/${teamId}`);
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!teamId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+// Basic team info (name, logo, country) for the team page header.
+export function useTeamInfo(teamId) {
+  return useQuery({
+    queryKey: ['team-info', teamId],
+    queryFn: async () => {
+      const { data } = await api.get(`/fixtures/team/${teamId}`);
+      return data && Object.keys(data).length ? data : null;
+    },
+    enabled: !!teamId,
+    staleTime: 60 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 // ─── ANALYSIS ───────────────────────────────────────────────────────
 
 export function useAnalysis(matchId) {

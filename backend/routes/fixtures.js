@@ -383,6 +383,13 @@ router.get('/integrity', async (req, res) => {
   }
 });
 
+// Global team search (clubs + national teams). MUST be registered before the
+// '/:id' catch-all below or 'search' would be read as a fixture id.
+router.get('/search', async (req, res) => {
+  try { res.json({ results: await api.searchTeams(req.query.q || '') }); }
+  catch (e) { res.json({ results: [] }); }
+});
+
 router.get('/team/:id',          async (req, res) => { try { res.json(await api.getTeamInfo(req.params.id) || {}); } catch(e) { res.json({}); } });
 router.get('/squad/:id',         async (req, res) => { try { res.json(await api.getSquad(req.params.id) || []); } catch(e) { res.json([]); } });
 router.get('/team-fixtures/:id', async (req, res) => { try { res.json(await api.getTeamFixtures(req.params.id) || []); } catch(e) { res.json([]); } });

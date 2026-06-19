@@ -22,6 +22,9 @@ import { getWcMarketWeight, getWcMarketWeightMeta, isMarketWeightFrozen, optimiz
 import { weatherGoalFactor } from '../services/weather.js';
 import { lineupAwareAvailability } from '../services/lineups.js';
 import { outcome90 } from '../services/resultService.js';
+import { extractRedCards, suspendedPlayersForTeam } from '../engine/suspensions.js';
+import { extractTeamXg, blendFormWithXg } from '../engine/xgForm.js';
+import { motivationFactor, stakesTag } from '../engine/stakes.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -211,6 +214,65 @@ check('injured player confirmed OUT counts as absence', confOut.absences.length 
 const confFit = lineupAwareAvailability([{ name: 'Player One A' }], xi); // in XI → fit
 check('injured player confirmed STARTING drops the penalty', confFit.multiplier === 1.0 && confFit.confirmedFit.length === 1,
   `mult ${confFit.multiplier}`);
+
+// ── 16. Red-card → suspension carry-forward ──
+console.log('\nRed-card suspensions (carry the last match forward):');
+const sampleEvents = [
+  { type: 'Card', detail: 'Yellow Card', player: { id: 1, name: 'Booked Guy' }, team: { id: 10, name: 'Brazil' }, time: { elapsed: 30 } },
+  { type: 'Card', detail: 'Red Card', player: { id: 2, name: 'Sent Off' }, team: { id: 10, name: 'Brazil' }, time: { elapsed: 55 } },
+  { type: 'Card', detail: 'Second Yellow card', player: { id: 3, name: 'Two Yellows' }, team: { id: 11, name: 'Haiti' }, time: { elapsed: 70 } },
+  { type: 'Goal', detail: 'Normal Goal', player: { id: 4, name: 'Scorer' }, team: { id: 10, name: 'Brazil' }, time: { elapsed: 80 } },
+];
+const reds = extractRedCards(sampleEvents);
+check('a straight red and a second yellow are dismissals (yellow is not)', reds.length === 2,
+  `got ${reds.length}: ${reds.map(r => r.name).join(', ')}`);
+check('empty / non-array events → no dismissals', extractRedCards([]).length === 0 && extractRedCards(null).length === 0);
+const braSusp = suspendedPlayersForTeam(sampleEvents, { teamId: 10, teamName: 'Brazil' });
+check('suspensions filter to the right team', braSusp.length === 1 && braSusp[0].name === 'Sent Off', `got ${JSON.stringify(braSusp)}`);
+check('a suspended player is marked out (definitely absent)', braSusp[0].suspended === true && braSusp[0].importance > 0);
+check('team with no dismissal → no suspensions', suspendedPlayersForTeam(sampleEvents, { teamId: 99, teamName: 'Spain' }).length === 0);
+// integration: a suspended key player lowers the favourite's output
+const noSusp = predictWorldCupMatch('Brazil', 'Haiti', null, { homeForm: inForm, awayForm: poorForm });
+const withSusp = predictWorldCupMatch('Brazil', 'Haiti', null, {
+  homeForm: inForm, awayForm: poorForm,
+  homeAvailability: availabilityFromInjuredPlayers(suspendedPlayersForTeam(sampleEvents, { teamId: 10, teamName: 'Brazil' })),
+});
+check('a suspension lowers the favourite win prob', withSusp.probabilities.home <= noSusp.probabilities.home,
+  `${noSusp.probabilities.home}% → ${withSusp.probabilities.home}%`);
+
+// ── 17. xG-aware form ──
+console.log('\nxG-aware form (strip finishing variance):');
+const statShape = { Brazil: { 'Total Shots': 22, 'expected_goals': '2.40' }, Haiti: { 'Total Shots': 3, 'expected_goals': '0.30' } };
+const braXg = extractTeamXg(statShape, 'Brazil');
+check('xG parsed for both directions (incl string value)', braXg && braXg.xgFor === 2.4 && braXg.xgAgainst === 0.3, `got ${JSON.stringify(braXg)}`);
+check('missing / malformed stats → null', extractTeamXg(null, 'Brazil') === null && extractTeamXg({}, 'Brazil') === null);
+const luckyForm = { played: 3, avgGoalsFor: 3.0, avgGoalsAgainst: 0.5 };
+const unchanged = blendFormWithXg(luckyForm, []);
+check('no xG samples → form unchanged (no-op)', unchanged.avgGoalsFor === 3.0 && unchanged === luckyForm);
+const regressed = blendFormWithXg(luckyForm, [{ xgFor: 1.0, xgAgainst: 1.5 }]);
+check('a lucky scoreline regresses toward xG (down, but bounded)',
+  regressed.avgGoalsFor < 3.0 && regressed.avgGoalsFor > 1.0, `3.0 → ${regressed.avgGoalsFor}`);
+check('xG weight is capped at 50% even with many samples',
+  blendFormWithXg(luckyForm, Array(20).fill({ xgFor: 0, xgAgainst: 0 })).xg.weight <= 0.5 + 1e-9);
+check('xG summary is surfaced for transparency', regressed.xg && regressed.xg.matches === 1 && regressed.rawAvgGoalsFor === 3.0);
+
+// ── 18. Stakes / motivation (bounded ±4%, group stage only) ──
+console.log('\nStakes / motivation (group standing):');
+check('knockout → no-op', motivationFactor({ isGroupStage: false, points: 0, played: 1 }) === 1.0);
+check('no standing → no-op', motivationFactor({ isGroupStage: true, points: null, played: null }) === 1.0);
+check('pre-tournament (0 played) → no-op', motivationFactor({ isGroupStage: true, points: 0, played: 0 }) === 1.0);
+const lostOpener = motivationFactor({ isGroupStage: true, points: 0, played: 1 });
+check('team that lost its opener pushes for goals (>1, chasing)', lostOpener > 1.0, `got ${lostOpener}`);
+const wonOpener = motivationFactor({ isGroupStage: true, points: 3, played: 1 });
+check('a team that won is closer to neutral than one that lost', wonOpener < lostOpener, `won ${wonOpener} < lost ${lostOpener}`);
+const throughEarly = motivationFactor({ isGroupStage: true, points: 6, played: 2 });
+check('a team already through (final game) may coast (<1)', throughEarly < 1.0, `got ${throughEarly}`);
+check('motivation is always bounded ±4%', [lostOpener, wonOpener, throughEarly].every(f => f >= 0.96 && f <= 1.04));
+check('must-win tag fires for a winless team going into the final game', stakesTag({ isGroupStage: true, points: 1, played: 2 }) === 'must win to advance');
+// integration: a chasing home team's λ rises through adjustExpectedGoals
+const stakesAdj = adjustExpectedGoals(1.5, 1.3, { homeStakes: lostOpener });
+check('stakes raises the chasing team\'s expected goals', stakesAdj.lambdaHome > 1.5 && stakesAdj.lambdaAway === 1.3, `λh ${stakesAdj.lambdaHome}`);
+check('stakes surfaced in context factors', !!stakesAdj.factors.stakes && stakesAdj.factors.stakes.home === parseFloat(lostOpener.toFixed(3)));
 
 // ── Sample report (eyeball) — evidence-based, with rich recent data ──
 console.log('\n─── SAMPLE PREDICTIONS (rich recent data, dataSufficiency = 1) ───');
