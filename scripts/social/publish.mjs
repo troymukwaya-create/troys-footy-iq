@@ -32,6 +32,22 @@ const ALL_PLATFORMS = ['telegram', 'x', 'instagram'];
 const ONLY = Array.isArray(payload._only) ? payload._only : ALL_PLATFORMS;
 const ITEM_ID = payload._id || null;
 
+// Per-platform retry budget. After this many failed attempts we GIVE UP on
+// that platform (terminal, like ok/skip) so a single persistently-failing
+// platform — e.g. an Instagram "Application request limit reached" block —
+// can no longer (a) keep the item in `pending` forever and head-of-line-block
+// every newer receipt, nor (b) get re-posted every tick. The endless 5-min
+// retry on a blocked IG is exactly what triggered the IG block in the first
+// place. Other platforms that already succeeded are never re-posted.
+const MAX_ATTEMPTS = 2;
+
+// Hard wall-clock budget per platform. A hung API call used to let a run reach
+// the workflow's 10-min timeout and get cancelled AFTER posting but BEFORE
+// committing state — so the next run re-posted (the duplicate-post bug). Now a
+// stuck platform call rejects, is recorded as a failure, and the run finishes.
+const withTimeout = (p, ms, label) =>
+  Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} timed out after ${ms}ms`)), ms))]);
+
 // ─── Telegram ───────────────────────────────────────────────────────
 async function postTelegram() {
   const token = process.env.TELEGRAM_BOT_TOKEN, chan = process.env.TELEGRAM_CHANNEL;
@@ -191,11 +207,23 @@ function recordResults(results) {
   st.pending = st.pending || {};
   const entry = st.pending[ITEM_ID] || { kind, label: ITEM_ID, platforms: {} };
   entry.platforms = entry.platforms || {};
-  for (const [k, v] of Object.entries(results)) entry.platforms[k] = v;
+  entry.attempts = entry.attempts || {};
+  for (const [k, v] of Object.entries(results)) {
+    if (v === 'failed') {
+      entry.attempts[k] = (entry.attempts[k] || 0) + 1;
+      // Retry up to MAX_ATTEMPTS, then give up on this platform (terminal).
+      entry.platforms[k] = entry.attempts[k] >= MAX_ATTEMPTS ? 'gaveup' : 'failed';
+    } else {
+      entry.platforms[k] = v; // 'ok' or 'skip' — terminal
+    }
+  }
   st.pending[ITEM_ID] = entry;
 
+  // "Owed" = still worth retrying. 'gaveup' is terminal, exactly like ok/skip,
+  // so an item is promoted to done once every platform is ok / skip / gaveup.
   const remaining = ALL_PLATFORMS.filter(k => entry.platforms[k] === 'todo' || entry.platforms[k] === 'failed');
   const okCount = ALL_PLATFORMS.filter(k => entry.platforms[k] === 'ok').length;
+  const gaveup = ALL_PLATFORMS.filter(k => entry.platforms[k] === 'gaveup');
   if (remaining.length === 0) {
     const list = kind === 'prematch' ? 'prematch' : 'receipts';
     st[list] = Array.isArray(st[list]) ? st[list] : [];
@@ -203,7 +231,7 @@ function recordResults(results) {
     st.log = Array.isArray(st.log) ? st.log : [];
     st.log.push({ kind, id: ITEM_ID, label: entry.label, at: new Date().toISOString(), platforms: { ...entry.platforms } });
     delete st.pending[ITEM_ID];
-    console.log(`${kind} ${ITEM_ID}: delivered on every platform (${okCount} posted) → marked done`);
+    console.log(`${kind} ${ITEM_ID}: done (${okCount} posted${gaveup.length ? `, gave up on ${gaveup.join('/')} after ${MAX_ATTEMPTS} tries` : ''}) → marked done`);
   } else {
     console.log(`${kind} ${ITEM_ID}: still owed [${remaining.join(', ')}] → retries next tick`);
   }
@@ -214,7 +242,7 @@ const results = {};
 let failed = false;
 for (const [name, fn] of [['telegram', postTelegram], ['x', postX], ['instagram', postInstagram]]) {
   if (!ONLY.includes(name)) continue; // not owed this tick — keep prior status
-  try { results[name] = (await fn()) || 'ok'; }
+  try { results[name] = (await withTimeout(fn(), 60000, name)) || 'ok'; }
   catch (e) { results[name] = 'failed'; failed = true; console.error(`${name}: ${e.message}`); }
 }
 recordResults(results);
