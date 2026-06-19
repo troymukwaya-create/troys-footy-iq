@@ -41,7 +41,8 @@
     "apf_1489382",
     "apf_1539003",
     "apf_1489384",
-    "apf_1489385"
+    "apf_1489385",
+    "apf_1489386"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -419,6 +420,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489386",
+      "label": "Uzbekistan 1–3 Colombia",
+      "at": "2026-06-19T21:20:49.016Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -435,9 +447,9 @@
         "instagram": 1
       }
     },
-    "apf_1489386": {
-      "kind": "match",
-      "label": "Uzbekistan 1–3 Colombia",
+    "apf_1489389": {
+      "kind": "prematch",
+      "label": "Brazil v Haiti",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
