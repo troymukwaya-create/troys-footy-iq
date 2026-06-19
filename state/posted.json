@@ -12,7 +12,10 @@
     "apf_1489379",
     "apf_1489378",
     "apf_1489381",
-    "apf_1489385"
+    "apf_1489385",
+    "apf_1489386",
+    "apf_1539004",
+    "apf_1489388"
   ],
   "receipts": [
     "apf_1538999",
@@ -34,7 +37,8 @@
     "apf_1489383",
     "apf_1539016",
     "apf_1489381",
-    "apf_1489382"
+    "apf_1489382",
+    "apf_1539003"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -331,45 +335,56 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489386",
+      "label": "Uzbekistan v Colombia",
+      "at": "2026-06-19T14:43:27.088Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      },
+      "note": "manual unblock — IG blocked, delivered on tg+x"
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539003",
+      "label": "Portugal 1–1 Congo DR",
+      "at": "2026-06-19T14:43:27.089Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      },
+      "note": "manual unblock — IG blocked, delivered on tg+x"
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1539004",
+      "label": "Czechia v South Africa",
+      "at": "2026-06-19T14:43:27.089Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      },
+      "note": "manual unblock — IG blocked, delivered on tg+x"
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489388",
+      "label": "Mexico v South Korea",
+      "at": "2026-06-19T14:43:27.089Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      },
+      "note": "manual unblock — IG blocked, delivered on tg+x"
     }
   ],
   "verdictWait": {},
-  "pending": {
-    "apf_1489386": {
-      "kind": "prematch",
-      "label": "Uzbekistan v Colombia",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      }
-    },
-    "apf_1539003": {
-      "kind": "match",
-      "label": "Portugal 1–1 Congo DR",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      }
-    },
-    "apf_1539004": {
-      "kind": "prematch",
-      "label": "Czechia v South Africa",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      }
-    },
-    "apf_1489388": {
-      "kind": "prematch",
-      "label": "Mexico v South Korea",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      }
-    }
-  }
+  "pending": {}
 }
