@@ -1,9 +1,11 @@
 # Today's Picks — the day's calls to the social channels.
-# 07:50 UTC cron lands ~08:00 (Troy's 9 a.m.).
+# DISABLED 2026-06-19: the morning "Today's calls" slate duplicated the standalone
+# per-game call cards that social-matchday posts ~3h before each kickoff (every
+# prediction appeared twice). The timely per-game card is the keeper. Left as
+# manual-dispatch only so the slate can still be run by hand if ever wanted.
+#   - cron: '50 7 * * *'   # was: 07:50 UTC daily — removed to stop the duplicate
 name: social-picks
 on:
-  schedule:
-    - cron: '50 7 * * *'
   workflow_dispatch:
     inputs:
       dry_run:

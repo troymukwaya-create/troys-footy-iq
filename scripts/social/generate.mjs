@@ -266,9 +266,12 @@ async function generateLedger() {
   const finish = (src_, dst) => execFileSync('ffmpeg', ['-y', '-i', path.join(OUT, src_),
     '-vf', 'scale=1080:1350:flags=lanczos,unsharp=5:5:0.45,eq=contrast=1.05:saturation=1.06',
     path.join(OUT, dst)], { stdio: 'pipe' });
+  // Morning ledger is the proof card ONLY. The per-match receipt cards already
+  // go out as standalone receipts via social-matchday (~15 min after FT), so
+  // bundling them here re-posted every result a second time. Keep just the
+  // ledger / Brier-track card.
   const imagesIG = ['ledger-ig.png'];
   finish('ledger-ig-raw.png', 'ledger-ig.png');
-  settled.slice(0, 3).forEach((_, j) => { finish(`receipt-${j}.png`, `receipt-${j}-ig.png`); imagesIG.push(`receipt-${j}-ig.png`); });
 
   const tags = buildHashtags(settled.map(s => [s.home_team, s.away_team]));
   // X gets a compact, purpose-built caption: result lines + tags ≤ 280
@@ -280,13 +283,13 @@ async function generateLedger() {
     return `${flagEmoji(s.home_team)} ${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)} ${mark}${v?.scoreline?.exact ? ' · exact ✓' : ''}`;
   });
   const xHead = nMissed === 0 ? `Yesterday: ${n}/${n} inside our range ✓` : `Yesterday: ${nCalled} called, ${nRange} in range, ${nMissed} miss${nMissed === 1 ? '' : 'es'}`;
-  let xCap = `${xHead}\n\n${xLines.join('\n')}\n\nEvery call locked before kickoff. Receipts attached — full reasoning in bio.\n\n${tags.x}`;
-  if (xCap.length > 278) xCap = `${xHead} — receipts attached. Every call locked before kickoff.\n\n${tags.x}`;
+  let xCap = `${xHead}\n\n${xLines.join('\n')}\n\nEvery call locked before kickoff — full receipts on the site, link in bio.\n\n${tags.x}`;
+  if (xCap.length > 278) xCap = `${xHead} — every call locked before kickoff. Full receipts on the site, link in bio.\n\n${tags.x}`;
   writeFileSync(path.join(OUT, 'ledger.json'), JSON.stringify({
     caption: caption + '\n\n' + tags.tg,
     captionX: xCap,
     hashtagsIG: tags.ig,
-    images: ['ledger.png', ...settled.slice(0, 3).map((_, j) => `receipt-${j}.png`)],
+    images: ['ledger.png'],
     imagesIG,
   }, null, 2));
   console.log(`ledger generated: ${n} matches — ${nCalled} called, ${nRange} in range, ${nMissed} missed (+${imagesIG.length} IG-native cards)`);
