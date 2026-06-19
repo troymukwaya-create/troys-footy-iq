@@ -40,7 +40,8 @@
     "apf_1489381",
     "apf_1489382",
     "apf_1539003",
-    "apf_1489384"
+    "apf_1489384",
+    "apf_1489385"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -407,21 +408,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1489385": {
+    },
+    {
       "kind": "match",
+      "id": "apf_1489385",
       "label": "Ghana 1–0 Panama",
+      "at": "2026-06-19T18:22:53.727Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
