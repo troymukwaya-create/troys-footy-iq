@@ -482,6 +482,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489387": {
+      "kind": "match",
+      "label": "Canada 6–0 Qatar",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
