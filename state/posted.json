@@ -542,6 +542,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489389": {
+      "kind": "match",
+      "label": "Brazil 3–0 Haiti",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
