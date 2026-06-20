@@ -494,6 +494,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489388": {
+      "kind": "match",
+      "label": "Mexico 1–0 South Korea",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
