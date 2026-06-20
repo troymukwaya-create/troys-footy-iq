@@ -45,7 +45,8 @@
     "apf_1489385",
     "apf_1489386",
     "apf_1539004",
-    "apf_1539005"
+    "apf_1539005",
+    "apf_1489387"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -467,6 +468,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489387",
+      "label": "Canada 6–0 Qatar",
+      "at": "2026-06-20T11:05:26.459Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -474,18 +486,6 @@
     "apf_1489390": {
       "kind": "prematch",
       "label": "Scotland v Morocco",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489387": {
-      "kind": "match",
-      "label": "Canada 6–0 Qatar",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
