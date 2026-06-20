@@ -48,7 +48,8 @@
     "apf_1539005",
     "apf_1489387",
     "apf_1489388",
-    "apf_1489391"
+    "apf_1489391",
+    "apf_1489390"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -503,22 +504,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489390",
+      "label": "Scotland v Morocco",
+      "at": "2026-06-20T19:04:37.950Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1489390": {
-      "kind": "prematch",
-      "label": "Scotland v Morocco",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1539007": {
       "kind": "prematch",
       "label": "Netherlands v Sweden",
