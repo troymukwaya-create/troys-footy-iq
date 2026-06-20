@@ -566,6 +566,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1539006": {
+      "kind": "match",
+      "label": "Türkiye 0–1 Paraguay",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
