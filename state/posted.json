@@ -44,7 +44,8 @@
     "apf_1489384",
     "apf_1489385",
     "apf_1489386",
-    "apf_1539004"
+    "apf_1539004",
+    "apf_1539005"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -455,6 +456,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539005",
+      "label": "Switzerland 4–1 Bosnia & Herzegovina",
+      "at": "2026-06-20T05:58:20.723Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -462,18 +474,6 @@
     "apf_1489390": {
       "kind": "prematch",
       "label": "Scotland v Morocco",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1539005": {
-      "kind": "match",
-      "label": "Switzerland 4–1 Bosnia & Herzegovina",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
