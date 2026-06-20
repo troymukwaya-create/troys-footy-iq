@@ -47,7 +47,8 @@
     "apf_1539004",
     "apf_1539005",
     "apf_1489387",
-    "apf_1489388"
+    "apf_1489388",
+    "apf_1489391"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -491,6 +492,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489391",
+      "label": "USA 2–0 Australia",
+      "at": "2026-06-20T17:54:56.507Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -519,9 +531,9 @@
         "instagram": 1
       }
     },
-    "apf_1489391": {
-      "kind": "match",
-      "label": "USA 2–0 Australia",
+    "apf_1489393": {
+      "kind": "prematch",
+      "label": "Germany v Ivory Coast",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
