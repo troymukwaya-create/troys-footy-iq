@@ -49,7 +49,8 @@
     "apf_1489387",
     "apf_1489388",
     "apf_1489391",
-    "apf_1489390"
+    "apf_1489390",
+    "apf_1489389"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -515,6 +516,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489389",
+      "label": "Brazil 3–0 Haiti",
+      "at": "2026-06-20T21:44:49.027Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -543,9 +555,9 @@
         "instagram": 1
       }
     },
-    "apf_1489389": {
-      "kind": "match",
-      "label": "Brazil 3–0 Haiti",
+    "apf_1489392": {
+      "kind": "prematch",
+      "label": "Ecuador v Curaçao",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
