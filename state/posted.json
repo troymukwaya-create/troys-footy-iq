@@ -470,6 +470,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1539005": {
+      "kind": "match",
+      "label": "Switzerland 4–1 Bosnia & Herzegovina",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
