@@ -518,6 +518,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489391": {
+      "kind": "match",
+      "label": "USA 2–0 Australia",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
