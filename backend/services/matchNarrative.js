@@ -17,11 +17,12 @@
 
 import axios from 'axios';
 import { logApiCost } from './monitor.js';
+// Opus 4.8 is the current model; brand voice quality matters more than the
+// few cents per finished match. The id (and its NARRATIVE_MODEL env override)
+// lives in config/models.js so every feature shares one source of truth.
+import { NARRATIVE_MODEL } from '../config/models.js';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-// Opus 4.8 is the current model; brand voice quality matters more than the
-// few cents per finished match. Override with NARRATIVE_MODEL if needed.
-const NARRATIVE_MODEL = process.env.NARRATIVE_MODEL || 'claude-opus-4-8';
 const LATE_MIN = 85;            // a goal at/after this minute is "late"
 
 // One polished line per finished match per process — the 90' score never

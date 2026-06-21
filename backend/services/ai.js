@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { query } from '../db/index.js';
 import { logApiCost } from './monitor.js';
+import { CHAT_MODEL } from '../config/models.js';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
@@ -38,7 +39,7 @@ Supported pick types: Over 2.5 Goals, Under 2.5 Goals, BTTS Yes, BTTS No, Home W
 `;
 
     const response = await axios.post(ANTHROPIC_API_URL, {
-      model: 'claude-sonnet-4-6',
+      model: CHAT_MODEL,
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }]
     }, {
@@ -51,7 +52,7 @@ Supported pick types: Over 2.5 Goals, Under 2.5 Goals, BTTS Yes, BTTS No, Home W
 
     // Cost accounting for the CEO dashboard spend card (fire-and-forget).
     try {
-      logApiCost(response.data?.usage, 'claude-sonnet-4-6', 'ai_verdict');
+      logApiCost(response.data?.usage, CHAT_MODEL, 'ai_verdict');
     } catch { /* never let accounting break analysis */ }
 
     const outputText = response.data?.content?.[0]?.text || '{}';

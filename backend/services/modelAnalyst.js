@@ -13,6 +13,7 @@ import axios from 'axios';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 import { getStoredAggregates } from '../engine/feedbackEngine.js';
 import { getActiveVersion, listVersions } from '../engine/modelVersioning.js';
+import { CHAT_MODEL } from '../config/models.js';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
@@ -56,7 +57,7 @@ export async function generateModelInsights() {
     });
 
     const response = await axios.post(ANTHROPIC_API_URL, {
-      model: 'claude-sonnet-4-6',
+      model: CHAT_MODEL,
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     }, {

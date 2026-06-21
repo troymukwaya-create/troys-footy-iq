@@ -17,6 +17,7 @@ function hasAPS() { return APS_KEY.length > 10 && !APS_KEY.startsWith('API_KEY')
 import * as analyst from '../services/analyst.js';
 import * as fd from '../services/footballdata.js';
 import cacheService from '../services/cache.js';
+import { CHAT_MODEL } from '../config/models.js';
 
 const DEMO_ANALYSES = {
   'dm1': {
@@ -226,7 +227,7 @@ Best pick: ${context?.bestPick?.name || 'N/A'} at ${context?.bestPick?.prob || '
 This platform is for analysis only. Never encourage gambling. Be data-driven and concise.`
 
     const r = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-6',
+      model: CHAT_MODEL,
       max_tokens: 400,
       system,
       messages: [...(history || []).slice(-6), { role:'user', content: message }],
@@ -288,7 +289,7 @@ Return ONLY this JSON:
 }`;
 
     const r = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-6',
+      model: CHAT_MODEL,
       max_tokens: 400,
       messages: [{ role: 'user', content: prompt }],
     }, {

@@ -19,6 +19,7 @@ const router = express.Router();
 import * as fd from '../services/footballdata.js';
 import api from '../services/apisports.js';
 import cacheService from '../services/cache.js';
+import { CHAT_MODEL } from '../config/models.js';
 import {
   normalizeTeamStats,
   normalizeH2H,
@@ -619,7 +620,7 @@ with near-certain markets like "Over 0.5 Goals". Return ONLY this JSON (no markd
 }`;
 
   const response = await axios.post('https://api.anthropic.com/v1/messages', {
-    model: 'claude-sonnet-4-6',
+    model: CHAT_MODEL,
     max_tokens: 800,
     messages: [{ role: 'user', content: prompt }],
   }, {

@@ -6,6 +6,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import axios from 'axios';
 import { computeConfidence } from './probabilityEngine.js';
 import { getModelMaturity } from '../engine/trustSignals.js';
+import { CHAT_MODEL } from '../config/models.js';
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 
@@ -268,7 +269,7 @@ Return ONLY this JSON (no markdown, no explanation outside JSON):
 
   try {
     const res = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-6',
+      model: CHAT_MODEL,
       max_tokens: 1200,
       messages: [{ role: 'user', content: prompt }],
     }, {
@@ -351,7 +352,7 @@ Return ONLY this JSON:
 
   try {
     const res = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-6',
+      model: CHAT_MODEL,
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     }, {
@@ -396,7 +397,7 @@ Be direct, specific, and data-driven. Keep answers concise but thorough.`;
 
   try {
     const res = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-6',
+      model: CHAT_MODEL,
       max_tokens: 600,
       system: systemPrompt,
       messages,
