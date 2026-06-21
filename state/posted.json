@@ -614,6 +614,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489398": {
+      "kind": "prematch",
+      "label": "Uruguay v Cape Verde Islands",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
