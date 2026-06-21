@@ -226,7 +226,7 @@ Best pick: ${context?.bestPick?.name || 'N/A'} at ${context?.bestPick?.prob || '
 This platform is for analysis only. Never encourage gambling. Be data-driven and concise.`
 
     const r = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 400,
       system,
       messages: [...(history || []).slice(-6), { role:'user', content: message }],
@@ -288,7 +288,7 @@ Return ONLY this JSON:
 }`;
 
     const r = await axios.post('https://api.anthropic.com/v1/messages', {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 400,
       messages: [{ role: 'user', content: prompt }],
     }, {

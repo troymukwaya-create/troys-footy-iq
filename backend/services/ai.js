@@ -38,7 +38,7 @@ Supported pick types: Over 2.5 Goals, Under 2.5 Goals, BTTS Yes, BTTS No, Home W
 `;
 
     const response = await axios.post(ANTHROPIC_API_URL, {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }]
     }, {
@@ -51,7 +51,7 @@ Supported pick types: Over 2.5 Goals, Under 2.5 Goals, BTTS Yes, BTTS No, Home W
 
     // Cost accounting for the CEO dashboard spend card (fire-and-forget).
     try {
-      logApiCost(response.data?.usage, 'claude-sonnet-4-20250514', 'ai_verdict');
+      logApiCost(response.data?.usage, 'claude-sonnet-4-6', 'ai_verdict');
     } catch { /* never let accounting break analysis */ }
 
     const outputText = response.data?.content?.[0]?.text || '{}';

@@ -56,7 +56,7 @@ export async function generateModelInsights() {
     });
 
     const response = await axios.post(ANTHROPIC_API_URL, {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }],
     }, {

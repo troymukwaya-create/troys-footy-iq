@@ -368,7 +368,9 @@ export async function checkForModelDegradation() {
 // cached = prompt-cache read rate (~10% of input).
 const CLAUDE_PRICING = {
   default:                    { input: 3.0, output: 15.0, cached: 0.30 },
-  'claude-sonnet-4-20250514': { input: 3.0, output: 15.0, cached: 0.30 },
+  'claude-sonnet-4-6':        { input: 3.0, output: 15.0, cached: 0.30 },
+  'claude-opus-4-8':          { input: 5.0, output: 25.0, cached: 0.50 },
+  'claude-sonnet-4-20250514': { input: 3.0, output: 15.0, cached: 0.30 }, // retired 2026-06-15 — kept for historical logs
   'claude-3-5-haiku':         { input: 0.80, output: 4.0, cached: 0.08 },
 };
 
