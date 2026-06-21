@@ -56,7 +56,8 @@
     "apf_1489393",
     "apf_1489392",
     "apf_1489394",
-    "apf_1489397"
+    "apf_1489397",
+    "apf_1489395"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -599,15 +600,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489395",
+      "label": "Belgium v Iran",
+      "at": "2026-06-21T22:39:43.000Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1489395": 1
-  },
+  "verdictWait": {},
   "pending": {
-    "apf_1489395": {
+    "apf_1489398": {
       "kind": "prematch",
-      "label": "Belgium v Iran",
+      "label": "Uruguay v Cape Verde Islands",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
@@ -617,9 +627,9 @@
         "instagram": 1
       }
     },
-    "apf_1489398": {
+    "apf_1489396": {
       "kind": "prematch",
-      "label": "Uruguay v Cape Verde Islands",
+      "label": "New Zealand v Egypt",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
