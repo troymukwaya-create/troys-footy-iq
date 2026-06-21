@@ -16,17 +16,23 @@ const WC_SEASON = 2026;             // API-Football season for World Cup 2026
 const memory = new Map();           // teamId -> { form, loadedAt }
 const MEMORY_TTL = 30 * 60 * 1000;  // re-read from DB every 30 min
 
-// ─── POST-MATCHDAY SIGNAL FLAGS (default OFF — additive, A/B-able) ───
-// Each enriches the cached form blob with a signal the base model is blind to.
-// OFF by default so a deploy changes nothing live until the flag is flipped in
-// Render; bounded + no-op without data even when ON. See engine/{suspensions,
-// xgForm,stakes}.js. Extra API cost per team when ON (events / stats calls) —
-// scoped to the most-recent / World-Cup matches and capped.
-const flag = (k) => String(process.env[k] ?? 'false').toLowerCase() === 'true';
+// ─── POST-MATCHDAY SIGNAL FLAGS ─────────────────────────────────────
+// Each enriches the cached form blob with a signal the base model is blind to:
+// red-card suspensions, xG-aware form, and group-standing stakes. All are
+// additive + bounded + a no-op without data. DEFAULT ON (Troy approved all
+// three — "use the different statistics"); set ENABLE_X=false in Render to
+// disable any one. Extra API cost per team when ON (events / stats / standings
+// calls) — scoped to the most-recent / World-Cup matches and capped.
+const flag = (k) => String(process.env[k] ?? 'true').toLowerCase() === 'true';
 const ENABLE_SUSPENSIONS = flag('ENABLE_SUSPENSIONS');
 const ENABLE_XG_FORM = flag('ENABLE_XG_FORM');
 const ENABLE_STAKES = flag('ENABLE_STAKES');
 const XG_MAX_MATCHES = 3;          // cap xG stat calls per team per refresh
+
+/** Current signal-flag state — surfaced on /health for verification. */
+export function getSignalFlags() {
+  return { suspensions: ENABLE_SUSPENSIONS, xgForm: ENABLE_XG_FORM, stakes: ENABLE_STAKES };
+}
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 

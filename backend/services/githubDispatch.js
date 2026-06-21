@@ -18,14 +18,20 @@ export const ALLOWED_WORKFLOWS = new Set(['social-matchday.yml', 'social-ledger.
 /** Whether a GitHub token is configured (so callers can no-op cleanly). */
 export function hasGithubToken() { return !!process.env.GITHUB_TOKEN; }
 
+// Last dispatch outcome — surfaced on /health so the heartbeat is verifiable
+// without reading Render logs (shows whether the token actually works).
+let _last = null;
+export function getLastDispatch() { return _last; }
+
 /**
  * Dispatch a workflow on the given ref.
  * @returns {Promise<{ok:boolean, status:number, message:string}>}
  */
 export async function dispatchWorkflow(workflow, inputs = {}, ref = 'main') {
+  const stamp = (out) => { _last = { ...out, workflow, at: new Date().toISOString() }; return out; };
   const token = process.env.GITHUB_TOKEN;
-  if (!token) return { ok: false, status: 0, message: 'GITHUB_TOKEN not set' };
-  if (!ALLOWED_WORKFLOWS.has(workflow)) return { ok: false, status: 0, message: `unknown workflow: ${workflow}` };
+  if (!token) return stamp({ ok: false, status: 0, message: 'GITHUB_TOKEN not set' });
+  if (!ALLOWED_WORKFLOWS.has(workflow)) return stamp({ ok: false, status: 0, message: `unknown workflow: ${workflow}` });
   try {
     const r = await fetch(`https://api.github.com/repos/${REPO}/actions/workflows/${workflow}/dispatches`, {
       method: 'POST',
@@ -37,11 +43,11 @@ export async function dispatchWorkflow(workflow, inputs = {}, ref = 'main') {
       },
       body: JSON.stringify({ ref, inputs }),
     });
-    if (r.status === 204) return { ok: true, status: 204, message: 'dispatched' };
+    if (r.status === 204) return stamp({ ok: true, status: 204, message: 'dispatched' });
     const body = await r.text();
-    return { ok: false, status: r.status, message: `github ${r.status}: ${body.slice(0, 200)}` };
+    return stamp({ ok: false, status: r.status, message: `github ${r.status}: ${body.slice(0, 200)}` });
   } catch (err) {
-    return { ok: false, status: 0, message: err.message };
+    return stamp({ ok: false, status: 0, message: err.message });
   }
 }
 

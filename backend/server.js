@@ -75,6 +75,8 @@ import authRouter from './routes/auth.js';
 import slipsRouter from './routes/slips.js';
 import slipShareRouter from './routes/slipShare.js';
 import { registerClientCounter } from './services/runtimeStats.js';
+import { hasGithubToken, getLastDispatch } from './services/githubDispatch.js';
+import { getSignalFlags } from './services/wcForm.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -156,8 +158,13 @@ app.get('/health', (_req, res) => {
       hasApisports:   !!hasApi,
       hasFootballdata: !!hasFd,
       hasClaude:      !!hasClaude,
+      hasGithubToken: hasGithubToken(),   // heartbeat armed? (boolean, never the token)
       nodeEnv:        process.env.NODE_ENV || 'development',
     },
+    // Engine signal flags (suspensions / xG-form / stakes) + last heartbeat
+    // dispatch outcome — so the social heartbeat is verifiable without logs.
+    engine: { signals: getSignalFlags() },
+    socialHeartbeat: { armed: hasGithubToken(), last: getLastDispatch() },
     warnings: warnings.length ? warnings : null,
   });
 });
