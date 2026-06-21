@@ -52,7 +52,8 @@
     "apf_1489390",
     "apf_1489389",
     "apf_1539006",
-    "apf_1539007"
+    "apf_1539007",
+    "apf_1489393"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -551,22 +552,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489393",
+      "label": "Germany v Ivory Coast",
+      "at": "2026-06-21T07:18:00.408Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1489393": {
-      "kind": "prematch",
-      "label": "Germany v Ivory Coast",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1489392": {
       "kind": "prematch",
       "label": "Ecuador v Curaçao",
