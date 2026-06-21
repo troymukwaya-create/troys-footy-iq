@@ -602,6 +602,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489395": {
+      "kind": "prematch",
+      "label": "Belgium v Iran",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
