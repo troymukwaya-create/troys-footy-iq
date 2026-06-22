@@ -650,6 +650,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1539017": {
+      "kind": "prematch",
+      "label": "France v Iraq",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
