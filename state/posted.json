@@ -57,7 +57,8 @@
     "apf_1489392",
     "apf_1489394",
     "apf_1489397",
-    "apf_1489395"
+    "apf_1489395",
+    "apf_1489398"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -611,22 +612,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489398",
+      "label": "Uruguay v Cape Verde Islands",
+      "at": "2026-06-22T02:43:22.077Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1489398": {
-      "kind": "prematch",
-      "label": "Uruguay v Cape Verde Islands",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1489396": {
       "kind": "prematch",
       "label": "New Zealand v Egypt",
