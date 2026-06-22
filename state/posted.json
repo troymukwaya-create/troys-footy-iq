@@ -59,7 +59,8 @@
     "apf_1489397",
     "apf_1489395",
     "apf_1489398",
-    "apf_1489396"
+    "apf_1489396",
+    "apf_1489399"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -635,13 +636,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489399",
+      "label": "Argentina v Austria",
+      "at": "2026-06-22T21:22:22.293Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1489399": {
+    "apf_1539017": {
       "kind": "prematch",
-      "label": "Argentina v Austria",
+      "label": "France v Iraq",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
@@ -651,9 +663,9 @@
         "instagram": 1
       }
     },
-    "apf_1539017": {
+    "apf_1489401": {
       "kind": "prematch",
-      "label": "France v Iraq",
+      "label": "Norway v Senegal",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
