@@ -62,7 +62,8 @@
     "apf_1489396",
     "apf_1489399",
     "apf_1539017",
-    "apf_1489401"
+    "apf_1489401",
+    "apf_1489400"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -671,13 +672,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489400",
+      "label": "Jordan v Algeria",
+      "at": "2026-06-23T13:58:07.605Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1489400": {
+    "apf_1489404": {
       "kind": "prematch",
-      "label": "Jordan v Algeria",
+      "label": "Portugal v Uzbekistan",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
