@@ -61,7 +61,8 @@
     "apf_1489398",
     "apf_1489396",
     "apf_1489399",
-    "apf_1539017"
+    "apf_1539017",
+    "apf_1489401"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -659,24 +660,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1489401": 1
-  },
-  "pending": {
-    "apf_1489401": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489401",
       "label": "Norway v Senegal",
+      "at": "2026-06-23T11:21:15.354Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
-    },
+    }
+  ],
+  "verdictWait": {},
+  "pending": {
     "apf_1489400": {
       "kind": "prematch",
       "label": "Jordan v Algeria",
