@@ -674,6 +674,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489400": {
+      "kind": "prematch",
+      "label": "Jordan v Algeria",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
