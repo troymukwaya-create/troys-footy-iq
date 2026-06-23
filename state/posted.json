@@ -63,7 +63,8 @@
     "apf_1489399",
     "apf_1539017",
     "apf_1489401",
-    "apf_1489400"
+    "apf_1489400",
+    "apf_1489404"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -683,23 +684,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1489404": 1
-  },
-  "pending": {
-    "apf_1489404": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489404",
       "label": "Portugal v Uzbekistan",
+      "at": "2026-06-23T21:55:33.829Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
