@@ -709,7 +709,9 @@
       }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1489402": 1
+  },
   "pending": {
     "apf_1489402": {
       "kind": "match",
