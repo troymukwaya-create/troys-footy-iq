@@ -65,7 +65,8 @@
     "apf_1539017",
     "apf_1489401",
     "apf_1489400",
-    "apf_1489404"
+    "apf_1489404",
+    "apf_1489402"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -707,23 +708,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1489402": 1
-  },
-  "pending": {
-    "apf_1489402": {
+    },
+    {
       "kind": "match",
+      "id": "apf_1489402",
       "label": "England 0–0 Ghana",
+      "at": "2026-06-24T07:02:10.144Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
