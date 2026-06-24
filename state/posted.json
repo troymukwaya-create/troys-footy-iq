@@ -721,8 +721,19 @@
       }
     }
   ],
-  "verdictWait": {
-    "apf_1489403": 1
-  },
-  "pending": {}
+  "verdictWait": {},
+  "pending": {
+    "apf_1489403": {
+      "kind": "match",
+      "label": "Panama 0–1 Croatia",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
