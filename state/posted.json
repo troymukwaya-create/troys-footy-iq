@@ -67,7 +67,8 @@
     "apf_1489400",
     "apf_1489404",
     "apf_1489402",
-    "apf_1489403"
+    "apf_1489403",
+    "apf_1539008"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -731,27 +732,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539008",
+      "label": "Colombia 1–0 Congo DR",
+      "at": "2026-06-24T23:17:48.979Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1539008": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1489405": {
       "kind": "prematch",
       "label": "Morocco v Haiti",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1539008": {
-      "kind": "match",
-      "label": "Colombia 1–0 Congo DR",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
