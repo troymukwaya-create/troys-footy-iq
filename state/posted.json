@@ -733,7 +733,9 @@
       }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1539008": 1
+  },
   "pending": {
     "apf_1489405": {
       "kind": "prematch",
@@ -750,6 +752,18 @@
     "apf_1539008": {
       "kind": "match",
       "label": "Colombia 1–0 Congo DR",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1539010": {
+      "kind": "prematch",
+      "label": "Czechia v Mexico",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
