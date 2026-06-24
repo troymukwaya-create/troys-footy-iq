@@ -733,6 +733,21 @@
       }
     }
   ],
-  "verdictWait": {},
-  "pending": {}
+  "verdictWait": {
+    "apf_1539008": 1
+  },
+  "pending": {
+    "apf_1489405": {
+      "kind": "prematch",
+      "label": "Morocco v Haiti",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
