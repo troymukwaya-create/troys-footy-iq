@@ -794,6 +794,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489406": {
+      "kind": "match",
+      "label": "Scotland 0–3 Brazil",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
