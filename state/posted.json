@@ -68,7 +68,8 @@
     "apf_1489404",
     "apf_1489402",
     "apf_1489403",
-    "apf_1539008"
+    "apf_1539008",
+    "apf_1539009"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -743,6 +744,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539009",
+      "label": "Bosnia & Herzegovina 3–1 Qatar",
+      "at": "2026-06-25T05:41:47.791Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -762,18 +774,6 @@
     "apf_1539010": {
       "kind": "prematch",
       "label": "Czechia v Mexico",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1539009": {
-      "kind": "match",
-      "label": "Bosnia & Herzegovina 3–1 Qatar",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
