@@ -806,6 +806,30 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1539011": {
+      "kind": "prematch",
+      "label": "Japan v Sweden",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1489407": {
+      "kind": "match",
+      "label": "South Africa 1–0 South Korea",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
