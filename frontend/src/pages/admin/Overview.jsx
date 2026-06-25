@@ -49,6 +49,7 @@ export default function Overview() {
   const s = useAdmin('/system', 30000).data || {};
   const alerts = useAdmin('/alerts?limit=6', 60000).data || [];
   const cost = a.cost || {};
+  const brier = o.predictions?.avgBrier != null ? Number(o.predictions.avgBrier) : null;
 
   return (
     <>
@@ -59,8 +60,18 @@ export default function Overview() {
       <Section title="At a glance — tap any tile for in-depth stats">
         <div style={grid('150px')}>
           <Metric live label="Live visitors" value={o.traffic?.liveVisitors ?? '—'} sub="active in last 5 min" color={C.cyan} to="/admin/visitors" />
-          <Metric label="Visitors today" value={o.traffic?.visitorsToday ?? '—'} sub={`${o.traffic?.viewsToday ?? 0} pageviews`} to="/admin/traffic" />
-          <Metric label="Brier score" value={o.predictions?.avgBrier != null ? Number(o.predictions.avgBrier).toFixed(3) : '—'} sub={o.predictions?.winRateWeek != null ? `${o.predictions.winRateWeek}% win rate (7d)` : 'awaiting results'} color={C.accent} to="/admin/predictions" />
+          {/* Rolling 24h (not calendar-day) so it never resets to ~0 at UTC
+              midnight, with a vs-prior-24h trend so a dip has context. */}
+          <Metric label="Visitors (24h)" value={o.traffic?.visitors24h ?? '—'}
+            trend={{ curr: o.traffic?.visitors24h, prev: o.traffic?.visitorsPrev24h, goodDirection: 'up', label: 'vs prev 24h' }}
+            sub={`${o.traffic?.views24h ?? 0} pageviews`} to="/admin/traffic" />
+          {/* Brier: LOWER is better — green while it beats the 0.222 coin-flip
+              line, so a falling number reads as winning, not a crash. */}
+          <Metric label="Brier score" value={brier != null ? brier.toFixed(3) : '—'}
+            color={brier == null ? C.text : brier < 0.222 ? C.ok : brier < 0.27 ? C.warn : C.bad}
+            sub={brier == null ? 'awaiting results'
+              : `${brier < 0.222 ? '✓ beating' : 'vs'} 0.222 coin-flip${o.predictions?.winRateWeek != null ? ` · ${o.predictions.winRateWeek}% win 7d` : ''}`}
+            to="/admin/predictions" />
           <Metric label="Claude spend (mo)" value={fmtUsd(cost.monthUsd)} sub={`${fmtUsd(cost.todayUsd)} today`} to="/admin/spend" />
           <Metric label="API calls today" value={(a.usage?.apisports?.today ?? 0) + (a.usage?.footballdata?.today ?? 0)} sub="quota & health" to="/admin/api" />
         </div>

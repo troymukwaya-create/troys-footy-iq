@@ -70,8 +70,33 @@ export function Card({ children, style, onClick }) {
   );
 }
 
+// Trend chip — direction + % change vs a prior period, coloured by whether the
+// move is GOOD. goodDirection='down' (e.g. Brier) makes a fall read green; the
+// default 'up' makes a fall read red (visitors, subscribers). This is what stops
+// a number from looking scary without context.
+export function Trend({ curr, prev, goodDirection = 'up', label }) {
+  const c = Number(curr) || 0, p = Number(prev) || 0;
+  const diff = c - p;
+  const pct = p === 0 ? null : (diff / p) * 100;
+  const noBase = p === 0;
+  const flat = !noBase && Math.abs(pct) < 1;
+  const up = diff > 0;
+  const neutral = flat || (noBase && c === 0);
+  const good = up === (goodDirection === 'up');
+  const color = neutral ? C.t3 : good ? C.ok : C.bad;
+  const arrow = neutral ? '→' : up ? '▲' : '▼';
+  const txt = noBase ? (c > 0 ? 'new' : '—') : `${Math.abs(pct).toFixed(0)}%`;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 700, color }}>
+      <span style={{ fontSize: 8 }}>{arrow}</span>{txt}
+      {label && <span style={{ color: C.t3, fontWeight: 400, marginLeft: 1 }}>{label}</span>}
+    </span>
+  );
+}
+
 // Clickable KPI tile — shows a "details ›" affordance when it links somewhere.
-export function Metric({ label, value, sub, color, live, to }) {
+// Pass `trend={{ curr, prev, goodDirection, label }}` to surface a vs-prior chip.
+export function Metric({ label, value, sub, color, live, to, trend }) {
   const navigate = useNavigate();
   return (
     <Card onClick={to ? () => navigate(to) : undefined}>
@@ -81,7 +106,12 @@ export function Metric({ label, value, sub, color, live, to }) {
         {to && <span style={{ marginLeft: 'auto', fontSize: 10, color: C.accent }}>details ›</span>}
       </div>
       <div style={{ fontFamily: C.mono, fontSize: 30, fontWeight: 700, color: color || C.text, lineHeight: 1, fontFeatureSettings: '"tnum"' }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: C.t3, marginTop: 6 }}>{sub}</div>}
+      {(trend || sub) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+          {trend && <Trend {...trend} />}
+          {sub && <span style={{ fontSize: 11, color: C.t3 }}>{sub}</span>}
+        </div>
+      )}
     </Card>
   );
 }

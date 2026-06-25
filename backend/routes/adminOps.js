@@ -173,20 +173,27 @@ router.get('/growth', async (_req, res) => {
     const topCodes = await safeQuery(`
       SELECT code, hits, combined_odds, created_at FROM shared_slips
       ORDER BY hits DESC, created_at DESC LIMIT 5`);
+    // Current 7d AND the prior 7d (8–14 days ago) for every funnel event, so the
+    // dashboard can show a real week-over-week trend instead of a bare number.
     const funnel = await safeQuery(`
-      SELECT event_name, COUNT(*)::int AS n FROM site_events
+      SELECT event_name,
+             COUNT(*) FILTER (WHERE created_at > NOW() - interval '7 days')::int AS n,
+             COUNT(*) FILTER (WHERE created_at > NOW() - interval '14 days' AND created_at <= NOW() - interval '7 days')::int AS prev
+      FROM site_events
       WHERE event_name IN ('slip_transfer_opened','slip_shared','slip_link_opened','slip_bookie_opened')
-        AND created_at > NOW() - interval '7 days'
+        AND created_at > NOW() - interval '14 days'
       GROUP BY event_name`);
     const subs = await safeQuery(`
       SELECT COUNT(*) FILTER (WHERE status = 'active')::int AS active,
-             COUNT(*) FILTER (WHERE created_at > NOW() - interval '7 days')::int AS last7d
+             COUNT(*) FILTER (WHERE created_at > NOW() - interval '7 days')::int AS last7d,
+             COUNT(*) FILTER (WHERE created_at > NOW() - interval '14 days' AND created_at <= NOW() - interval '7 days')::int AS prev7d
       FROM subscribers`);
     res.json({
       error: false,
       data: {
         slips: { ...slips.rows[0], top: topCodes.rows },
         funnel7d: Object.fromEntries(funnel.rows.map(r => [r.event_name, r.n])),
+        funnelPrev7d: Object.fromEntries(funnel.rows.map(r => [r.event_name, r.prev])),
         subscribers: subs.rows[0],
       },
     });

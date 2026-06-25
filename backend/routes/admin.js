@@ -68,7 +68,16 @@ router.get('/overview', async (req, res) => {
           COUNT(DISTINCT visitor_id) FILTER (WHERE created_at >= NOW() - INTERVAL '5 minutes')  AS live_visitors,
           COUNT(*)                   FILTER (WHERE event_name = '$pageview' AND created_at >= CURRENT_DATE) AS views_today,
           COUNT(DISTINCT visitor_id) FILTER (WHERE created_at >= CURRENT_DATE)                   AS visitors_today,
-          COUNT(DISTINCT visitor_id) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')      AS visitors_week
+          -- Rolling 24h windows (NOT calendar-day): a "today" counter keyed to
+          -- CURRENT_DATE resets to ~0 at 00:00 UTC, so checking the dashboard in
+          -- the morning looks like traffic crashed. Rolling 24h + the prior 24h
+          -- give a stable number and an honest trend instead of a daily scare.
+          COUNT(DISTINCT visitor_id) FILTER (WHERE created_at >= NOW() - INTERVAL '24 hours')    AS visitors_24h,
+          COUNT(DISTINCT visitor_id) FILTER (WHERE created_at >= NOW() - INTERVAL '48 hours' AND created_at < NOW() - INTERVAL '24 hours') AS visitors_prev_24h,
+          COUNT(*) FILTER (WHERE event_name = '$pageview' AND created_at >= NOW() - INTERVAL '24 hours') AS views_24h,
+          COUNT(*) FILTER (WHERE event_name = '$pageview' AND created_at >= NOW() - INTERVAL '48 hours' AND created_at < NOW() - INTERVAL '24 hours') AS views_prev_24h,
+          COUNT(DISTINCT visitor_id) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')      AS visitors_week,
+          COUNT(DISTINCT visitor_id) FILTER (WHERE created_at >= NOW() - INTERVAL '14 days' AND created_at < NOW() - INTERVAL '7 days') AS visitors_prev_week
         FROM site_events
         WHERE ${REAL_TRAFFIC}${demoClause(req)}
       `);
@@ -98,6 +107,12 @@ router.get('/overview', async (req, res) => {
         viewsToday: Number(t.views_today || 0),
         visitorsToday: Number(t.visitors_today || 0),
         visitorsWeek: Number(t.visitors_week || 0),
+        // Rolling windows + prior period for trend deltas on the dashboard.
+        visitors24h: Number(t.visitors_24h || 0),
+        visitorsPrev24h: Number(t.visitors_prev_24h || 0),
+        views24h: Number(t.views_24h || 0),
+        viewsPrev24h: Number(t.views_prev_24h || 0),
+        visitorsPrevWeek: Number(t.visitors_prev_week || 0),
       };
       out.predictions = {
         total: p.total_predictions || 0,

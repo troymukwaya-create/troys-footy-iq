@@ -152,9 +152,12 @@ function Growth() {
       <div style={grid('150px')}>
         <Metric label="Slip links minted" value={g.slips?.created ?? 0} />
         <Metric label="Shared slips opened" value={g.slips?.opens ?? 0} color={C.ok} />
-        <Metric label="Bookmaker click-outs (7d)" value={g.funnel7d?.slip_bookie_opened ?? 0} color={C.accent} sub="the affiliate-pitch number" />
-        <Metric label="Transfer sheet opens (7d)" value={g.funnel7d?.slip_transfer_opened ?? 0} />
-        <Metric label="Active subscribers" value={g.subscribers?.active ?? 0} sub={`+${g.subscribers?.last7d ?? 0} this week`} color={C.warn} />
+        <Metric label="Bookmaker click-outs (7d)" value={g.funnel7d?.slip_bookie_opened ?? 0} color={C.accent} sub="the affiliate-pitch number"
+          trend={{ curr: g.funnel7d?.slip_bookie_opened, prev: g.funnelPrev7d?.slip_bookie_opened, goodDirection: 'up', label: 'vs prev 7d' }} />
+        <Metric label="Transfer sheet opens (7d)" value={g.funnel7d?.slip_transfer_opened ?? 0}
+          trend={{ curr: g.funnel7d?.slip_transfer_opened, prev: g.funnelPrev7d?.slip_transfer_opened, goodDirection: 'up', label: 'vs prev 7d' }} />
+        <Metric label="Active subscribers" value={g.subscribers?.active ?? 0} sub={`+${g.subscribers?.last7d ?? 0} this week`} color={C.warn}
+          trend={{ curr: g.subscribers?.last7d, prev: g.subscribers?.prev7d, goodDirection: 'up', label: 'signups vs last wk' }} />
       </div>
       {(g.slips?.top || []).filter(t => t.hits > 0).length > 0 && (
         <Card style={{ marginTop: 10 }}>
