@@ -72,7 +72,8 @@
     "apf_1539009",
     "apf_1489408",
     "apf_1489406",
-    "apf_1489405"
+    "apf_1489405",
+    "apf_1489407"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -791,6 +792,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489407",
+      "label": "South Africa 1–0 South Korea",
+      "at": "2026-06-25T21:59:40.051Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -810,18 +822,6 @@
     "apf_1539011": {
       "kind": "prematch",
       "label": "Japan v Sweden",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489407": {
-      "kind": "match",
-      "label": "South Africa 1–0 South Korea",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
