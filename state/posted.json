@@ -782,6 +782,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489408": {
+      "kind": "match",
+      "label": "Switzerland 2–1 Canada",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
