@@ -73,7 +73,8 @@
     "apf_1489408",
     "apf_1489406",
     "apf_1489405",
-    "apf_1489407"
+    "apf_1489407",
+    "apf_1539010"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -803,13 +804,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539010",
+      "label": "Czechia v Mexico",
+      "at": "2026-06-25T23:19:40.602Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1539010": {
+    "apf_1539011": {
       "kind": "prematch",
-      "label": "Czechia v Mexico",
+      "label": "Japan v Sweden",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
@@ -819,9 +831,9 @@
         "instagram": 1
       }
     },
-    "apf_1539011": {
+    "apf_1539012": {
       "kind": "prematch",
-      "label": "Japan v Sweden",
+      "label": "Türkiye v USA",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
