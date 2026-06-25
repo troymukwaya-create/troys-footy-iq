@@ -70,7 +70,8 @@
     "apf_1489403",
     "apf_1539008",
     "apf_1539009",
-    "apf_1489408"
+    "apf_1489408",
+    "apf_1489406"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -767,6 +768,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489406",
+      "label": "Scotland 0–3 Brazil",
+      "at": "2026-06-25T16:03:54.138Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -786,18 +798,6 @@
     "apf_1539010": {
       "kind": "prematch",
       "label": "Czechia v Mexico",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489406": {
-      "kind": "match",
-      "label": "Scotland 0–3 Brazil",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
