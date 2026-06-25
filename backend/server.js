@@ -16,6 +16,7 @@ console.log('  ENV loaded from:', envPath);
 const APISPORTS_KEY = process.env.APISPORTS_KEY || '';
 const FD_TOKEN = process.env.FOOTBALLDATA_TOKEN || '';
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY || '';
+const THE_ODDS_KEY = process.env.THE_ODDS_API_KEY || '';
 const DB_URL = process.env.DATABASE_URL || '';
 
 function isValidKey(key, minLen = 10) {
@@ -27,6 +28,7 @@ function isValidKey(key, minLen = 10) {
 console.log(`  APISPORTS_KEY:     ${isValidKey(APISPORTS_KEY) ? 'YES (' + APISPORTS_KEY.slice(0,4) + '****)' : 'NO'}`);
 console.log(`  FOOTBALLDATA_TOKEN: ${isValidKey(FD_TOKEN) ? 'YES (' + FD_TOKEN.slice(0,4) + '****)' : 'NO'}`);
 console.log(`  ANTHROPIC_API_KEY: ${isValidKey(CLAUDE_KEY, 20) ? 'YES' : 'NO'}`);
+console.log(`  THE_ODDS_API_KEY:  ${isValidKey(THE_ODDS_KEY) ? 'YES (' + THE_ODDS_KEY.slice(0,4) + '****)' : 'NO — market blend DISABLED, predictions run Elo-only'}`);
 console.log(`  DATABASE_URL:      ${DB_URL ? 'YES' : 'NO'}`);
 console.log('==========================================');
 
@@ -142,11 +144,13 @@ app.get('/health', (_req, res) => {
   const hasApi     = isValidKey(APISPORTS_KEY);
   const hasFd      = isValidKey(FD_TOKEN);
   const hasClaude  = isValidKey(CLAUDE_KEY, 20);
+  const hasTheOdds = isValidKey(THE_ODDS_KEY);
 
   const warnings = [];
   if (!hasDb)     warnings.push('DATABASE_URL not set — predictions will not be persisted');
   if (!hasApi && !hasFd) warnings.push('No data API keys set — demo mode active');
   if (!hasClaude) warnings.push('ANTHROPIC_API_KEY not set — AI analysis disabled');
+  if (!hasTheOdds) warnings.push('THE_ODDS_API_KEY not set — market blend disabled, predictions run Elo-only');
 
   res.json({
     status: 'ok',
@@ -158,6 +162,7 @@ app.get('/health', (_req, res) => {
       hasApisports:   !!hasApi,
       hasFootballdata: !!hasFd,
       hasClaude:      !!hasClaude,
+      hasTheOdds:     !!hasTheOdds,        // The Odds API (market blend) configured?
       hasGithubToken: hasGithubToken(),   // heartbeat armed? (boolean, never the token)
       nodeEnv:        process.env.NODE_ENV || 'development',
     },

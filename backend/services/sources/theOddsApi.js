@@ -5,6 +5,7 @@
 // to API-Sports otherwise. Docs: https://the-odds-api.com/liveapi/guides/v4/
 
 import cache from '../cache.js';
+import { recordApiCall } from '../monitor.js';
 
 const BASE = 'https://api.the-odds-api.com/v4';
 const REGIONS = process.env.THE_ODDS_API_REGIONS || 'uk,eu';
@@ -45,9 +46,18 @@ export async function getEvents() {
 
   const events = [];
   for (const sport of SPORT_KEYS) {
+    const t0 = Date.now();
     try {
-      for (const ev of await fetchSport(sport)) events.push(normalizeEvent(ev));
+      const raw = await fetchSport(sport);
+      // Record EVERY real (cache-miss) fetch so the CEO dashboard's Odds-API
+      // usage is accurate. Previously only the rarely-hit display route
+      // recorded calls, so the lock job (every 10 min) and the page-view
+      // predictions — the bulk of real usage — went uncounted and the
+      // dashboard read "0 calls / not active" even while the API was in use.
+      recordApiCall('theodds', true, Date.now() - t0, sport);
+      for (const ev of raw) events.push(normalizeEvent(ev));
     } catch (err) {
+      recordApiCall('theodds', false, Date.now() - t0, sport);
       console.warn(`[ODDS:theoddsapi] ${sport} fetch failed:`, err.response?.status || err.message);
     }
   }

@@ -7,7 +7,6 @@ import api from './apisports.js';
 import * as toa from './sources/theOddsApi.js';
 import cache from './cache.js';
 import { predictStatic } from '../engine/inferenceEngine.js';
-import { recordApiCall } from './monitor.js';
 
 const SUPPORTED_MARKETS = {
   'Match Winner': '1X2',
@@ -48,15 +47,13 @@ export async function getFixtureOdds(fixtureId, teams = null) {
   if (cached) return cached;
 
   // Preferred: The Odds API (paid, broader bookmaker coverage), matched by team name.
+  // getEvents() records its own usage now, so we don't double-count here.
   if (toa.hasKey() && teams?.home && teams?.away) {
-    const t0 = Date.now();
     try {
       const events = await toa.getEvents();
-      recordApiCall('theodds', true, Date.now() - t0, 'events');
       const ev = toa.matchEvent(events, teams.home, teams.away);
       if (ev) { cache.set(cacheKey, ev, ODDS_CACHE_TTL); return ev; }
     } catch (err) {
-      recordApiCall('theodds', false, Date.now() - t0, 'events');
       console.warn('[ODDS] The Odds API match failed:', err.message);
     }
   }
@@ -102,11 +99,10 @@ export async function getTodayOdds() {
   if (cached) return cached;
 
   // Preferred: The Odds API (paid). Returns all upcoming soccer events normalized.
+  // getEvents() records its own usage now, so we don't double-count here.
   if (toa.hasKey()) {
-    const t0 = Date.now();
     try {
       const events = await toa.getEvents();
-      recordApiCall('theodds', true, Date.now() - t0, 'events-batch');
       if (events.length) {
         for (const ev of events) cache.set(`odds_${ev.fixtureId}`, ev, ODDS_CACHE_TTL);
         cache.set(cacheKey, events, 300);

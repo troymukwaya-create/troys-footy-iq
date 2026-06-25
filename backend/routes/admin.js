@@ -195,6 +195,7 @@ router.get('/traffic', async (req, res) => {
 // the UI can render "X / limit" gauges.
 const QUOTA_LIMITS = {
   apisports:    { dailyFree: 100,  label: 'API-Football' },
+  theodds:      { monthly: 20000,  label: 'The Odds API' },
   footballdata: { perMinute: 10,   label: 'football-data.org' },
   anthropic:    { monthlyBudget: 100, label: 'Anthropic (Claude)' },
 };
