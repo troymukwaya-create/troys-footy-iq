@@ -770,6 +770,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1539009": {
+      "kind": "match",
+      "label": "Bosnia & Herzegovina 3–1 Qatar",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
