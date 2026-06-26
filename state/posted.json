@@ -817,9 +817,7 @@
       }
     }
   ],
-  "verdictWait": {
-    "apf_1489410": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1539011": {
       "kind": "prematch",
@@ -836,6 +834,18 @@
     "apf_1539012": {
       "kind": "prematch",
       "label": "Türkiye v USA",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1489410": {
+      "kind": "match",
+      "label": "Ecuador 2–1 Germany",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
