@@ -76,7 +76,8 @@
     "apf_1489407",
     "apf_1539010",
     "apf_1489410",
-    "apf_1489409"
+    "apf_1489409",
+    "apf_1539011"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -839,22 +840,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539011",
+      "label": "Japan v Sweden",
+      "at": "2026-06-26T17:28:05.321Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1539011": {
-      "kind": "prematch",
-      "label": "Japan v Sweden",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1539012": {
       "kind": "prematch",
       "label": "Türkiye v USA",
