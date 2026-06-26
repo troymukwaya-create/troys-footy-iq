@@ -74,7 +74,8 @@
     "apf_1489406",
     "apf_1489405",
     "apf_1489407",
-    "apf_1539010"
+    "apf_1539010",
+    "apf_1489410"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -815,11 +816,20 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489410",
+      "label": "Ecuador 2–1 Germany",
+      "at": "2026-06-26T11:33:21.832Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1489410": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1539011": {
       "kind": "prematch",
@@ -836,18 +846,6 @@
     "apf_1539012": {
       "kind": "prematch",
       "label": "Türkiye v USA",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489410": {
-      "kind": "match",
-      "label": "Ecuador 2–1 Germany",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
