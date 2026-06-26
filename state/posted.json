@@ -854,6 +854,19 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489409": {
+      "kind": "match",
+      "label": "Curaçao 0–2 Ivory Coast",
+      "platforms": {
+        "telegram": "ok",
+        "x": "failed",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "x": 1,
+        "instagram": 1
+      }
     }
   }
 }
