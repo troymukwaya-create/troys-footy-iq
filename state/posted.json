@@ -78,7 +78,8 @@
     "apf_1489410",
     "apf_1489409",
     "apf_1539011",
-    "apf_1489412"
+    "apf_1489412",
+    "apf_1539012"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -863,22 +864,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539012",
+      "label": "Türkiye v USA",
+      "at": "2026-06-26T22:10:40.265Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1539012": {
-      "kind": "prematch",
-      "label": "Türkiye v USA",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1539074": {
       "kind": "prematch",
       "label": "Senegal v Iraq",
