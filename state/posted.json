@@ -75,7 +75,8 @@
     "apf_1489405",
     "apf_1489407",
     "apf_1539010",
-    "apf_1489410"
+    "apf_1489410",
+    "apf_1489409"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -827,6 +828,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489409",
+      "label": "Curaçao 0–2 Ivory Coast",
+      "at": "2026-06-26T15:55:46.552Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -855,16 +867,15 @@
         "instagram": 1
       }
     },
-    "apf_1489409": {
-      "kind": "match",
-      "label": "Curaçao 0–2 Ivory Coast",
+    "apf_1539074": {
+      "kind": "prematch",
+      "label": "Senegal v Iraq",
       "platforms": {
         "telegram": "ok",
-        "x": "failed",
+        "x": "ok",
         "instagram": "failed"
       },
       "attempts": {
-        "x": 1,
         "instagram": 1
       }
     }
