@@ -18,7 +18,8 @@
     "apf_1489388",
     "apf_1489391",
     "apf_1489389",
-    "apf_1539008"
+    "apf_1539008",
+    "apf_1489420"
   ],
   "receipts": [
     "apf_1538999",
@@ -84,7 +85,8 @@
     "apf_1539074",
     "apf_1489416",
     "apf_1489417",
-    "apf_1489413"
+    "apf_1489413",
+    "apf_1489414"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -935,33 +937,30 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489420",
+      "label": "Croatia v Ghana",
+      "at": "2026-06-27T18:57:22.717Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489414",
+      "label": "Egypt 1–1 Iran",
+      "at": "2026-06-27T18:57:42.780Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
-  "pending": {
-    "apf_1489420": {
-      "kind": "prematch",
-      "label": "Croatia v Ghana",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489414": {
-      "kind": "match",
-      "label": "Egypt 1–1 Iran",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    }
-  }
+  "pending": {}
 }
