@@ -69,7 +69,7 @@ export function HonestBar() {
               style={{
                 position: 'absolute',
                 top: 0, left: 0, bottom: 0,
-                background: 'linear-gradient(to right, rgba(168,52,74,0.25), var(--accent))',
+                background: 'linear-gradient(to right, rgba(192,57,43,0.25), var(--accent))',
                 borderRadius: 2,
               }}
             />
@@ -85,7 +85,7 @@ export function HonestBar() {
                 height: 5,
                 borderRadius: '50%',
                 background: 'var(--accent)',
-                boxShadow: '0 0 5px rgba(168,52,74,0.55)',
+                boxShadow: '0 0 5px rgba(192,57,43,0.55)',
               }}
             />
           </>

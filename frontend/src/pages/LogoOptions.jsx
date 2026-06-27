@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 
-const ACCENT = '#A8344A';
+const ACCENT = '#C0392B';
 
 // ─── The five marks (from the brand exploration) ─────────────────────
 const OrbitO = () => (
@@ -80,7 +80,7 @@ export default function LogoOptions() {
               transition={{ duration: 0.5, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
               style={{ borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}
             >
-              <div style={{ position: 'relative', height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 40%, rgba(168,52,74,0.16), transparent 60%)' }}>
+              <div style={{ position: 'relative', height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle at 50% 40%, rgba(192,57,43,0.16), transparent 60%)' }}>
                 <span style={{ position: 'absolute', top: 12, left: 14, fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.35)' }}>{l.id}</span>
                 <div style={{ width: 80, height: 80 }}><l.Mark /></div>
               </div>

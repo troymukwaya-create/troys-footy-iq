@@ -145,7 +145,7 @@ export function SuggestedSlips({ fixtures }) {
               style={{
                 textAlign: 'left', width: '100%', cursor: 'pointer', padding: 12, borderRadius: 'var(--radius-md)',
                 background: s.highlight ? 'var(--accent-muted)' : 'var(--bg-raised)',
-                border: `1px solid ${s.highlight ? 'rgba(168,52,74,0.3)' : 'var(--border-subtle)'}`,
+                border: `1px solid ${s.highlight ? 'rgba(192,57,43,0.3)' : 'var(--border-subtle)'}`,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>

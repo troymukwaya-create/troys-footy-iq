@@ -10,7 +10,7 @@ import QRCode from 'qrcode';
 const PAPER = '#F5F0E6';
 const INK = '#17171B';
 const INK_MUTED = '#6E6A61';
-const ACCENT = '#A8344A';
+const ACCENT = '#C0392B';
 const GREEN = '#15803D';
 
 const W = 1080;            // canvas width

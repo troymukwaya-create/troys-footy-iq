@@ -3,7 +3,7 @@ import React from 'react';
 // Faint graph-paper dot field — says "calibration / measurement / plot",
 // exactly the brand. Pure CSS (no canvas/WebGL), zero perf cost. Fades out
 // at the edges so it never competes with content.
-export default function DotGrid({ gap = 24, dot = 1.2, color = 'rgba(168,52,74,0.12)', fade = 'ellipse at center', style }) {
+export default function DotGrid({ gap = 24, dot = 1.2, color = 'rgba(192,57,43,0.12)', fade = 'ellipse at center', style }) {
   return (
     <div
       aria-hidden="true"

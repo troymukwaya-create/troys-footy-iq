@@ -33,7 +33,7 @@ export default function LiquidBackground({ base = '#0B0B0D' }) {
           width: 75vw; height: 75vw; max-width: 1100px; max-height: 1100px;
           top: -22vh; left: -12vw;
           background: radial-gradient(circle at center,
-            rgba(168,52,74,0.50) 0%, rgba(168,52,74,0.16) 42%, rgba(168,52,74,0) 70%);
+            rgba(192,57,43,0.50) 0%, rgba(192,57,43,0.16) 42%, rgba(192,57,43,0) 70%);
           animation: liquidDrift1 28s ease-in-out infinite alternate;
         }
         /* Bottom-right deeper signature bloom */
@@ -49,7 +49,7 @@ export default function LiquidBackground({ base = '#0B0B0D' }) {
           width: 58vw; height: 58vw; max-width: 820px; max-height: 820px;
           top: 26vh; left: 32vw;
           background: radial-gradient(circle at center,
-            rgba(168,52,74,0.30) 0%, rgba(168,52,74,0.09) 46%, rgba(168,52,74,0) 72%);
+            rgba(192,57,43,0.30) 0%, rgba(192,57,43,0.09) 46%, rgba(192,57,43,0) 72%);
           animation: liquidDrift3 40s ease-in-out infinite alternate;
         }
         @keyframes liquidDrift1 {

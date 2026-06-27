@@ -10,6 +10,8 @@ import { getVisibleTeamColor } from '../constants/teamColors.js';
 import { flagGradient } from '../constants/nationColors.js';
 import FlagBleed, { hasFlags } from './FlagBleed.jsx';
 import TeamMark from './TeamMark.jsx';
+import { VersusHero, T } from './fixture/primitives.jsx';
+import { fixtureView } from './fixture/oddData.js';
 
 /**
  * MatchAnalysisPanel — Center panel for match analysis.
@@ -65,60 +67,24 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
         <ShareCallButton fixture={fixture} prob={prob} />
       </div>
 
-      {/* ─── Match Header — each team's REAL flag bleeding across, like the home cards ─── */}
-      <div className="card" style={{ padding: 24, marginBottom: 16, background: hasFlags(home, away) ? 'var(--bg-surface)' : flagGradient(home, away, 'var(--bg-surface)'), border: '1px solid var(--border-subtle)', position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
-        {hasFlags(home, away) && <FlagBleed home={home} away={away} opacity={0.85} />}
-        {/* League */}
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{league}</span>
-          {fixture?.league?.round && (
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>· {fixture.league.round}</span>
-          )}
-        </div>
-
-        {/* Teams + Score */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
-          {/* Home */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
-            <TeamMark name={home} crest={homeCrest} size={52} />
-            <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3, color: homeColor }}>{home}</span>
-            {homeStats?.form && homeStats.form !== 'N/A' && <FormStrip form={homeStats.form} />}
-          </div>
-
-          {/* Score */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            {isLive && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
-                <span style={{ fontSize: 11, color: 'var(--success)', fontWeight: 700 }}>{fixture?.minute || ''}′</span>
-              </div>
-            )}
-            <div className="score-box" style={{ borderRadius: 'var(--radius-lg)', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 28, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{fixture?.score?.home ?? '–'}</span>
-              <span style={{ fontSize: 18, color: 'var(--text-muted)' }}>:</span>
-              <span style={{ fontSize: 28, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{fixture?.score?.away ?? '–'}</span>
-            </div>
-            {status === 'SCHEDULED' && fixture?.date && (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                {new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-            {status === 'FINISHED' && (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginTop: 4 }}>FULL TIME</span>
-            )}
-          </div>
-
-          {/* Away */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1 }}>
-            <TeamMark name={away} crest={awayCrest} size={52} />
-            <span style={{ fontSize: 14, fontWeight: 700, textAlign: 'center', lineHeight: 1.3, color: awayColor }}>{away}</span>
-            {awayStats?.form && awayStats.form !== 'N/A' && <FormStrip form={awayStats.form} />}
-          </div>
+      {/* ─── Match Header — the VersusHero seam motif (the new brand identity) ─── */}
+      <div className="card" style={{ padding: 0, marginBottom: 16, border: '1px solid var(--border-subtle)', position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
+        <VersusHero
+          v={{ ...fixtureView(fixture), homeForm: homeStats?.form && homeStats.form !== 'N/A' ? homeStats.form : null, awayForm: awayStats?.form && awayStats.form !== 'N/A' ? awayStats.form : null }}
+          t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
+          h={176} meta codes codeSize={36} disc={30} seam={[60, 40]} discTop={44}
+        />
+        <div style={{ padding: '16px 24px 24px' }}>
+        {/* Full team names */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap', marginBottom: (prob && dataQuality !== 'INSUFFICIENT') ? 18 : 0 }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: homeColor }}>{home}</span>
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500 }}>v</span>
+          <span style={{ fontSize: 16, fontWeight: 800, color: awayColor }}>{away}</span>
         </div>
 
         {/* Win Probability Bar — only show with valid data */}
         {prob && dataQuality !== 'INSUFFICIENT' && (
-          <div style={{ marginTop: 24 }}>
+          <div>
             {status === 'FINISHED' && (
               <div style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8 }}>
                 OUR PRE-MATCH PROBABILITIES — AS LOCKED
@@ -141,6 +107,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* ─── Data Quality Banners ─────────────────────────── */}
@@ -580,8 +547,8 @@ function ScorelineGrid({ topScorelines, actualScore = null }) {
           return (
             <div key={i} className="matrix-cell" style={{
               flexDirection: 'column', height: 52, position: 'relative',
-              background: isActual ? 'var(--success-muted)' : `rgba(168,52,74, ${0.04 + intensity * 0.12})`,
-              border: isActual ? '1px solid var(--success)' : `1px solid rgba(168,52,74, ${0.08 + intensity * 0.15})`,
+              background: isActual ? 'var(--success-muted)' : `rgba(192,57,43, ${0.04 + intensity * 0.12})`,
+              border: isActual ? '1px solid var(--success)' : `1px solid rgba(192,57,43, ${0.08 + intensity * 0.15})`,
             }}>
               {isActual && (
                 <span style={{ position: 'absolute', top: 3, right: 5, fontSize: 8, fontWeight: 800, color: 'var(--success)' }}>FT</span>

@@ -121,7 +121,7 @@ export default function BrierScoreHero() {
       className="w-full rounded-2xl border border-outline-variant/30 bg-gradient-to-br from-surface-container to-surface-container-low p-6 sm:p-8 shadow-lg shadow-black/20"
       style={{ position: 'relative', overflow: 'hidden' }}
     >
-      <DotGrid gap={22} dot={1.1} color="rgba(168,52,74,0.11)" />
+      <DotGrid gap={22} dot={1.1} color="rgba(192,57,43,0.11)" />
       <div style={{ position: 'relative', zIndex: 1 }}>
       {/* Top row: label + last updated */}
       <div className="flex items-start justify-between mb-6">
@@ -180,7 +180,7 @@ export default function BrierScoreHero() {
             animate={{ width: `${ourPosition}%` }}
             transition={barFill}
             className="absolute inset-y-0 left-0 rounded-full"
-            style={{ background: 'linear-gradient(to right, rgba(168,52,74,0.3), var(--accent))' }}
+            style={{ background: 'linear-gradient(to right, rgba(192,57,43,0.3), var(--accent))' }}
           />
         </div>
 
@@ -213,7 +213,7 @@ export default function BrierScoreHero() {
           className="absolute top-0 -translate-x-1/2 z-10"
           style={{ left: `${ourPosition}%` }}
         >
-          <div className="w-1 h-5 rounded-full" style={{ background: 'var(--accent)', boxShadow: '0 0 8px rgba(168,52,74,0.5)' }} />
+          <div className="w-1 h-5 rounded-full" style={{ background: 'var(--accent)', boxShadow: '0 0 8px rgba(192,57,43,0.5)' }} />
           <div className="absolute top-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap shadow-md" style={{ background: 'var(--accent)', color: 'var(--bone)', fontFamily: 'var(--font-mono)' }}>
             YOU · {data.brier.toFixed(3)}
           </div>

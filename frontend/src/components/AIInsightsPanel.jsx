@@ -187,7 +187,7 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
             {ai.recommendedPick && ai.recommendedPick !== 'N/A' && (
               <div style={{
                 padding: 12, borderRadius: 'var(--radius-md)',
-                background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.15)',
+                background: 'var(--accent-muted)', border: '1px solid rgba(192,57,43,0.15)',
               }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', letterSpacing: '0.06em', marginBottom: 4 }}>BEST PICK</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>{ai.recommendedPick}</div>

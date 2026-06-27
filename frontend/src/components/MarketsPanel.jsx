@@ -210,7 +210,7 @@ function OutcomeCard({ outcome, marketType, marketLabel, fixture, isLast }) {
       padding: '12px 16px',
       borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)',
       transition: 'background 150ms ease',
-      background: isSelected ? 'rgba(168,52,74,0.10)' : 'transparent',
+      background: isSelected ? 'rgba(192,57,43,0.10)' : 'transparent',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         {/* Left: Outcome info */}

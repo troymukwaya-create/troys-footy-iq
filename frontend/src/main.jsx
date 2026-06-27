@@ -43,7 +43,7 @@ class ErrorBoundary extends React.Component {
           justifyContent: 'center', fontFamily: "'IBM Plex Sans', system-ui", padding: 32, gap: 20,
         }}>
           <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px' }}>
-            <span style={{ color: '#A8344A' }}>Odd</span><span style={{ color: '#9CA3AF' }}>yessa</span>
+            <span style={{ color: '#C0392B' }}>Odd</span><span style={{ color: '#9CA3AF' }}>yessa</span>
           </div>
           <div style={{ color: '#ef4444', fontSize: 15, fontWeight: 600 }}>
             Something crashed
@@ -63,7 +63,7 @@ class ErrorBoundary extends React.Component {
           <button
             onClick={() => { this.setState({ error: null, info: null }); window.location.reload(); }}
             style={{
-              padding: '12px 28px', background: '#A8344A',
+              padding: '12px 28px', background: '#C0392B',
               border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700,
               cursor: 'pointer', fontSize: 14, transition: 'transform 0.2s',
             }}

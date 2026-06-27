@@ -12,7 +12,8 @@ import FlagBleed, { hasFlags } from './FlagBleed.jsx';
 import { getMatchColor } from '../constants/nationColors.js';
 import { track } from '../lib/analytics.js';
 import { scorelineSummary } from '../lib/scoreline.js';
-import TeamMark from './TeamMark.jsx';
+import { VersusHero, T } from './fixture/primitives.jsx';
+import { fixtureView } from './fixture/oddData.js';
 
 const MONO = 'var(--font-mono)';
 const mono = { fontFamily: MONO, fontVariantNumeric: 'tabular-nums' };
@@ -210,7 +211,7 @@ function BoardRow({ f, now, onSelect }) {
           )}
           <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             {!done && (locked ? (
-              <span style={{ color: 'var(--accent)', fontWeight: 600, border: '1px solid rgba(168,52,74,0.45)', padding: '1.5px 7px', borderRadius: 3 }}>LOCKED</span>
+              <span style={{ color: 'var(--accent)', fontWeight: 600, border: '1px solid rgba(192,57,43,0.45)', padding: '1.5px 7px', borderRadius: 3 }}>LOCKED</span>
             ) : !live && (
               <span>LOCKS T-10</span>
             ))}
@@ -264,9 +265,9 @@ function HeroMatch({ f, now, onSelect }) {
   const locked = !!f.probability?.locked;
   const until = untilLabel(f.date, now);
   const ko = f.date ? new Date(f.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const useBleed = hasFlags(f.homeTeam?.name, f.awayTeam?.name);
   const bestEdge = bestEdgeOf(f);
   const sl = scorelineSummary(f.probability);
+  const v = fixtureView(f);
 
   return (
     <div
@@ -275,13 +276,11 @@ function HeroMatch({ f, now, onSelect }) {
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(f); } }}
       style={{
         position: 'relative', isolation: 'isolate', overflow: 'hidden', cursor: 'pointer',
-        border: '1px solid rgba(168,52,74,0.45)', borderRadius: 10, padding: 'clamp(15px, 4vw, 20px)',
-        background: '#0B0B0D', display: 'flex', flexDirection: 'column', gap: 13, marginBottom: 22,
+        border: '1px solid rgba(192,57,43,0.45)', borderRadius: 12,
+        background: '#0B0B0D', display: 'flex', flexDirection: 'column', marginBottom: 22,
       }}
     >
-      {useBleed && <FlagBleed home={f.homeTeam?.name} away={f.awayTeam?.name} opacity={0.5} />}
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...mono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...mono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', padding: 'clamp(13px,3.5vw,16px) clamp(15px,4vw,20px) 12px' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--accent)', fontWeight: 600 }}>
           <Star size={11} fill="var(--accent)" /> Match of the day
         </span>
@@ -292,14 +291,20 @@ function HeroMatch({ f, now, onSelect }) {
         </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <TeamMark name={f.homeTeam?.name} crest={f.homeTeam?.crest} size={34} />
-        <div style={{ flex: 1, fontSize: 'clamp(17px, 4.6vw, 23px)', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15 }}>
-          {f.homeTeam?.name} <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '0.7em' }}>v</span> {f.awayTeam?.name}
-        </div>
-        <TeamMark name={f.awayTeam?.name} crest={f.awayTeam?.crest} size={34} />
+      {/* The shared matchup motif — two flags on a diagonal seam, score/VS on the fold. */}
+      <div style={{ padding: '0 clamp(15px,4vw,20px)' }}>
+        <VersusHero v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
+          h={150} radius={10} seam={[60, 40]} disc={26} codes codeSize={30} discTop={46} />
       </div>
 
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 'clamp(16px, 4.4vw, 21px)', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15, padding: '13px clamp(15px,4vw,20px) 0' }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.homeTeam?.name}</span>
+        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '0.72em' }}>v</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.awayTeam?.name}</span>
+        {f.league?.name && <span style={{ ...mono, marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 400, whiteSpace: 'nowrap' }} className="board-venue">{f.league.name}</span>}
+      </div>
+
+      <div style={{ padding: '13px clamp(15px,4vw,20px) clamp(15px,4vw,20px)', display: 'flex', flexDirection: 'column', gap: 13 }}>
       <ProbBars f={f} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -309,10 +314,10 @@ function HeroMatch({ f, now, onSelect }) {
           </span>
         )}
         {sl.confident
-          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 3, color: 'var(--accent)', background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.30)' }}>{sl.score} likely</span>
+          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 3, color: 'var(--accent)', background: 'var(--accent-muted)', border: '1px solid rgba(192,57,43,0.30)' }}>{sl.score} likely</span>
           : <span style={{ ...mono, fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 3, color: 'var(--text-tertiary)', border: '1px solid var(--border-default)' }}>OPEN GAME</span>}
         {!live && (locked
-          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 600, color: 'var(--accent)', border: '1px solid rgba(168,52,74,0.45)', padding: '3px 8px', borderRadius: 3 }}>LOCKED</span>
+          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 600, color: 'var(--accent)', border: '1px solid rgba(192,57,43,0.45)', padding: '3px 8px', borderRadius: 3 }}>LOCKED</span>
           : <span style={{ ...mono, fontSize: 10.5, color: 'var(--text-tertiary)' }}>LOCKS T-10</span>)}
       </div>
 
@@ -324,6 +329,7 @@ function HeroMatch({ f, now, onSelect }) {
 
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, ...mono, fontSize: 10.5, letterSpacing: '0.08em', color: 'var(--accent)' }}>
         FULL ANALYSIS <ArrowRight size={13} />
+      </div>
       </div>
     </div>
   );

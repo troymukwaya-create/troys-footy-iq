@@ -1,260 +1,147 @@
 import React from 'react';
-import { flagGradient } from '../constants/nationColors.js';
-import FlagBleed, { hasFlags } from './FlagBleed.jsx';
-import TeamMark from './TeamMark.jsx';
+import { T, num, label, VersusHero, ProbViz, RiskPill, VerdictPill, FlagBleedBg } from './fixture/primitives.jsx';
+import { getMatchColor } from '../constants/nationColors.js';
+import { fixtureView } from './fixture/oddData.js';
 import { scorelineSummary } from '../lib/scoreline.js';
+import OrbitMark from './OrbitMark.jsx';
 
 /**
- * FixtureCard — Compact sidebar match card.
- * Clean hierarchy: league → teams/score → probability strip.
+ * FixtureCard — the Oddyessa "Ticket" fixture card.
+ *
+ * The new brand identity (from the Claude Design "Fixture Cards" exploration):
+ * a matchday ticket — oxblood spine + perforated fold, a diagonal flag-seam
+ * crest with the scoreline (or VS) riding the fold, then a calm split-bar
+ * probability read. Built on the shared VersusHero motif so every fixture
+ * surface speaks the same matchup language.
+ *
+ * Approved tweak settings: split-bar probability · max density · nation
+ * colours · accent #C0392B · flag-bleed on.
  */
+const TWEAKS = { probViz: 'split', density: 5, colorMode: 'nation', accent: T.accent, flagBg: true };
+
+// Scoreline honesty (unchanged principle): only HEADLINE a specific score when
+// there's a clear favourite — otherwise the game is OPEN and we show the spread
+// of likely scores, so even matchups never assert a copy-paste 1-1.
+function ScorelineCall({ prob }) {
+  const { confident, score, spread } = scorelineSummary(prob);
+  if (confident) {
+    return (
+      <span style={{ ...num(10.5, 700), color: T.accent, padding: '2px 8px', borderRadius: 6, background: T.accentSoft, border: '1px solid ' + T.accentLine, whiteSpace: 'nowrap' }}>
+        {score} <span style={{ ...label(7.5), color: T.t3 }}>likely</span>
+      </span>
+    );
+  }
+  if (!spread.length) return null;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <span style={{ ...label(7.5), color: T.t4 }}>OPEN</span>
+      <span style={{ display: 'flex', gap: 4 }}>
+        {spread.slice(0, 2).map((s, i) => (
+          <span key={i} style={{ ...num(10, 600), color: T.t2, padding: '2px 6px', borderRadius: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid ' + T.b1 }}>{s.score}</span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function Ticket({ v, t, isSelected, fixtureProb }) {
+  const accent = t.accent;
+  const stubText = v.state === 'settled' ? 'FULL · TIME'
+    : v.state === 'live' ? (v.minute ? `${v.minute}'  LIVE` : 'LIVE')
+    : (v.kickoff ? `${v.kickoff} KO` : 'KICKOFF');
+  // The notch "punches" through to the colour sitting behind the card (the
+  // sidebar / panel surface), selling the ticket illusion.
+  const notch = 'var(--bg-surface)';
+
+  return (
+    <div style={{
+      position: 'relative', width: '100%', display: 'flex',
+      background: T.raised,
+      border: '1px solid ' + (isSelected ? accent : T.b2),
+      borderRadius: 12, overflow: 'hidden', isolation: 'isolate',
+      boxShadow: isSelected ? `0 0 0 1px ${accent}` : 'none',
+    }}>
+      <FlagBleedBg home={v.home} away={v.away} on={t.flagBg} opacity={0.18} />
+
+      {/* Oxblood spine */}
+      <div style={{ position: 'relative', width: 44, flexShrink: 0, background: `linear-gradient(180deg, ${accent}, ${T.accentDeep})`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', zIndex: 4 }}>
+        <OrbitMark size={16} ring="rgba(255,255,255,0.92)" dot="#ffffff" />
+        <span style={{ ...num(11, 600), color: '#fff', transform: 'rotate(180deg)', writingMode: 'vertical-rl', letterSpacing: '0.14em' }}>{stubText}</span>
+        <span style={{ width: 14, height: 14 }} />
+      </div>
+
+      {/* Perforated fold */}
+      <div style={{ position: 'absolute', top: -7, left: 44, width: 14, height: 14, borderRadius: '50%', background: notch, transform: 'translateX(-50%)', zIndex: 5 }} />
+      <div style={{ position: 'absolute', bottom: -7, left: 44, width: 14, height: 14, borderRadius: '50%', background: notch, transform: 'translateX(-50%)', zIndex: 5 }} />
+      <div style={{ position: 'absolute', top: 6, bottom: 6, left: 44, borderLeft: '1.5px dashed rgba(255,255,255,0.25)', zIndex: 5 }} />
+
+      {/* Body */}
+      <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+        <VersusHero v={v} t={t} h={84} seam={[60, 40]} disc={16} codes codeSize={18} discTop={50} />
+        <div style={{ padding: '10px 14px 13px 16px' }}>
+          <div style={{ ...label(8.5), color: T.t3, marginBottom: v.prob ? 10 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {v.league}{v.stage ? ` · ${v.stage}` : ''}
+          </div>
+
+          {v.prob && (
+            <ProbViz
+              prob={v.prob} mode={t.probViz} colorMode={t.colorMode}
+              homeColor={getMatchColor(v.home)} awayColor={getMatchColor(v.away)}
+              density={t.density} score={v.score} state={v.state} accent={accent}
+            />
+          )}
+
+          <div style={{ marginTop: v.prob ? 11 : 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            {v.state === 'settled' && v.score && v.prob
+              ? <VerdictPill prob={v.prob} score={v.score} small />
+              : v.prob
+                ? <RiskPill level={v.risk} small />
+                : <span style={{ ...label(8.5), color: T.t3 }}>{v.state === 'settled' ? 'Full time' : v.kickoff}</span>}
+
+            {v.state !== 'settled' && fixtureProb && <ScorelineCall prob={fixtureProb} />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FixtureCard({ fixture, isSelected, onClick, onMouseEnter }) {
   if (!fixture) return null;
 
   // ─── FRONTEND SAFETY CHECK ──────────────────────────────────────────
-  // NEVER render a fixture with missing or invalid critical fields.
-  // This prevents incorrect data from ever appearing in the UI.
+  // NEVER render a fixture with missing or invalid critical fields — this
+  // keeps bad data from ever surfacing in the UI.
   const homeName = fixture.homeTeam?.name;
   const awayName = fixture.awayTeam?.name;
   const hasValidDate = fixture.date && !isNaN(new Date(fixture.date).getTime());
-  const INVALID_NAMES = new Set(['undefined', 'null', 'tbd', '', undefined, null]);
+  const INVALID_NAMES = new Set(['undefined', 'null', 'tbd', '']);
 
-  if (INVALID_NAMES.has(homeName?.toLowerCase?.()) || 
-      INVALID_NAMES.has(awayName?.toLowerCase?.()) || 
+  if (!homeName || !awayName ||
+      INVALID_NAMES.has(String(homeName).toLowerCase()) ||
+      INVALID_NAMES.has(String(awayName).toLowerCase()) ||
       !hasValidDate) {
     console.warn('[FixtureCard] ⚠️ Blocked render of invalid fixture:', fixture.id, { homeName, awayName, date: fixture.date });
     return (
-      <div style={{
-        padding: '10px 12px', marginBottom: 4,
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-subtle)',
-        background: 'transparent',
-      }}>
+      <div style={{ padding: '10px 12px', marginBottom: 6, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', background: 'transparent' }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Data unavailable</span>
       </div>
     );
   }
   // ────────────────────────────────────────────────────────────────────
 
-  const home = homeName;
-  const away = awayName;
-  const homeCrest = fixture.homeTeam?.crest || null;
-  const awayCrest = fixture.awayTeam?.crest || null;
-  const status = fixture.status || 'SCHEDULED';
-  const isLive = status === 'IN_PLAY' || status === 'PAUSED';
-  const isFinished = status === 'FINISHED';
-  const scoreHome = fixture.score?.home;
-  const scoreAway = fixture.score?.away;
-  const minute = fixture.minute;
-  const prob = fixture.probability;
-
-  const time = fixture.date
-    ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : '';
-
-  // EXPERIMENT: real flags bleeding across the row (subtle, sidebar dose).
-  const useFlagBleed = !isSelected && hasFlags(home, away);
+  const v = fixtureView(fixture);
 
   return (
     <div
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       className={`match-card ${isSelected ? 'active' : ''}`}
-      style={{
-        borderRadius: 'var(--radius-md)',
-        border: `1px solid ${isSelected ? 'rgba(168,52,74,0.30)' : 'var(--border-subtle)'}`,
-        padding: '10px 12px',
-        marginBottom: 4,
-        background: isSelected ? 'var(--accent-muted)'
-          : useFlagBleed ? '#101114'
-          : flagGradient(home, away, null, '30'),
-        position: 'relative',
-        overflow: 'hidden',
-        isolation: 'isolate',
-      }}
+      style={{ marginBottom: 6, borderRadius: 12, cursor: 'pointer' }}
     >
-      {useFlagBleed && <FlagBleed home={home} away={away} opacity={0.6} />}
-      {/* League + Status */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 10, color: 'var(--text-muted)', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {fixture.league?.name || ''}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {isLive && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--success)', fontWeight: 700 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
-              {minute ? `${minute}'` : 'LIVE'}
-            </span>
-          )}
-          {isFinished && <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>FT</span>}
-          {!isLive && !isFinished && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{time}</span>}
-        </div>
-      </div>
-
-      {/* Teams */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <TeamRow name={home} crest={homeCrest} score={scoreHome} isWinner={isFinished && scoreHome > scoreAway} isLive={isLive} />
-        <TeamRow name={away} crest={awayCrest} score={scoreAway} isWinner={isFinished && scoreAway > scoreHome} isLive={isLive} />
-      </div>
-
-      {/* Probability Strip */}
-      {prob?.probabilities ? (
-        <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-subtle)' }}>
-          {/* Probability values */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <ProbValue label="H" value={prob.probabilities.home} />
-            <ProbValue label="D" value={prob.probabilities.draw} />
-            <ProbValue label="A" value={prob.probabilities.away} />
-          </div>
-
-          {/* Risk (upcoming) or verdict (settled) + the scoreline call.
-              Settled: the top scorelines with a ✓ on a hit. Upcoming: a
-              specific score ONLY when there's a clear favourite — otherwise
-              "Open" + the spread, so even games never assert a single 1-1. */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-            {isFinished && scoreHome != null && scoreAway != null
-              ? <VerdictBadge prob={prob} scoreHome={scoreHome} scoreAway={scoreAway} />
-              : <RiskBadge level={prob.riskLevel} />}
-            {isFinished && scoreHome != null && scoreAway != null
-              ? <FinishedScorelines sls={prob.topScorelines} scoreHome={scoreHome} scoreAway={scoreAway} />
-              : <ScorelineCall prob={prob} />}
-          </div>
-        </div>
-      ) : null}
-      {/* No probability → no strip. A skeleton here pulsed FOREVER on live/
-          finished matches whose endpoint never sends a prediction — a loading
-          state must only promise data that is actually on its way. */}
+      <Ticket v={v} t={TWEAKS} isSelected={isSelected} fixtureProb={fixture.probability} />
     </div>
   );
 }
 
-function TeamRow({ name, crest, score, isWinner, isLive }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-        <TeamMark name={name} crest={crest} size={16} />
-        <span style={{
-          fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          fontWeight: isWinner ? 600 : 400,
-          color: isWinner ? 'var(--text-primary)' : 'var(--text-secondary)',
-        }}>{name}</span>
-      </div>
-      <span style={{
-        fontSize: 13, fontWeight: 700, width: 20, textAlign: 'right',
-        fontVariantNumeric: 'tabular-nums',
-        color: isLive ? 'var(--success)' : isWinner ? 'var(--text-primary)' : 'var(--text-secondary)',
-      }}>{score ?? ''}</span>
-    </div>
-  );
-}
-
-function ProbValue({ label, value }) {
-  // Whole integers on tiles; decimals live on the analysis page.
-  return (
-    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
-      {label} <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{value == null ? '–' : Math.round(value)}%</span>
-    </span>
-  );
-}
-
-// Settled fixture: graded by the probability we gave the actual result, not
-// a binary did-the-favourite-win. Mirrors backend/engine/grading.js (22/13).
-// Both verdicts render — every ✓ on the feed is backed by visible misses.
-const VERDICT_TIER = {
-  ON_READ: { label: '✓ Called it', color: 'var(--success)', bg: 'var(--success-muted)' },
-  IN_RANGE: { label: '≈ In range', color: '#AAB2C0', bg: 'rgba(138,148,166,0.14)' },
-  AGAINST: { label: '± Against', color: '#D99A2B', bg: 'rgba(217,154,43,0.12)' },
-  MISSED: { label: '✗ Missed', color: 'var(--danger)', bg: 'var(--danger-muted)' },
-};
-function VerdictBadge({ prob, scoreHome, scoreAway }) {
-  // Number() so a stringified prob can't trigger lexicographic comparison
-  // (would silently disagree with the ledger/receipt). Tie-break mirrors
-  // backend/engine/grading.js + the sibling fallbacks exactly.
-  const pr = prob?.probabilities || {};
-  const home = Number(pr.home) || 0, draw = Number(pr.draw) || 0, away = Number(pr.away) || 0;
-  const p = { HOME: home, DRAW: draw, AWAY: away };
-  const norm = (v) => { const n = Number(v) || 0; return n > 1 ? n / 100 : n; };
-  const predicted = home >= draw && home >= away ? 'HOME' : draw >= away ? 'DRAW' : 'AWAY';
-  const actual = scoreHome > scoreAway ? 'HOME' : scoreHome < scoreAway ? 'AWAY' : 'DRAW';
-  const pa = norm(p[actual] || 0);
-  const tier = actual === predicted ? 'ON_READ' : pa >= 0.22 ? 'IN_RANGE' : pa >= 0.13 ? 'AGAINST' : 'MISSED';
-  const t = VERDICT_TIER[tier];
-  return (
-    <span style={{
-      display: 'flex', alignItems: 'center', gap: 4,
-      fontSize: 10, fontWeight: 700, color: t.color,
-      padding: '2px 8px', borderRadius: 10,
-      background: t.bg,
-    }}>
-      {t.label}
-    </span>
-  );
-}
-
-// Settled: the predicted scorelines, with a ✓ on the one that actually landed.
-function FinishedScorelines({ sls, scoreHome, scoreAway }) {
-  return (
-    <div style={{ display: 'flex', gap: 4 }}>
-      {(sls || []).slice(0, 2).map((sl, i) => {
-        const hit = sl.score === `${scoreHome}-${scoreAway}`;
-        return (
-          <span key={i} style={{
-            fontSize: 10, fontWeight: hit ? 700 : 600, padding: '2px 6px',
-            borderRadius: 'var(--radius-sm)',
-            background: hit ? 'var(--success-muted)' : 'var(--bg-raised)',
-            border: `1px solid ${hit ? 'var(--success)' : 'var(--border-subtle)'}`,
-            color: hit ? 'var(--success)' : 'var(--text-secondary)',
-            fontVariantNumeric: 'tabular-nums',
-          }}>{sl.score}{hit ? ' ✓' : ''}</span>
-        );
-      })}
-    </div>
-  );
-}
-
-// Upcoming: name a score only when there's a clear favourite ("2-0 likely").
-// Otherwise the game is OPEN — show the spread of most-likely scores so even
-// matchups read as individually judged, never a copy-paste 1-1.
-function ScorelineCall({ prob }) {
-  const { confident, score, spread } = scorelineSummary(prob);
-  if (confident) {
-    return (
-      <span style={{
-        fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--radius-sm)',
-        background: 'var(--accent-muted)', color: 'var(--accent)',
-        border: '1px solid rgba(168,52,74,0.30)', fontVariantNumeric: 'tabular-nums',
-      }}>{score} likely</span>
-    );
-  }
-  if (!spread.length) return null;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', color: 'var(--text-muted)' }}>OPEN</span>
-      <div style={{ display: 'flex', gap: 4 }}>
-        {spread.slice(0, 2).map((s, i) => (
-          <span key={i} style={{
-            fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 'var(--radius-sm)',
-            background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
-            color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums',
-          }}>{s.score}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RiskBadge({ level }) {
-  const color = level === 'LOW' ? 'var(--success)' : level === 'MEDIUM' ? 'var(--warning)' : 'var(--danger)';
-  const bg = level === 'LOW' ? 'var(--success-muted)' : level === 'MEDIUM' ? 'var(--warning-muted)' : 'var(--danger-muted)';
-  return (
-    <span style={{
-      display: 'flex', alignItems: 'center', gap: 4,
-      fontSize: 10, fontWeight: 700, color,
-      padding: '2px 8px', borderRadius: 10,
-      background: bg,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: color }} />
-      {level ?? 'UNKNOWN'}
-    </span>
-  );
-}
+export default FixtureCard;

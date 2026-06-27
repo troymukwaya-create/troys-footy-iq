@@ -184,7 +184,7 @@ export default function HowItWorks() {
           <motion.div {...print}>
             <svg width="58" height="58" viewBox="0 0 100 100" aria-label="Oddyessa" style={{ display: 'block', margin: '0 auto', overflow: 'visible' }}>
               <path className="hiw-logo-ring" pathLength="100" d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" strokeWidth="9" strokeLinecap="round" />
-              <circle className="hiw-logo-dot" cx="69.8" cy="30.2" r="8" fill="#A8344A" />
+              <circle className="hiw-logo-dot" cx="69.8" cy="30.2" r="8" fill="#C0392B" />
             </svg>
             <div className="font-display" style={{ fontSize: 'clamp(30px,8vw,40px)', fontWeight: 800, marginTop: 8 }}>
               <span style={{ color: 'var(--accent)' }}>Odd</span>yessa

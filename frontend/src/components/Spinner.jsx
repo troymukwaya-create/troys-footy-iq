@@ -11,7 +11,7 @@ export default function Spinner({
   size = 28,
   speed = 0.95,           // seconds per revolution
   ring = '#F7F4EE',
-  dot = '#A8344A',
+  dot = '#C0392B',
   stroke = 6.5,
   label = 'Loading',
   style = {},

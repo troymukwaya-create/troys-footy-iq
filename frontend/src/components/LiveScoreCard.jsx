@@ -1,66 +1,40 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { VersusHero, T, disp, label } from './fixture/primitives.jsx';
+import { fixtureView } from './fixture/oddData.js';
 
+// Compact match card on the new brand identity — the shared VersusHero seam
+// motif (two flags on a diagonal seam, score/VS on the fold) with the league
+// + live/FT status baked into the banner. Replaces the old emerald card.
 export default function LiveScoreCard({ match }) {
   if (!match) return null;
-
-  const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED';
-  const isFinished = match.status === 'FINISHED' || match.status === 'AWARDED';
-  const isToday = new Date(match.date).toDateString() === new Date().toDateString();
-
-  let statusBadge = null;
-  if (isLive) {
-     statusBadge = <Badge variant="outline" className="bg-emerald-950/50 text-emerald-400 border-emerald-900 shadow-sm animate-pulse whitespace-nowrap">LIVE {match.minute ? `${match.minute}'` : ''}</Badge>;
-  } else if (isFinished) {
-     statusBadge = <Badge variant="outline" className="bg-gray-800 text-white border-gray-700 whitespace-nowrap">FT</Badge>;
-  } else if (isToday) {
-     statusBadge = <Badge variant="outline" className="bg-blue-950/50 text-blue-400 border-blue-900 whitespace-nowrap">TODAY</Badge>;
-  } else {
-     statusBadge = <Badge variant="outline" className="bg-gray-800 text-gray-400 border-gray-700 whitespace-nowrap">UPCOMING</Badge>;
-  }
+  const v = fixtureView(match);
 
   return (
-    <Link to={`/live/${match.id}`} className="block h-full group">
-      <Card className="bg-gray-900 border-gray-800 hover:border-emerald-500/50 transition-all h-full shadow-sm hover:shadow-emerald-900/20 overflow-hidden">
-        <CardContent className="p-5 flex flex-col justify-between h-full bg-gradient-to-b from-transparent to-gray-900/50 group-hover:to-gray-800/30">
-          <div className="flex justify-between items-start mb-5">
-             <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-950/80 px-2.5 py-1 rounded truncate max-w-[120px] border border-gray-800">
-               {match.league?.name || 'Competition'}
-             </div>
-             {statusBadge}
-          </div>
-          
-          <div className="flex justify-between items-center px-1">
-             <div className="flex flex-col items-center w-5/12 text-center group-hover:text-emerald-400 transition-colors">
-                <div className="w-12 h-12 mb-3 bg-gray-950/50 rounded-full p-1.5 border border-gray-800/50">
-                   {match.homeTeam?.crest ? <img src={match.homeTeam.crest} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-gray-800 rounded-full"></div>}
-                </div>
-                <span className="font-bold text-sm leading-tight text-gray-200 line-clamp-2">{match.homeTeam?.name}</span>
-             </div>
-             
-             <div className="flex flex-col items-center justify-center w-2/12 h-full -mt-4">
-                {isLive || isFinished ? (
-                   <div className="text-xl font-black tabular-nums bg-gray-950 px-3 py-1.5 rounded-xl border border-gray-800 shadow-inner tracking-widest text-white group-hover:border-gray-700 transition-colors">
-                      {match.score.home ?? '-'}<span className="text-gray-600 font-light mx-1">:</span>{match.score.away ?? '-'}
-                   </div>
-                ) : (
-                   <div className="text-xs font-bold bg-gray-800 text-gray-400 px-3 py-1.5 rounded-lg border border-gray-700 shadow-sm whitespace-nowrap">
-                      {new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                   </div>
-                )}
-             </div>
-             
-             <div className="flex flex-col items-center w-5/12 text-center group-hover:text-emerald-400 transition-colors">
-                <div className="w-12 h-12 mb-3 bg-gray-950/50 rounded-full p-1.5 border border-gray-800/50">
-                   {match.awayTeam?.crest ? <img src={match.awayTeam.crest} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-gray-800 rounded-full"></div>}
-                </div>
-                <span className="font-bold text-sm leading-tight text-gray-200 line-clamp-2">{match.awayTeam?.name}</span>
-             </div>
-          </div>
-        </CardContent>
-      </Card>
+    <Link to={`/live/${match.id}`} className="block h-full group" style={{ textDecoration: 'none' }}>
+      <div
+        className="lsc-card"
+        style={{
+          position: 'relative', height: '100%', display: 'flex', flexDirection: 'column',
+          background: T.raised, border: '1px solid ' + T.b2, borderRadius: 12,
+          overflow: 'hidden', isolation: 'isolate',
+          transition: 'border-color 180ms ease, transform 180ms ease',
+        }}
+      >
+        <VersusHero
+          v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
+          h={120} meta codes codeSize={24} disc={20} seam={[60, 40]} discTop={48}
+        />
+        <div style={{ padding: '12px 14px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 7, minWidth: 0 }}>
+            <span style={{ ...disp(13.5, 700), color: T.t1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.homeTeam?.name}</span>
+            <span style={{ ...label(8.5), color: T.t3 }}>v</span>
+            <span style={{ ...disp(13.5, 700), color: T.t1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{match.awayTeam?.name}</span>
+          </span>
+          <span style={{ ...label(8), color: T.t4, flexShrink: 0 }}>›</span>
+        </div>
+      </div>
+      <style>{`.lsc-card:hover{ border-color:${T.b3}; transform:translateY(-1px); }`}</style>
     </Link>
   );
 }

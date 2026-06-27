@@ -10,7 +10,7 @@
 
 import React from 'react';
 
-export default function OrbitMark({ size = 28, ring = '#F7F4EE', dot = '#A8344A', stroke = 6.5, boxed = false, ...props }) {
+export default function OrbitMark({ size = 28, ring = '#F7F4EE', dot = '#C0392B', stroke = 6.5, boxed = false, ...props }) {
   const mark = (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none"
       role="img" aria-label="Oddyessa" {...props}>
@@ -29,7 +29,7 @@ export default function OrbitMark({ size = 28, ring = '#F7F4EE', dot = '#A8344A'
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
       width: size + pad * 2, height: size + pad * 2,
       borderRadius: Math.round((size + pad * 2) * 0.28),
-      background: 'rgba(168,52,74,0.12)', border: '1px solid rgba(168,52,74,0.28)',
+      background: 'rgba(192,57,43,0.12)', border: '1px solid rgba(192,57,43,0.28)',
     }}>{mark}</span>
   );
 }

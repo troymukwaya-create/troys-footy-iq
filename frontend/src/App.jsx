@@ -44,8 +44,8 @@ function Splash() {
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#070708', gap: 14, zIndex: 9999 }}>
       <OrbitMark size={48} stroke={7} />
-      <div className="font-display" style={{ fontSize: 18, fontWeight: 800 }}><span style={{ color: '#A8344A' }}>Odd</span><span style={{ color: '#cfd2da' }}>yessa</span></div>
-      <div className="oddyessa-boot-spin" style={{ width: 22, height: 22, border: '2.5px solid rgba(255,255,255,0.12)', borderTopColor: '#A8344A', borderRadius: '50%' }} />
+      <div className="font-display" style={{ fontSize: 18, fontWeight: 800 }}><span style={{ color: '#C0392B' }}>Odd</span><span style={{ color: '#cfd2da' }}>yessa</span></div>
+      <div className="oddyessa-boot-spin" style={{ width: 22, height: 22, border: '2.5px solid rgba(255,255,255,0.12)', borderTopColor: '#C0392B', borderRadius: '50%' }} />
       <style>{`@keyframes oddyessaBootSpin{to{transform:rotate(360deg)}} .oddyessa-boot-spin{animation:oddyessaBootSpin .8s linear infinite}`}</style>
     </div>
   );
@@ -267,7 +267,7 @@ function MainApp() {
       <LiquidBackground />
       <GoalFlash flashes={goalFlashes} />
       {slipToast && (
-        <div style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 340, display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 999, background: 'rgba(11,11,13,0.92)', border: '1px solid rgba(168,52,74,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', boxShadow: '0 10px 30px rgba(0,0,0,0.45)' }}>
+        <div style={{ position: 'fixed', top: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 340, display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 999, background: 'rgba(11,11,13,0.92)', border: '1px solid rgba(192,57,43,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', boxShadow: '0 10px 30px rgba(0,0,0,0.45)' }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
           Slip loaded — {slipToast.n} leg{slipToast.n > 1 ? 's' : ''} @ {slipToast.odds.toFixed(2)}×
         </div>

@@ -219,7 +219,7 @@ export function TransferSheet({ open, onClose, legs, totals }) {
                 style={{
                   padding: '8px 6px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
                   background: book?.id === b.id ? 'var(--accent-muted)' : 'var(--bg-raised)',
-                  border: `1px solid ${book?.id === b.id ? 'rgba(168,52,74,0.45)' : 'var(--border-subtle)'}`,
+                  border: `1px solid ${book?.id === b.id ? 'rgba(192,57,43,0.45)' : 'var(--border-subtle)'}`,
                 }}
               >
                 <div style={{ fontSize: 11, fontWeight: 700, color: book?.id === b.id ? 'var(--accent)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</div>
@@ -239,7 +239,7 @@ export function TransferSheet({ open, onClose, legs, totals }) {
                   {copied === 'book' ? 'Copied' : `Copy for ${book.id === 'other' ? 'your book' : book.name}`}
                 </button>
                 {book.url && (
-                  <button onClick={handleOpenBook} style={{ ...btn, flexDirection: 'row', padding: '10px 8px', background: 'var(--accent-muted)', color: 'var(--accent)', border: '1px solid rgba(168,52,74,0.3)' }}>
+                  <button onClick={handleOpenBook} style={{ ...btn, flexDirection: 'row', padding: '10px 8px', background: 'var(--accent-muted)', color: 'var(--accent)', border: '1px solid rgba(192,57,43,0.3)' }}>
                     <ExternalLink size={13} /> Open {book.name}
                   </button>
                 )}

@@ -1,55 +1,67 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { VersusHero, T, disp, num, label } from './fixture/primitives.jsx';
+
+// AI pick on the new brand identity — the VersusHero seam crest up top, then
+// the pick + a confidence ring in brand oxblood (was off-brand emerald).
+const RISK_TONE = {
+  low: { c: '#22C55E', bg: 'rgba(34,197,94,0.12)', b: 'rgba(34,197,94,0.4)' },
+  medium: { c: '#EAB308', bg: 'rgba(234,179,8,0.12)', b: 'rgba(234,179,8,0.4)' },
+  high: { c: '#EF4444', bg: 'rgba(239,68,68,0.12)', b: 'rgba(239,68,68,0.4)' },
+};
 
 export default function AIPickCard({ pick }) {
   if (!pick) return null;
 
-  const getRiskColor = (risk) => {
-    switch (risk?.toLowerCase()) {
-      case 'low': return 'bg-emerald-950/50 text-emerald-400 border-emerald-900 shadow-[0_0_12px_rgba(16,185,129,0.2)]';
-      case 'medium': return 'bg-amber-950/50 text-amber-400 border-amber-900 shadow-[0_0_12px_rgba(245,158,11,0.2)]';
-      case 'high': return 'bg-red-950/50 text-red-500 border-red-900 shadow-[0_0_12px_rgba(239,68,68,0.2)]';
-      default: return 'bg-gray-800 text-gray-300 border-gray-700';
-    }
-  };
-
   const confidence = pick.confidence || 0;
-  const radius = 24;
+  const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (confidence / 100) * circumference;
+  const tone = RISK_TONE[pick.risk_level?.toLowerCase()] || { c: T.t2, bg: 'rgba(255,255,255,0.04)', b: T.b2 };
+
+  const v = {
+    home: pick.home_name || 'Home', away: pick.away_name || 'Away',
+    league: pick.league_name || 'Competition', stage: '',
+    state: 'upcoming', prob: null, score: null, kickoff: '',
+  };
 
   return (
-    <Card className="bg-gray-900 border-gray-800 shadow-sm relative overflow-hidden h-full flex flex-col hover:border-emerald-500/30 transition-colors group">
-      <CardContent className="p-6 flex-1 flex flex-col relative z-10">
-        <div className="flex justify-between items-start mb-6">
-           <div>
-             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 border-b border-gray-800 pb-1 inline-block">{pick.league_name || 'Competition'}</div>
-             <h3 className="font-bold text-white text-lg leading-tight">{pick.home_name || 'Home'} <span className="text-gray-600 font-light mx-1">vs</span> {pick.away_name || 'Away'}</h3>
-           </div>
-           
-           {/* Confidence Ring */}
-           <div className="relative flex items-center justify-center w-16 h-16 flex-shrink-0">
-             <svg className="w-full h-full transform -rotate-90">
-               <circle cx="32" cy="32" r={radius} stroke="currentColor" strokeWidth="4" fill="transparent" className="text-gray-800" />
-               <circle cx="32" cy="32" r={radius} stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className={`transition-all duration-1000 ${confidence >= 70 ? 'text-emerald-500' : 'text-amber-500'}`} strokeLinecap="round" />
-             </svg>
-             <div className="absolute flex flex-col items-center justify-center">
-               <span className="text-base font-black text-white">{confidence}<span className="text-[10px] text-gray-400">%</span></span>
-             </div>
-           </div>
+    <div style={{ position: 'relative', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', background: T.raised, border: '1px solid ' + T.b2, borderRadius: 14, isolation: 'isolate' }}>
+      <VersusHero
+        v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
+        h={112} meta codes codeSize={22} disc={18} seam={[60, 40]} discTop={48}
+      />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...label(8.5), color: T.t3, marginBottom: 7 }}>AI pick</div>
+            <div style={{ ...disp(17, 800), color: T.t1, lineHeight: 1.1 }}>{pick.pick_type || '—'}</div>
+          </div>
+          {/* Confidence ring — brand oxblood */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 56, height: 56, flexShrink: 0 }}>
+            <svg width="56" height="56" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="28" cy="28" r={radius} stroke={T.b2} strokeWidth="4" fill="transparent" />
+              <circle cx="28" cy="28" r={radius} stroke={T.accent} strokeWidth="4" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s cubic-bezier(.3,.7,.4,1)' }} />
+            </svg>
+            <div style={{ position: 'absolute', display: 'flex', alignItems: 'baseline' }}>
+              <span style={{ ...num(16, 700), color: T.t1 }}>{confidence}</span>
+              <span style={{ ...num(9, 500), color: T.t3 }}>%</span>
+            </div>
+          </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-3">
-           <span className="bg-gray-950 border border-gray-800 text-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide">{pick.pick_type}</span>
-           <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getRiskColor(pick.risk_level)}`}>{pick.risk_level || 'LOW'} RISK</span>
+        <div style={{ marginBottom: 14 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 999, background: tone.bg, border: '1px solid ' + tone.b }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: tone.c }} />
+            <span style={{ ...label(8), color: tone.c }}>{(pick.risk_level || 'LOW')} risk</span>
+          </span>
         </div>
 
-        <div className="p-4 bg-gray-950/50 rounded-xl border border-gray-800/50 mt-2 flex-1">
-          <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">
+        <div style={{ flex: 1, padding: 14, background: 'rgba(0,0,0,0.22)', borderRadius: 10, border: '1px solid ' + T.b1 }}>
+          <p style={{ fontFamily: T.sans, fontSize: 13, lineHeight: 1.55, color: T.t2, whiteSpace: 'pre-wrap', margin: 0 }}>
             {pick.reasoning}
           </p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

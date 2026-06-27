@@ -1,5 +1,8 @@
 import React from 'react';
 import { CheckCircle2, XCircle, CircleDot, AlertCircle, Lock, Receipt } from 'lucide-react';
+import { VersusHero, T } from './fixture/primitives.jsx';
+
+const parseScoreStr = (s) => { const m = /^(\d+)\s*[-–:]\s*(\d+)$/.exec(String(s || '').trim()); return m ? { home: +m[1], away: +m[2] } : null; };
 
 // ─── THE CALL — SETTLED ─────────────────────────────────────────────
 // Post-match receipt: the locked pre-match call next to what actually
@@ -85,8 +88,17 @@ export function MatchVerdict({ verdict, prob, home, away, homeColor, awayColor }
       : null);
   const headline = verdict.assessment?.headline || t.headline;
 
+  // Settled seam banner — the matchup motif with the final score on the fold.
+  const hv = {
+    home, away, league: '', stage: '', state: 'settled',
+    score: parseScoreStr(sl?.actual), prob: null, kickoff: '',
+  };
+
   return (
-    <div className="card" style={{ padding: 18, border: `1px solid ${TONE_BORDER[tone]}` }}>
+    <div className="card" style={{ padding: 0, border: `1px solid ${TONE_BORDER[tone]}`, overflow: 'hidden', isolation: 'isolate' }}>
+      <VersusHero v={hv} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
+        h={120} meta codes codeSize={24} disc={20} seam={[60, 40]} discTop={48} />
+      <div style={{ padding: 18 }}>
       {/* Header — what this card is */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -163,6 +175,7 @@ export function MatchVerdict({ verdict, prob, home, away, homeColor, awayColor }
 
       <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.55, marginTop: 12 }}>
         This is the prediction exactly as it was locked before kickoff — nothing here was edited after the final whistle. Misses stay on the record too.
+      </div>
       </div>
     </div>
   );

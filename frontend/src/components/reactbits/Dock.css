@@ -47,9 +47,9 @@
 /* the active tab gets the oxblood glass pill + glow */
 .dock-item-active {
   color: var(--accent);
-  background: rgba(168, 52, 74, 0.18);
+  background: rgba(192, 57, 43, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 4px 14px rgba(168, 52, 74, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 4px 14px rgba(192, 57, 43, 0.28);
 }
 
 .dock-icon {
@@ -58,7 +58,7 @@
   justify-content: center;
   filter: none;
 }
-.dock-item-active .dock-icon { filter: drop-shadow(0 1px 6px rgba(168, 52, 74, 0.45)); }
+.dock-item-active .dock-icon { filter: drop-shadow(0 1px 6px rgba(192, 57, 43, 0.45)); }
 
 .dock-label {
   position: absolute;

@@ -80,7 +80,7 @@ function AccountButton() {
   const initial = (user.email?.[0] || 'U').toUpperCase();
   return (
     <div style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(o => !o)} aria-label="Account" style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent-muted)', border: '1px solid rgba(168,52,74,0.3)', color: 'var(--accent)', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+      <button onClick={() => setOpen(o => !o)} aria-label="Account" style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent-muted)', border: '1px solid rgba(192,57,43,0.3)', color: 'var(--accent)', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
         {initial}
       </button>
       {open && (
