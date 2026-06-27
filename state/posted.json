@@ -83,7 +83,8 @@
     "apf_1489411",
     "apf_1539074",
     "apf_1489416",
-    "apf_1489417"
+    "apf_1489417",
+    "apf_1489413"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -923,21 +924,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1489413": {
+    },
+    {
       "kind": "match",
+      "id": "apf_1489413",
       "label": "Cape Verde Islands 0–0 Saudi Arabia",
+      "at": "2026-06-27T16:52:43.028Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
