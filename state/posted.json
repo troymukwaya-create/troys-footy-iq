@@ -926,5 +926,18 @@
     }
   ],
   "verdictWait": {},
-  "pending": {}
+  "pending": {
+    "apf_1489413": {
+      "kind": "match",
+      "label": "Cape Verde Islands 0–0 Saudi Arabia",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
