@@ -19,7 +19,8 @@
     "apf_1489391",
     "apf_1489389",
     "apf_1539008",
-    "apf_1489420"
+    "apf_1489420",
+    "apf_1489419"
   ],
   "receipts": [
     "apf_1538999",
@@ -86,7 +87,8 @@
     "apf_1489416",
     "apf_1489417",
     "apf_1489413",
-    "apf_1489414"
+    "apf_1489414",
+    "apf_1489415"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -959,33 +961,30 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1489419",
+      "label": "Colombia v Portugal",
+      "at": "2026-06-27T21:17:55.316Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489415",
+      "label": "New Zealand 1–5 Belgium",
+      "at": "2026-06-27T21:18:13.590Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
-  "pending": {
-    "apf_1489419": {
-      "kind": "prematch",
-      "label": "Colombia v Portugal",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489415": {
-      "kind": "match",
-      "label": "New Zealand 1–5 Belgium",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    }
-  }
+  "pending": {}
 }
