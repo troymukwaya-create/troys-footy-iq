@@ -962,5 +962,30 @@
     }
   ],
   "verdictWait": {},
-  "pending": {}
+  "pending": {
+    "apf_1489419": {
+      "kind": "prematch",
+      "label": "Colombia v Portugal",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1489415": {
+      "kind": "match",
+      "label": "New Zealand 1–5 Belgium",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
