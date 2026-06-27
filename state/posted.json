@@ -82,7 +82,8 @@
     "apf_1539012",
     "apf_1489411",
     "apf_1539074",
-    "apf_1489416"
+    "apf_1489416",
+    "apf_1489417"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -911,21 +912,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1489417": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489417",
       "label": "Uruguay v Spain",
+      "at": "2026-06-27T14:43:32.713Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
