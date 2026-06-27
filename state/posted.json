@@ -914,6 +914,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489416": {
+      "kind": "match",
+      "label": "Norway 1–4 France",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
