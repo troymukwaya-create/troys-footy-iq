@@ -877,9 +877,7 @@
       }
     }
   ],
-  "verdictWait": {
-    "apf_1489411": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1539074": {
       "kind": "prematch",
@@ -896,6 +894,18 @@
     "apf_1489417": {
       "kind": "prematch",
       "label": "Uruguay v Spain",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1489411": {
+      "kind": "match",
+      "label": "Paraguay 0–0 Australia",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
