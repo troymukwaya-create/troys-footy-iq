@@ -81,7 +81,8 @@
     "apf_1489412",
     "apf_1539012",
     "apf_1489411",
-    "apf_1539074"
+    "apf_1539074",
+    "apf_1489416"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -899,6 +900,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489416",
+      "label": "Norway 1–4 France",
+      "at": "2026-06-27T13:00:08.166Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -906,18 +918,6 @@
     "apf_1489417": {
       "kind": "prematch",
       "label": "Uruguay v Spain",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489416": {
-      "kind": "match",
-      "label": "Norway 1–4 France",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
