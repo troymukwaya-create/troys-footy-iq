@@ -985,6 +985,21 @@
       }
     }
   ],
-  "verdictWait": {},
-  "pending": {}
+  "verdictWait": {
+    "apf_1489422": 1
+  },
+  "pending": {
+    "apf_1489418": {
+      "kind": "prematch",
+      "label": "Algeria v Austria",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
