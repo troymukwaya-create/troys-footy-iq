@@ -938,5 +938,30 @@
     }
   ],
   "verdictWait": {},
-  "pending": {}
+  "pending": {
+    "apf_1489420": {
+      "kind": "prematch",
+      "label": "Croatia v Ghana",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1489414": {
+      "kind": "match",
+      "label": "Egypt 1–1 Iran",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
