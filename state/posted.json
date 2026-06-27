@@ -79,7 +79,8 @@
     "apf_1489409",
     "apf_1539011",
     "apf_1489412",
-    "apf_1539012"
+    "apf_1539012",
+    "apf_1489411"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -875,11 +876,20 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489411",
+      "label": "Paraguay 0–0 Australia",
+      "at": "2026-06-27T08:05:40.099Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1489411": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1539074": {
       "kind": "prematch",
@@ -896,18 +906,6 @@
     "apf_1489417": {
       "kind": "prematch",
       "label": "Uruguay v Spain",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489411": {
-      "kind": "match",
-      "label": "Paraguay 0–0 Australia",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
