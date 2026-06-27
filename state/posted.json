@@ -80,7 +80,8 @@
     "apf_1539011",
     "apf_1489412",
     "apf_1539012",
-    "apf_1489411"
+    "apf_1489411",
+    "apf_1539074"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -887,22 +888,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1539074",
+      "label": "Senegal v Iraq",
+      "at": "2026-06-27T10:20:41.069Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1539074": {
-      "kind": "prematch",
-      "label": "Senegal v Iraq",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1489417": {
       "kind": "prematch",
       "label": "Uruguay v Spain",
