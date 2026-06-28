@@ -66,6 +66,7 @@ export async function evaluateStoredPredictions() {
         AND f.status = 'FINISHED'
         AND f.home_goals IS NOT NULL
         AND f.away_goals IS NOT NULL
+        AND p.model_version NOT LIKE '%-shadow'
       RETURNING p.id, p.prob_home, p.prob_draw, p.prob_away, p.actual_result
     `);
 

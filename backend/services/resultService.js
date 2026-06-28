@@ -137,14 +137,21 @@ export async function ingestResults(lookbackDays = 3) {
       p.prob_home, p.prob_draw, p.prob_away,
       p.odds_home, p.odds_draw, p.odds_away,
       p.value_edge_home, p.value_edge_draw, p.value_edge_away,
-      p.actual_result, p.home_team, p.away_team
+      p.actual_result, p.home_team, p.away_team, p.model_version
   `);
 
-  const newlyEvaluated = evalResult?.rows || [];
-  console.log(`[RESULTS] Evaluated ${newlyEvaluated.length} predictions.`);
+  const allEvaluated = evalResult?.rows || [];
+  // Fan-brain shadow rows DID get actual_result above (the shadow ledger reads
+  // predictions directly), but they MUST NOT enter model_performance/model_runs
+  // — the PUBLIC Brier aggregates that table with no model filter, so a shadow
+  // track would corrupt the published honesty number. Keep them out here, at the
+  // single choke point, so every current and future public surface stays clean.
+  const newlyEvaluated = allEvaluated.filter(r => !/-shadow$/i.test(r.model_version || ''));
+  const shadowExcluded = allEvaluated.length - newlyEvaluated.length;
+  console.log(`[RESULTS] Evaluated ${newlyEvaluated.length} predictions${shadowExcluded ? ` (+${shadowExcluded} shadow rows scored privately, kept out of public metrics)` : ''}.`);
 
   if (newlyEvaluated.length === 0) {
-    return { updated, evaluated: 0 };
+    return { updated, evaluated: 0, shadowEvaluated: shadowExcluded };
   }
 
   // ─── Step 4: Compute per-match metrics ────────────────────────
