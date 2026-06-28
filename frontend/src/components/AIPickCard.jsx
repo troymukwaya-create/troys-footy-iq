@@ -28,7 +28,7 @@ export default function AIPickCard({ pick }) {
     <div style={{ position: 'relative', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', background: T.raised, border: '1px solid ' + T.b2, borderRadius: 14, isolation: 'isolate' }}>
       <VersusHero
         v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
-        h={112} meta codes codeSize={22} disc={18} seam={[60, 40]} discTop={48}
+        h={112} meta codes codeSize={17} disc={18} seam={[60, 40]} discTop={48}
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>

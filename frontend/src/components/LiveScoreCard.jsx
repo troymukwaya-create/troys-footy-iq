@@ -23,7 +23,7 @@ export default function LiveScoreCard({ match }) {
       >
         <VersusHero
           v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
-          h={120} meta codes codeSize={24} disc={20} seam={[60, 40]} discTop={48}
+          h={120} meta codes codeSize={18} disc={20} seam={[60, 40]} discTop={48}
         />
         <div style={{ padding: '12px 14px 13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 7, minWidth: 0 }}>

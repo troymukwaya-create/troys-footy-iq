@@ -96,7 +96,7 @@ export function MatchOfDay({ v, t = {}, onSelect, onMouseEnter }) {
       {t.flagBg && <FlagBleedBg home={v.home} away={v.away} on opacity={0.08} />}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: 'linear-gradient(180deg,' + (t.accent || T.accent) + ',' + T.accentDeep + ')', zIndex: 8 }} />
       <div style={{ position: 'relative' }}>
-        <VersusHero v={v} t={t} h={176} seam={seamOf(t)} disc={32} codes codeSize={30} discTop={45} />
+        <VersusHero v={v} t={t} h={176} seam={seamOf(t)} disc={32} codes codeSize={26} discTop={45} />
         <div style={{ position: 'absolute', top: 13, left: 22, right: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 6 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
             <Diamond s={7} c={t.accent || T.accent} />
@@ -144,7 +144,7 @@ export function MatchBand({ v, t = {} }) {
     <div style={{ position: 'relative', isolation: 'isolate' }}>
       {t.flagBg && <FlagBleedBg home={v.home} away={v.away} on opacity={0.08} />}
       {live && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: t.accent || T.accent, zIndex: 8 }} />}
-      <VersusHero v={v} t={t} h={120} seam={seamOf(t)} disc={23} meta icon={v.state === 'upcoming' ? 'KickoffIcon' : null} codes codeSize={27} discTop={50} />
+      <VersusHero v={v} t={t} h={120} seam={seamOf(t)} disc={23} meta icon={v.state === 'upcoming' ? 'KickoffIcon' : null} codes codeSize={20} discTop={50} />
       <div style={{ position: 'relative', padding: '13px 18px 15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
           <span style={{ ...num(10.5, 400), color: T.t3, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</span>

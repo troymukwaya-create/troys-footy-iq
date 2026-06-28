@@ -97,7 +97,7 @@ export function MatchVerdict({ verdict, prob, home, away, homeColor, awayColor }
   return (
     <div className="card" style={{ padding: 0, border: `1px solid ${TONE_BORDER[tone]}`, overflow: 'hidden', isolation: 'isolate' }}>
       <VersusHero v={hv} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
-        h={120} meta codes codeSize={24} disc={20} seam={[60, 40]} discTop={48} />
+        h={120} meta codes codeSize={18} disc={20} seam={[60, 40]} discTop={48} />
       <div style={{ padding: 18 }}>
       {/* Header — what this card is */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>

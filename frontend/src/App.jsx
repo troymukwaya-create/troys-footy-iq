@@ -28,6 +28,7 @@ import { AuthModal } from './components/AuthModal.jsx';
 import { SavedSlipsModal } from './components/SavedSlipsModal.jsx';
 import { useAuth } from './hooks/useAuth.js';
 import { usePullToRefresh } from './hooks/usePullToRefresh.js';
+import { useSwipeBack } from './hooks/useSwipeBack.js';
 import Spinner from './components/Spinner.jsx';
 
 const MatchAnalysisPanel = React.lazy(() => import('./components/MatchAnalysisPanel.jsx').then(m => ({ default: m.MatchAnalysisPanel })));
@@ -56,7 +57,6 @@ function MainApp() {
 
   const {
     selectedFixture, setSelectedFixture,
-    activeLeague, setActiveLeague,
     goalFlashes,
     addParlaySelection, clearParlay,
   } = useStore();
@@ -124,6 +124,8 @@ function MainApp() {
   const [searchParams, setSearchParams] = useSearchParams();
   const mobileTab = searchParams.get('tab') ?? 'home';
   const teamParam = searchParams.get('team');
+  // League filter is URL state (?league=PL) so Back/Forward + swipe can undo it.
+  const activeLeague = searchParams.get('league') || 'ALL';
 
   // ─── Fixture filtering ─────────────────────────────────────────
   const allFixtures = useMemo(() => {
@@ -179,8 +181,10 @@ function MainApp() {
     // the main feed, so the URL→store effect (which scans the feed) can't find it.
     setSelectedFixture(fixture);
     setSearchParams(prev => {
-      const team = prev.get('team');
-      return team ? { tab: 'home', team, match: String(fixture.id) } : { tab: 'home', match: String(fixture.id) };
+      const n = { tab: 'home', match: String(fixture.id) };
+      const team = prev.get('team'); if (team) n.team = team;
+      const league = prev.get('league'); if (league) n.league = league;
+      return n;
     });
     // CEO dashboard engagement signal
     track('prediction_viewed', {
@@ -192,10 +196,12 @@ function MainApp() {
   }, [setSearchParams, setSelectedFixture]);
 
   const handleDeselectFixture = useCallback(() => {
-    // Drop ?match= but keep a team page open if we came from one.
+    // Drop ?match= but keep a team page / league browse open if we came from one.
     setSearchParams(prev => {
-      const team = prev.get('team');
-      return team ? { tab: 'home', team } : { tab: 'home' };
+      const n = { tab: 'home' };
+      const team = prev.get('team'); if (team) n.team = team;
+      const league = prev.get('league'); if (league) n.league = league;
+      return n;
     });
   }, [setSearchParams]);
 
@@ -203,23 +209,56 @@ function MainApp() {
   const handleSelectTeam = useCallback((team) => {
     if (!team?.id) return;
     setSelectedFixture(null);
-    setSearchParams({ tab: 'home', team: String(team.id) });
+    setSearchParams(prev => { const n = { tab: 'home', team: String(team.id) }; const league = prev.get('league'); if (league) n.league = league; return n; });
     track('team_searched', { team_id: team.id, team_name: team.name });
   }, [setSearchParams, setSelectedFixture]);
 
   const handleCloseTeam = useCallback(() => {
-    setSearchParams({ tab: 'home' });
+    setSearchParams(prev => { const n = { tab: 'home' }; const league = prev.get('league'); if (league) n.league = league; return n; });
   }, [setSearchParams]);
 
   // Mobile bottom-nav handler — tapping "Home" clears any open match so the
   // best-bets feed shows (not a stale match analysis). Other tabs keep the
-  // open match in the URL so returning to Home-with-back still works.
+  // open match + league filter in the URL so back still works.
   const onMobileTab = useCallback((tab) => {
     setSearchParams(prev => {
-      const match = prev.get('match');
-      return tab !== 'home' && match ? { tab, match } : { tab };
+      const n = Object.fromEntries(prev);
+      n.tab = tab;
+      if (tab === 'home') delete n.match;
+      return n;
     });
   }, [setSearchParams]);
+
+  // Logo → true home: clear match, team, AND the league filter, so the
+  // "Good morning" board (which only shows when activeLeague === 'ALL') is
+  // always one tap away.
+  const handleGoHome = useCallback(() => {
+    setSearchParams({ tab: 'home' });
+  }, [setSearchParams]);
+
+  // League selection writes the URL (?league=) so it's a real history entry —
+  // Back/Forward and the swipe-back gesture undo it like any other navigation.
+  const handleSelectLeague = useCallback((league) => {
+    const code = league?.code;
+    setSearchParams(prev => {
+      const n = Object.fromEntries(prev);
+      n.tab = 'home';
+      delete n.match;
+      if (!code || code === 'ALL') delete n.league; else n.league = code;
+      return n;
+    });
+  }, [setSearchParams]);
+
+  // Contextual back for the mobile swipe gesture: peel ONE layer at a time
+  // (match → team → non-home tab → league filter) and never walk out of the app.
+  const handleBack = useCallback(() => {
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('match')) { handleDeselectFixture(); return; }
+    if (sp.get('team')) { handleCloseTeam(); return; }
+    if ((sp.get('tab') || 'home') !== 'home') { setSearchParams(prev => { const n = Object.fromEntries(prev); n.tab = 'home'; return n; }); return; }
+    if (sp.get('league')) { handleGoHome(); return; }
+  }, [handleDeselectFixture, handleCloseTeam, handleGoHome, setSearchParams]);
+  useSwipeBack(handleBack);
 
   // URL → store sync. Re-runs as fixtures stream in, so a deep link selects
   // its match as soon as the feed contains it.
@@ -282,7 +321,7 @@ function MainApp() {
           setSearchParams({ tab: 'home' });
           setTimeout(() => document.getElementById('receipts')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
         }} />
-        <TopNav onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
+        <TopNav onGoHome={handleGoHome} onGoDashboard={handleDeselectFixture} fixtureSelected={!!selectedFixture} />
       </div>
 
       <div className="panel-row flex flex-1 overflow-hidden">
@@ -295,8 +334,8 @@ function MainApp() {
             fixtures={fixtures}
             liveMatches={liveMatches}
             activeLeague={activeLeague}
-            onSelectLeague={(league) => league?.code ? setActiveLeague(league.code) : setActiveLeague('ALL')}
-            onGoDashboard={handleDeselectFixture}
+            onSelectLeague={handleSelectLeague}
+            onGoDashboard={handleGoHome}
           />
 
           {/* Fixture List — freshness-first: Live → Up next → Results collapsed */}

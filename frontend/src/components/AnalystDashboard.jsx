@@ -83,7 +83,7 @@ function InsightCard({ fixture, onSelect }) {
     >
       {v && (
         <VersusHero v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5 }}
-          h={120} seam={[58, 42]} disc={23} meta codes codeSize={27} discTop={50} />
+          h={120} seam={[58, 42]} disc={23} meta codes codeSize={20} discTop={50} />
       )}
 
       <div style={{ padding: 'clamp(13px,3.5vw,16px) clamp(14px,4vw,18px)', display: 'flex', flexDirection: 'column', gap: 13 }}>

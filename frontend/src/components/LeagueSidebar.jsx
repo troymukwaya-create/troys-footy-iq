@@ -43,7 +43,9 @@ function PillFlag({ iso }) {
 
 export function LeagueSidebar({ fixtures = [], liveMatches = [], activeLeague, onSelectLeague, onGoDashboard }) {
   const liveCount = (liveMatches || []).length || (fixtures || []).filter(f => f.status === 'IN_PLAY' || f.status === 'PAUSED').length;
-  const select = (code) => (code === 'ALL' ? onGoDashboard?.() : onSelectLeague?.({ code }));
+  // Every chip (incl. "All") routes through onSelectLeague so the URL drives
+  // the filter — keeps Back/Forward + the All-chip highlight working.
+  const select = (code) => onSelectLeague?.({ code });
   const todayStr = new Date().toDateString();
 
   return (
