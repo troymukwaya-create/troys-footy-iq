@@ -7,7 +7,7 @@ export function GoalFlash({ flashes }) {
   if (!flashes || flashes.length === 0) return null;
 
   return (
-    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2">
+    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none">
       {flashes.map((flash, i) => {
         if (!flash) return null;
         return (

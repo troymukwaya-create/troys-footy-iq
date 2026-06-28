@@ -77,7 +77,7 @@ function Ticket({ v, t, isSelected, fixtureProb }) {
 
       {/* Body */}
       <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-        <VersusHero v={v} t={t} h={84} seam={[60, 40]} disc={16} codes codeSize={18} discTop={50} />
+        <VersusHero v={v} t={t} h={84} seam={[60, 40]} disc={16} codes codeSize={14} discTop={50} />
         <div style={{ padding: '10px 14px 13px 16px' }}>
           <div style={{ ...label(8.5), color: T.t3, marginBottom: v.prob ? 10 : 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {v.league}{v.stage ? ` · ${v.stage}` : ''}

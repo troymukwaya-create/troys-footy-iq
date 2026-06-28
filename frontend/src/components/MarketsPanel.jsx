@@ -11,8 +11,6 @@ export function MarketsPanel({ fixture }) {
   const fixtureId = fixture?.id;
   const { data: markets, isLoading } = useMarkets(fixtureId);
 
-  if (!fixture) return null;
-
   // Find value picks across all markets
   const valuePicks = useMemo(() => {
     if (!Array.isArray(markets)) return [];
@@ -26,6 +24,9 @@ export function MarketsPanel({ fixture }) {
     }
     return picks.sort((a, b) => (b.value_edge || 0) - (a.value_edge || 0)).slice(0, 3);
   }, [markets]);
+
+  // Guard AFTER all hooks so the hook order is stable (was a Rules-of-Hooks bug).
+  if (!fixture) return null;
 
   if (isLoading) {
     return (

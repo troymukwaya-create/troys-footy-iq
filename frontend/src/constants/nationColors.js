@@ -48,3 +48,51 @@ export function flagGradient(homeName, awayName, base = null, alpha = '40') {
   const flags = `linear-gradient(100deg, ${h}${alpha} 0%, ${h}1A 30%, transparent 48%, transparent 52%, ${a}1A 70%, ${a}${alpha} 100%)`;
   return base ? `${flags}, ${base}` : flags;
 }
+
+// ─── TEAM PALETTE + BADGE CONTRAST ──────────────────────────────────
+// A club crest dropped on its own team-colour seam can vanish (Liverpool's red
+// crest on the red half). So: frame every crest on a CONTRASTING plate, and if
+// the two teams' seam colours are too close (two reds, two navies), push one
+// side to its alternate so the halves stay distinguishable.
+
+function _rgb(hex) {
+  let s = String(hex || '').replace('#', '');
+  if (s.length === 3) s = s.replace(/./g, (c) => c + c);
+  const n = parseInt(s.slice(0, 6), 16);
+  return Number.isNaN(n) ? [100, 116, 139] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function _isLight(hex) { const [r, g, b] = _rgb(hex); return (r * 299 + g * 587 + b * 114) > 140000; }
+
+// redmean perceptual-ish distance between two hex colours (0 = identical)
+export function colorDist(a, b) {
+  const [r1, g1, b1] = _rgb(a), [r2, g2, b2] = _rgb(b);
+  const rm = (r1 + r2) / 2;
+  return Math.sqrt((2 + rm / 256) * (r1 - r2) ** 2 + 4 * (g1 - g2) ** 2 + (2 + (255 - rm) / 256) * (b1 - b2) ** 2);
+}
+
+// Full palette for any team — nation (flag colour + neutral alt) or club
+// (its real primary/secondary/text), with a sane fallback for the unknown.
+export function getTeamColors(name) {
+  if (NATION_COLORS[name]) { const p = NATION_COLORS[name]; return { primary: p, secondary: '#F7F4EE', text: _isLight(p) ? '#0B0B0D' : '#fff' }; }
+  const t = TEAM_COLORS[name];
+  if (t?.primary) return { primary: t.primary, secondary: t.secondary || '#F7F4EE', text: t.text || (_isLight(t.primary) ? '#0B0B0D' : '#fff') };
+  return { primary: '#64748B', secondary: '#F7F4EE', text: '#fff' };
+}
+
+// A plate colour that contrasts with a seam, so a crest never blends in:
+// dark seam → warm cream (Bone), light seam → near-black chrome.
+export function crestPlate(seam) { return _isLight(seam) ? '#0B0B0D' : '#F7F4EE'; }
+
+// Seam colours for a fixture's two club halves, de-clashed when too similar.
+const SEAM_CLASH = 78;
+export function matchSeam(homeName, awayName) {
+  const H = getTeamColors(homeName), A = getTeamColors(awayName);
+  let home = H.primary, away = A.primary;
+  if (colorDist(home, away) < SEAM_CLASH) {
+    const gainAway = colorDist(home, A.secondary) - colorDist(home, away);
+    const gainHome = colorDist(away, H.secondary) - colorDist(home, away);
+    if (gainAway >= gainHome && gainAway > 0) away = A.secondary;
+    else if (gainHome > 0) home = H.secondary;
+  }
+  return { home: { seam: home, plate: crestPlate(home) }, away: { seam: away, plate: crestPlate(away) } };
+}

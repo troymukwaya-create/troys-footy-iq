@@ -155,6 +155,9 @@ export default function HowItWorks() {
   const [tearing, setTearing] = useState(false);
   const stubRef = React.useRef(null);
 
+  // Visiting the guide counts as "welcomed" — so a first-timer who lands here
+  // and navigates away (or refreshes) is never bounced back to this gate forever.
+  useEffect(() => { try { localStorage.setItem('oddyessa_welcomed', '1'); } catch { /* ignore */ } }, []);
   const enter = () => { try { localStorage.setItem('oddyessa_welcomed', '1'); } catch { /* ignore */ } };
   const tear = () => {
     enter();

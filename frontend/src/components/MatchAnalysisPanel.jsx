@@ -72,7 +72,7 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
         <VersusHero
           v={{ ...fixtureView(fixture), homeForm: homeStats?.form && homeStats.form !== 'N/A' ? homeStats.form : null, awayForm: awayStats?.form && awayStats.form !== 'N/A' ? awayStats.form : null }}
           t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
-          h={176} meta codes codeSize={36} disc={30} seam={[60, 40]} discTop={44}
+          h={176} meta codes codeSize={28} disc={30} seam={[60, 40]} discTop={44}
         />
         <div style={{ padding: '16px 24px 24px' }}>
         {/* Full team names */}

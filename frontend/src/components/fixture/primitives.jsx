@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { flagUrl } from '../../constants/nationFlags.js';
-import { getMatchColor } from '../../constants/nationColors.js';
+import { getMatchColor, matchSeam } from '../../constants/nationColors.js';
 import OrbitMark from '../OrbitMark.jsx';
 import { KickoffIcon, PitchIcon, EdgeIcon } from '../BrandIcons.jsx';
 import FlagBleed from '../FlagBleed.jsx';
@@ -40,6 +40,12 @@ export function num(size, weight) {
 }
 export function label(size) {
   return { fontFamily: T.sans, fontWeight: 600, fontSize: size || 9.5, letterSpacing: '0.14em', textTransform: 'uppercase' };
+}
+// Team-code idiom — the fixture-card IDENTIFIER (ARS/COV), not a page headline.
+// Pulled back one register from the display cut (disp): lighter weight, less
+// expansion, relaxed tracking — confident and on-brand, but calm, not shouty.
+export function codeType(size) {
+  return { fontFamily: T.sans, fontWeight: 700, fontStretch: '112%', letterSpacing: '-0.01em', fontSize: size, lineHeight: 1, margin: 0 };
 }
 
 // ── Crisp flag (rectangular), with a coloured-code fallback for clubs ──────
@@ -237,6 +243,26 @@ export function ScorePlate({ v, t, size }) {
   );
 }
 
+// ── Club crest — the badge itself, made 3D (no plate/disc behind it) ──────
+// The crest is the object: a contrast HALO hugs its real silhouette so a red
+// crest never melts into a red seam, a faint top rim-light gives the raised
+// emboss, and a directional cast shadow lifts it off the surface.
+function CrestBadge({ src, plate, size, left }) {
+  // plate '#F7F4EE' (cream) ⇒ seam is dark ⇒ light halo; else seam is light ⇒ dark halo.
+  const onDark = plate === '#F7F4EE';
+  const halo = onDark
+    // light halo + warm top rim, cast shadow below
+    ? 'drop-shadow(0 0 1.1px rgba(255,255,255,0.98)) drop-shadow(0 0 1.1px rgba(255,255,255,0.98)) drop-shadow(0 0 3px rgba(255,255,255,0.45)) drop-shadow(0 -1px 0.5px rgba(255,255,255,0.7)) drop-shadow(0 3px 4px rgba(0,0,0,0.6)) drop-shadow(0 1px 1.5px rgba(0,0,0,0.5))'
+    // dark halo + faint top rim, cast shadow below
+    : 'drop-shadow(0 0 1.1px rgba(0,0,0,0.85)) drop-shadow(0 0 1.1px rgba(0,0,0,0.85)) drop-shadow(0 0 3px rgba(0,0,0,0.4)) drop-shadow(0 -1px 0.5px rgba(255,255,255,0.45)) drop-shadow(0 3px 4px rgba(0,0,0,0.5)) drop-shadow(0 1px 1.5px rgba(0,0,0,0.4))';
+  const d = Math.round(size * 1.04);
+  return (
+    <img src={src} alt="" loading="lazy"
+      style={{ position: 'absolute', left, top: '42%', transform: 'translate(-50%,-50%)', width: d, height: d, objectFit: 'contain', filter: halo, zIndex: 2 }}
+      onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+  );
+}
+
 // ── The shared "matchup" hero: two flags clipped on a diagonal seam ───────
 export function VersusHero({ v, t, h, w, radius, disc, seam, meta, icon, codes, codeSize, discTop }) {
   const W = w == null ? '100%' : w, H = h || 158, R = radius || 0;
@@ -247,30 +273,30 @@ export function VersusHero({ v, t, h, w, radius, disc, seam, meta, icon, codes, 
   const awayClip = `polygon(${topX}% 0, 100% 0, 100% 100%, ${botX}% 100%)`;
   const dTop = discTop == null ? 50 : discTop;
   const cs = codeSize || 30;
+  // Team-colour seams for flagless (club) halves — de-clashed + with crest plates.
+  const pal = matchSeam(v.home, v.away);
   const showForm = codes && t && t.density >= 2 && H >= 118 && (v.homeForm || v.awayForm);
   return (
     <div style={{ position: 'relative', width: W, height: H, overflow: 'hidden', borderRadius: R, flexShrink: 0, background: '#1d2028' }}>
       {hu
         ? <img src={hu} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', clipPath: homeClip }} />
-        : <div style={{ position: 'absolute', inset: 0, clipPath: homeClip, background: getMatchColor(v.home) }} />}
+        : <div style={{ position: 'absolute', inset: 0, clipPath: homeClip, background: pal.home.seam }} />}
       {au
         ? <img src={au} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', clipPath: awayClip }} />
-        : <div style={{ position: 'absolute', inset: 0, clipPath: awayClip, background: getMatchColor(v.away) }} />}
+        : <div style={{ position: 'absolute', inset: 0, clipPath: awayClip, background: pal.away.seam }} />}
       <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
         <line x1={topX} y1={-2} x2={botX} y2={102} stroke="rgba(0,0,0,0.5)" strokeWidth={6} vectorEffect="non-scaling-stroke" />
         <line x1={topX} y1={-2} x2={botX} y2={102} stroke={ACC} strokeWidth={2.5} vectorEffect="non-scaling-stroke" />
       </svg>
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,11,14,0.62) 0%, rgba(10,11,14,0.05) 24%, rgba(12,13,17,0.12) 54%, rgba(20,22,27,0.98) 100%)' }} />
-      {/* Club crest centred on a flagless (club) team's colour half — the PL-emblem look that fills the otherwise-blank tile. Nations have a flag instead. */}
+      {/* Club crest on a CONTRASTING plate so it never blends into its own
+          team-colour seam (e.g. Liverpool's red crest on the red half). Nations
+          render their flag instead. */}
       {!hu && v.homeCrest && (
-        <img src={v.homeCrest} alt="" loading="lazy"
-          style={{ position: 'absolute', left: '25%', top: '42%', transform: 'translate(-50%,-50%)', width: Math.min(56, Math.round(H * 0.42)), height: Math.min(56, Math.round(H * 0.42)), objectFit: 'contain', filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.7))', zIndex: 2 }}
-          onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+        <CrestBadge src={v.homeCrest} plate={pal.home.plate} size={Math.min(56, Math.round(H * 0.42))} left="25%" />
       )}
       {!au && v.awayCrest && (
-        <img src={v.awayCrest} alt="" loading="lazy"
-          style={{ position: 'absolute', left: '75%', top: '42%', transform: 'translate(-50%,-50%)', width: Math.min(56, Math.round(H * 0.42)), height: Math.min(56, Math.round(H * 0.42)), objectFit: 'contain', filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.7))', zIndex: 2 }}
-          onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+        <CrestBadge src={v.awayCrest} plate={pal.away.plate} size={Math.min(56, Math.round(H * 0.42))} left="75%" />
       )}
       {meta &&
         <div style={{ position: 'absolute', top: 11, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 3 }}>
@@ -284,15 +310,15 @@ export function VersusHero({ v, t, h, w, radius, disc, seam, meta, icon, codes, 
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 16px', zIndex: 3 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              {hu && <Flag name={v.home} w={Math.round(cs * 0.92)} h={Math.round(cs * 0.62)} radius={2} />}
-              <span style={{ ...disp(cs, 800), color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.78)' }}>{teamCode(v.home)}</span>
+              {hu && <Flag name={v.home} w={Math.round(cs * 0.86)} h={Math.round(cs * 0.58)} radius={2} />}
+              <span style={{ ...codeType(cs), color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.66)' }}>{teamCode(v.home)}</span>
             </span>
             {showForm && <MiniForm form={v.homeForm} size={Math.round(cs * 0.4)} />}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-end' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ ...disp(cs, 800), color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.78)' }}>{teamCode(v.away)}</span>
-              {au && <Flag name={v.away} w={Math.round(cs * 0.92)} h={Math.round(cs * 0.62)} radius={2} />}
+              <span style={{ ...codeType(cs), color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.66)' }}>{teamCode(v.away)}</span>
+              {au && <Flag name={v.away} w={Math.round(cs * 0.86)} h={Math.round(cs * 0.58)} radius={2} />}
             </span>
             {showForm && <MiniForm form={v.awayForm} size={Math.round(cs * 0.4)} />}
           </div>

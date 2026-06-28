@@ -7,7 +7,7 @@ import OrbitMark from './OrbitMark.jsx';
  * TopNav — Clean, minimal top navigation.
  * Logo + breadcrumb (desktop) + How-it-works + account + connection status.
  */
-export function TopNav({ onGoDashboard, fixtureSelected }) {
+export function TopNav({ onGoHome, onGoDashboard, fixtureSelected }) {
   return (
     <nav className="top-nav" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -24,7 +24,7 @@ export function TopNav({ onGoDashboard, fixtureSelected }) {
       zIndex: 30,
     }}>
       {/* Logo — orbit mark + wordmark in the expanded display cut */}
-      <div onClick={onGoDashboard} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
+      <div onClick={onGoHome || onGoDashboard} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
         <OrbitMark size={26} boxed />
         <span className="font-display" style={{ fontSize: 14, fontWeight: 700 }}>
           <span style={{ color: 'var(--accent)' }}>Odd</span><span style={{ color: 'var(--text-secondary)' }}>yessa</span>
