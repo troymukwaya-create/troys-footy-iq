@@ -104,6 +104,10 @@ export function fixtureView(fixture) {
     minute: fixture.minute,
     homeForm: fixture.homeTeam?.form || fixture.homeForm || null,
     awayForm: fixture.awayTeam?.form || fixture.awayForm || null,
+    // Club badge URLs (API-Football) — used to fill the seam for non-nation
+    // teams that have no flag; null for nations (they render their flag).
+    homeCrest: fixture.homeTeam?.crest || null,
+    awayCrest: fixture.awayTeam?.crest || null,
   };
 }
 

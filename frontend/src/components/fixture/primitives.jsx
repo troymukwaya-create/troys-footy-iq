@@ -261,6 +261,17 @@ export function VersusHero({ v, t, h, w, radius, disc, seam, meta, icon, codes, 
         <line x1={topX} y1={-2} x2={botX} y2={102} stroke={ACC} strokeWidth={2.5} vectorEffect="non-scaling-stroke" />
       </svg>
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,11,14,0.62) 0%, rgba(10,11,14,0.05) 24%, rgba(12,13,17,0.12) 54%, rgba(20,22,27,0.98) 100%)' }} />
+      {/* Club crest centred on a flagless (club) team's colour half — the PL-emblem look that fills the otherwise-blank tile. Nations have a flag instead. */}
+      {!hu && v.homeCrest && (
+        <img src={v.homeCrest} alt="" loading="lazy"
+          style={{ position: 'absolute', left: '25%', top: '42%', transform: 'translate(-50%,-50%)', width: Math.min(56, Math.round(H * 0.42)), height: Math.min(56, Math.round(H * 0.42)), objectFit: 'contain', filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.7))', zIndex: 2 }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      )}
+      {!au && v.awayCrest && (
+        <img src={v.awayCrest} alt="" loading="lazy"
+          style={{ position: 'absolute', left: '75%', top: '42%', transform: 'translate(-50%,-50%)', width: Math.min(56, Math.round(H * 0.42)), height: Math.min(56, Math.round(H * 0.42)), objectFit: 'contain', filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.7))', zIndex: 2 }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+      )}
       {meta &&
         <div style={{ position: 'absolute', top: 11, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 3 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
@@ -272,11 +283,17 @@ export function VersusHero({ v, t, h, w, radius, disc, seam, meta, icon, codes, 
       {codes &&
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 16px', zIndex: 3 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-start' }}>
-            <span style={{ ...disp(cs, 800), color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.78)' }}>{teamCode(v.home)}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              {hu && <Flag name={v.home} w={Math.round(cs * 0.92)} h={Math.round(cs * 0.62)} radius={2} />}
+              <span style={{ ...disp(cs, 800), color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.78)' }}>{teamCode(v.home)}</span>
+            </span>
             {showForm && <MiniForm form={v.homeForm} size={Math.round(cs * 0.4)} />}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'flex-end' }}>
-            <span style={{ ...disp(cs, 800), color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.78)' }}>{teamCode(v.away)}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ ...disp(cs, 800), color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.78)' }}>{teamCode(v.away)}</span>
+              {au && <Flag name={v.away} w={Math.round(cs * 0.92)} h={Math.round(cs * 0.62)} radius={2} />}
+            </span>
             {showForm && <MiniForm form={v.awayForm} size={Math.round(cs * 0.4)} />}
           </div>
         </div>}
