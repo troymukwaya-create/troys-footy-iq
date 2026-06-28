@@ -22,6 +22,8 @@ import { runWcPredictionLock } from './wcPredictionLock.js';
 import { refreshWcTeamForms } from '../services/wcForm.js';
 import { refreshWcMarketWeight, optimizeWcMarketWeight } from '../engine/marketWeight.js';
 import { dispatchWorkflow, hasGithubToken } from '../services/githubDispatch.js';
+import { fanbrainFlags, fanbrainFlagState } from '../config/fanbrainFlags.js';
+import { ensurePerfEloTables, loadPerfElo } from '../engine/perfElo.js';
 
 let previousScores = {};
 
@@ -173,6 +175,22 @@ export default function initJobs() {
     try { await runEloLearningCycle(); }
     catch (err) { console.error('[SCHEDULER] Elo learning failed:', err.message); }
   });
+
+  // ─── FAN-BRAIN SHADOW (default-off) ────────────────────────────────
+  // Parallel experimental tracks that NEVER touch the scored wc-elo-market-v1
+  // path. Dormant unless a *_SHADOW flag is set in Render. At boot, when perfElo
+  // is on: create its tables + load the learned ladder so the lock job reads it.
+  if (fanbrainFlags.anyShadowOn()) {
+    console.log('[SCHEDULER] 🧠 Fan-brain shadow ON:', JSON.stringify(fanbrainFlagState()));
+    if (fanbrainFlags.perfElo()) {
+      ensurePerfEloTables()
+        .then(() => loadPerfElo())
+        .then((n) => console.log(`[SCHEDULER] perfElo ladder loaded (${n} learned teams)`))
+        .catch((e) => console.warn('[SCHEDULER] perfElo boot failed (shadow, ignored):', e.message));
+    }
+  } else {
+    console.log('[SCHEDULER] Fan-brain shadow OFF (all *_SHADOW flags unset).');
+  }
 
   // ─── WORLD CUP PREDICTION LOCK (Brier integrity) ──────────────────
   // Every 10 min: lock/refresh the official wc-elo-market-v1 prediction for

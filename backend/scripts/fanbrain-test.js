@@ -11,8 +11,11 @@ import {
 } from '../engine/perception.js';
 import { applyKnockoutRegime, inflateDraw, pHomeAdvances, KNOCKOUT_DEFAULTS } from '../engine/knockoutRegime.js';
 import { betaShrink, isotonic, buildCalibrationMap, applyCalibration, ece, calibrate } from '../engine/calibrationMap.js';
-import { softResult, updatePerfElo, deservedUpdate } from '../engine/perfElo.js';
+import { softResult, updatePerfElo, deservedUpdate, resetPerfElo } from '../engine/perfElo.js';
 import { updateElo } from '../engine/eloLearning.js';
+import { buildShadowPredictions, SHADOW_VERSIONS } from '../engine/shadowPredict.js';
+import { predictWorldCupMatch } from '../engine/nationalTeams.js';
+import { boundedNudge, buildScoutPrompt, parseScoutResponse, assertMarketBlind } from '../services/scout.js';
 
 let pass = 0, fail = 0; const fails = [];
 function check(name, cond, detail = '') {
@@ -131,6 +134,40 @@ check('softResult null on bad input', softResult(1, null) === null);
   check('deservedUpdate falls back to a shots proxy', deservedUpdate(1900, 1900, { goals: 1, shotsOnTarget: 7, shotsTotal: 16 }, { goals: 1, shotsOnTarget: 1, shotsTotal: 5 })?.source === 'shots-proxy');
   check('deservedUpdate null with no xG and no shots (teach nothing)', deservedUpdate(1900, 1900, { goals: 1 }, { goals: 0 }) === null);
 }
+
+// ── 7. PREDICT: shadow assembler (market-blind, flag-gated) ──
+console.log('\nShadow assembler (market-blind, default-off):');
+check('no shadow tracks when all flags off', buildShadowPredictions({ homeName: 'Brazil', awayName: 'Serbia', ctx: {} }).length === 0);
+check('SHADOW_VERSIONS enumerates 5 tracks', SHADOW_VERSIONS.length === 5);
+{
+  process.env.PERF_ELO_SHADOW = 'true';
+  try {
+    resetPerfElo(); // no learned overrides ⇒ perfElo seeds from the base ladder
+    const tracks = buildShadowPredictions({ homeName: 'Brazil', awayName: 'Serbia', ctx: {} });
+    const versions = tracks.map(t => t.version);
+    check('perfElo flag emits perf-elo + combined fanbrain tracks', versions.includes('wc-perf-elo-shadow') && versions.includes('wc-fanbrain-shadow'), versions.join(','));
+    const perf = tracks.find(t => t.version === 'wc-perf-elo-shadow');
+    const pure = predictWorldCupMatch('Brazil', 'Serbia', null, {}); // no market, no opts
+    check('shadow probs are MARKET-BLIND (== pure model, never the 0.60 blend)', near(perf.probabilities.home, pure.probabilities.home) && near(perf.probabilities.away, pure.probabilities.away), JSON.stringify(perf.probabilities));
+    check('shadow probs sum ~100', near(perf.probabilities.home + perf.probabilities.draw + perf.probabilities.away, 100, 0.6));
+  } finally {
+    delete process.env.PERF_ELO_SHADOW;
+    resetPerfElo();
+  }
+}
+
+// ── 8. REASON: scout (market-blind, bounded) ──
+console.log('\nScout (market-blind λ nudge):');
+check('boundedNudge clamps to [0.85,1.15]', boundedNudge(1.5) === 1.15 && boundedNudge(0.5) === 0.85 && boundedNudge(1.07) === 1.07);
+check('boundedNudge → 1.0 (no change) on garbage', boundedNudge('x') === 1 && boundedNudge(null) === 1);
+{
+  const prompt = buildScoutPrompt('Brazil', 'Serbia', { knockout: true, venueCity: 'Dallas', homeForm: { form: 'WWDWL' } });
+  check('scout prompt is MARKET-BLIND (no odds/market/line)', assertMarketBlind(prompt) && !/odds|market|implied|price/i.test(prompt), prompt.slice(0, 60));
+  check('scout prompt carries the matchup + stage', prompt.includes('Brazil') && prompt.includes('Serbia') && /KNOCKOUT/.test(prompt));
+}
+check('assertMarketBlind catches a leaked market term', assertMarketBlind('home implied prob 55% from the market') === false);
+check('parseScoutResponse clamps + extracts', (() => { const r = parseScoutResponse('{"home":1.4,"away":0.7,"why":"high press"}'); return r && r.home === 1.15 && r.away === 0.85 && r.why === 'high press'; })());
+check('parseScoutResponse null on garbage', parseScoutResponse('not json') === null && parseScoutResponse('{}') === null);
 
 // ── Result ──
 console.log(`\n${fail === 0 ? '✅' : '❌'} ${pass} passed, ${fail} failed`);

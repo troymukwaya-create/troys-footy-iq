@@ -23,6 +23,12 @@ import { getConfirmedLineups } from '../services/lineups.js';
 import { storePrediction } from '../services/predictionService.js';
 import { upsertFixture } from '../db/upsert.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
+// SHADOW (all default-off): parallel fan-brain tracks, fully isolated from the
+// scored write above — see writeShadowRows. Never affects wc-elo-market-v1.
+import { fanbrainFlags } from '../config/fanbrainFlags.js';
+import { buildShadowPredictions } from '../engine/shadowPredict.js';
+import { scoutLambdaNudge } from '../services/scout.js';
+import { getShadowCalibrationMap } from '../services/shadowCalibration.js';
 
 const WC_SEASON = 2026;              // API-Football season for World Cup 2026
 const LOCK_WINDOW_MIN = 75;          // start locking this many minutes before kickoff
@@ -128,6 +134,66 @@ async function lockOneMatch(match, { leagueId, leagueCode, modelVersion, homeFie
     `form:${pred.nationalStrength?.recentMatchesUsed || 0}g, ko:${ctx.knockout ? 'y' : 'n'}` +
     `${cf.lineupsConfirmed ? ', XI✓' : ''}` +
     `${cf.weather && cf.weather.effect ? `, wx:${cf.weather.effect}%` : ''})`);
+
+  // 5. SHADOW tracks (default-off). Runs AFTER the scored row is committed, in a
+  //    blanket try/catch — a shadow failure can never affect the published Brier.
+  await writeShadowRows({ match, ctx, leagueCode, marketProbs: pred.marketProbs });
+}
+
+// Write the parallel fan-brain shadow rows for one match. Market-BLIND: each
+// track is scored on the PURE model (features.modelProbs); marketProbs is stored
+// only for CLV reference. No-op (and silent) unless a shadow flag is on.
+async function writeShadowRows({ match, ctx, leagueCode, marketProbs }) {
+  if (!fanbrainFlags.anyShadowOn()) return;
+  try {
+    const homeName = match.homeTeam?.name, awayName = match.awayTeam?.name;
+    if (!homeName || !awayName) return;
+
+    let scoutMul = null, calMap = null;
+    if (fanbrainFlags.scout()) { try { scoutMul = await scoutLambdaNudge(homeName, awayName, ctx); } catch { /* drop scout track */ } }
+    if (fanbrainFlags.calibrationMap()) { try { calMap = await getShadowCalibrationMap(); } catch { /* drop cal track */ } }
+
+    const tracks = buildShadowPredictions({ homeName, awayName, ctx, scoutMul, calMap });
+    for (const t of tracks) {
+      const p = t.probabilities;
+      const bestPick = (p.home >= p.draw && p.home >= p.away) ? { name: `${homeName} win`, probability: p.home }
+        : (p.away >= p.draw) ? { name: `${awayName} win`, probability: p.away }
+        : { name: 'Draw', probability: p.draw };
+      try {
+        await storePrediction({
+          matchExternalId: match.id,
+          homeTeam: homeName,
+          awayTeam: awayName,
+          prediction: { probabilities: p, modelProbs: p, advance: t.advance, bestPick, expectedGoals: { home: t.lambda?.home, away: t.lambda?.away } },
+          odds: null,
+          valueEdges: null,
+          features: {
+            modelProbs: p,                       // PURE (market-blind) — what gets scored
+            marketProbs: marketProbs || null,    // reference only (CLV); NOT blended in
+            shadowLambda: t.lambda,
+            shadowElo: t.elo,
+            scout: /scout|fanbrain/.test(t.version) ? scoutMul : null,
+            calibrated: /calibration|fanbrain/.test(t.version) && !!calMap,
+            knockout: !!ctx.knockout,
+            advance: t.advance || null,
+            shadow: true,
+            lockedAt: new Date().toISOString(),
+          },
+          leagueCode,
+          modelVersion: t.version,
+          upsert: true,
+        });
+      } catch (e) {
+        console.warn(`[wcLock] shadow ${t.version} write failed for ${match.id}:`, e.message);
+      }
+    }
+    if (tracks.length) {
+      console.log(`[wcLock]   ↳ shadow: ${tracks.map(t => t.version.replace('wc-', '').replace('-shadow', '')).join(', ')}` +
+        `${scoutMul ? ` (scout ${scoutMul.home}/${scoutMul.away})` : ''}`);
+    }
+  } catch (e) {
+    console.warn('[wcLock] shadow block failed (ignored):', e.message);
+  }
 }
 
 export async function runWcPredictionLock() {

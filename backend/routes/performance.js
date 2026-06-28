@@ -8,9 +8,25 @@
 import { Router } from 'express';
 import { safeQuery, isDbAvailable } from '../db/index.js';
 import { getPredictions, getPredictionByMatch } from '../services/predictionService.js';
-import { computeLedger } from '../services/ledger.js';
+import { computeLedger, computeShadowLedger } from '../services/ledger.js';
+import { fanbrainFlagState } from '../config/fanbrainFlags.js';
 
 const router = Router();
+
+// ─── GET /api/performance/shadow ────────────────────────────────────
+// Mission Control for the fan-brain shadow tracks: the flag state, the published
+// ledger (pure/blended/market), and each shadow track's Brier in a FAIR head-to-
+// head vs the published model over the same fixtures. Empty tracks = flags still
+// off or no shadow matches scored yet. Read-only; never affects the scored path.
+router.get('/shadow', async (req, res) => {
+  try {
+    if (!isDbAvailable()) return res.json({ error: false, data: { flags: fanbrainFlagState(), ledger: null, shadow: { tracks: [], n: 0 } } });
+    const [ledger, shadow] = await Promise.all([computeLedger(), computeShadowLedger()]);
+    res.json({ error: false, data: { flags: fanbrainFlagState(), ledger, shadow } });
+  } catch (e) {
+    res.status(500).json({ error: true, message: e.message });
+  }
+});
 
 // ─── GET /api/performance ───────────────────────────────────────────
 // Returns aggregated model performance: overall + per-run history.

@@ -14,6 +14,7 @@
 // to the market, THAT is the asset. n is tiny early — always shown with it.
 
 import { safeQuery, isDbAvailable } from '../db/index.js';
+import { SHADOW_VERSIONS } from '../engine/shadowPredict.js';
 
 const WC_MODEL = 'wc-elo-market-v1';
 
@@ -136,4 +137,65 @@ async function computeClv(fixtureIds, rows) {
   };
 }
 
-export default { computeLedger };
+/**
+ * Per-shadow-track ledger, as a FAIR head-to-head: each shadow track's Brier vs
+ * the published model's pure + blended Brier over the EXACT SAME fixtures (joined
+ * on fixture_id). This is the promotion signal — a track earns promotion only by
+ * beating the pure model on shared matches, scored market-blind. Returns [] until
+ * the shadow tracks have scored rows (they only exist after the flags are on).
+ * @returns {Promise<{tracks:Array, n:number}>}
+ */
+export async function computeShadowLedger() {
+  if (!isDbAvailable()) return { tracks: [], n: 0 };
+  let r;
+  try {
+    r = await safeQuery(`
+      SELECT s.model_version, s.features AS s_features, s.actual_result,
+             b.features AS b_features, b.prob_home AS bh, b.prob_draw AS bd, b.prob_away AS ba
+      FROM predictions s
+      JOIN predictions b ON b.fixture_id = s.fixture_id AND b.model_version = $2
+      WHERE s.model_version = ANY($1)
+        AND s.actual_result IS NOT NULL
+        AND s.features IS NOT NULL AND b.features IS NOT NULL
+      LIMIT 5000
+    `, [SHADOW_VERSIONS, WC_MODEL]);
+  } catch (e) {
+    console.warn('[ledger] shadow ledger failed (ignored):', e.message);
+    return { tracks: [], n: 0 };
+  }
+
+  // version → { shadow:[], pure:[], blended:[] } Brier arrays over shared matches.
+  const acc = new Map();
+  for (const row of r?.rows || []) {
+    const sf = parse(row.s_features) || {}, bf = parse(row.b_features) || {};
+    const actual = row.actual_result;
+    const sB = brier1x2(sf.modelProbs, actual);
+    const pB = brier1x2(bf.modelProbs, actual);
+    const blB = brier1x2({ home: Number(row.bh), draw: Number(row.bd), away: Number(row.ba) }, actual);
+    if (sB == null) continue;
+    if (!acc.has(row.model_version)) acc.set(row.model_version, { shadow: [], pure: [], blended: [] });
+    const g = acc.get(row.model_version);
+    g.shadow.push(sB);
+    if (pB != null) g.pure.push(pB);
+    if (blB != null) g.blended.push(blB);
+  }
+
+  const tracks = [];
+  for (const v of SHADOW_VERSIONS) {
+    const g = acc.get(v);
+    if (!g || !g.shadow.length) continue;
+    const shadow = avg(g.shadow), pure = avg(g.pure), blended = avg(g.blended);
+    tracks.push({
+      version: v,
+      n: g.shadow.length,
+      brier: r4(shadow),
+      vsPure: r4(pure),                                  // published model, pure, same matches
+      vsBlended: r4(blended),                            // published model, blended, same matches
+      beatsPure: shadow != null && pure != null ? shadow < pure : null,
+      deltaVsPure: shadow != null && pure != null ? r4(pure - shadow) : null, // >0 = shadow better
+    });
+  }
+  return { tracks, n: tracks.reduce((s, t) => s + t.n, 0) };
+}
+
+export default { computeLedger, computeShadowLedger };

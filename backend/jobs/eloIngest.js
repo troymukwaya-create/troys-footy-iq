@@ -19,6 +19,22 @@
 import { applyResult } from '../engine/nationalTeams.js';
 import api from '../services/apisports.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
+// SHADOW (default-off): the perfElo ladder learns from the DESERVED (xG) result
+// alongside plain Elo, fully isolated — a perfElo failure never blocks Elo.
+import { applyPerfResult } from '../engine/perfElo.js';
+import { fanbrainFlags } from '../config/fanbrainFlags.js';
+
+const numOr = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+// Parse one team's box score from getFixtureStats output for the perfElo signal.
+function boxScore(stats, teamName, goals) {
+  const s = stats?.[teamName] || {};
+  return {
+    goals,
+    xg: numOr(s['expected_goals'] ?? s['Expected Goals']),
+    shotsOnTarget: numOr(s['Shots on Goal'] ?? s['Shots insidebox']),
+    shotsTotal: numOr(s['Total Shots']),
+  };
+}
 
 // football-data.org competition codes that are national-team football.
 const INTL_COMPETITIONS = 'WC,EC';   // World Cup + Euros (free-tier coverage)
@@ -83,6 +99,24 @@ export async function ingestInternationalEloResults(results = []) {
       await markProcessed(r.id);
       learned++;
       deltas.push({ home: out.home.name, away: out.away.name, delta: out.delta });
+    }
+
+    // SHADOW: perfElo learns from the deserved (xG) result. Gated, deduped
+    // (perf_elo_processed_matches), and degrades to a no-op when xG/shots are
+    // unavailable. Wrapped so it can never disturb the plain-Elo learner above.
+    if (fanbrainFlags.perfElo()) {
+      try {
+        const numId = String(r.id).replace(/^apf_/, '');
+        const stats = /^\d+$/.test(numId) ? await api.getFixtureStats(numId) : null;
+        await applyPerfResult({
+          matchId: r.id,
+          homeName: r.homeName, awayName: r.awayName,
+          home: boxScore(stats, r.homeName, r.homeGoals),
+          away: boxScore(stats, r.awayName, r.awayGoals),
+          neutral: r.neutral !== false,
+          importance: r.importance || 'qualifier',
+        });
+      } catch (e) { /* shadow learning is best-effort; never blocks Elo */ }
     }
   }
   return { learned, skipped, deltas };

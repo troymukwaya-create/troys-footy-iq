@@ -13,6 +13,11 @@ import { updateElo, expectedScore } from './eloLearning.js';
 import { adjustExpectedGoals } from './matchContext.js';
 import { getWcMarketWeight } from './marketWeight.js';
 import { safeQuery, isDbAvailable } from '../db/index.js';
+// SHADOW-ONLY (pure, no DB): used only when predictWorldCupMatch is called with
+// an `opts` object. With no opts (the scored path) these are never invoked, so
+// the scored model stays byte-identical — proven by regression-scored-model.js.
+import { applyKnockoutRegime } from './knockoutRegime.js';
+import { applyCalibration } from './calibrationMap.js';
 
 // World Football Elo snapshot (eloratings.net, ~2026) — all 48 qualified
 // nations + a few likely qualifiers. Anchored to real Elo where available,
@@ -153,9 +158,13 @@ function opponentStrengthFactor(formObj) {
  * ctx extras (all optional): homeForm/awayForm, homeRestDays/awayRestDays,
  * homeAvailability/awayAvailability, venueCity, knockout.
  */
-export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx = {}) {
-  const homeElo = getElo(homeName);
-  const awayElo = getElo(awayName);
+export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx = {}, opts = {}) {
+  // opts (SHADOW ONLY, all default no-op): eloFn swaps the rating source (perfElo),
+  // scoutMul nudges λ market-blind, calMap recalibrates confidence, knockoutOpts
+  // replaces the advance regime. opts = {} ⇒ identical to the live scored model.
+  const eloFn = opts.eloFn || getElo;
+  const homeElo = eloFn(homeName);
+  const awayElo = eloFn(awayName);
   // Neutral unless host nation. Mexico's edge at altitude venues is real
   // physiology (acclimatized squad at 1500-2240m), not just crowd — boost more.
   let homeAdv = isHost(homeName) ? HOST_ELO_BOOST : 0;
@@ -194,8 +203,14 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
 
   // Fatigue / availability adjustments (no-op unless ctx supplies real data).
   const adj = adjustExpectedGoals(baseLh, baseLa, ctx);
-  const lambdaHome = adj.lambdaHome;
-  const lambdaAway = adj.lambdaAway;
+  let lambdaHome = adj.lambdaHome;
+  let lambdaAway = adj.lambdaAway;
+
+  // Scout (SHADOW): a market-BLIND bounded λ nudge. Default scoutMul absent ⇒ no-op.
+  if (opts.scoutMul) {
+    lambdaHome = clamp(lambdaHome * (Number(opts.scoutMul.home) || 1), 0.25, 4.5);
+    lambdaAway = clamp(lambdaAway * (Number(opts.scoutMul.away) || 1), 0.25, 4.5);
+  }
 
   const result = generateProbabilities(lambdaHome, lambdaAway, -0.08);
   const modelProbs = { ...result.probabilities };
@@ -219,6 +234,9 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
     };
   }
 
+  // Calibration (SHADOW): confidence-only remap of the final 1X2. Default no map ⇒ no-op.
+  if (opts.calMap) probabilities = applyCalibration(probabilities, opts.calMap);
+
   const { home, draw, away } = probabilities;
   const bestPick = (home >= draw && home >= away) ? { name: `${homeName} win`, probability: home }
     : (away >= draw) ? { name: `${awayName} win`, probability: away }
@@ -230,11 +248,16 @@ export function predictWorldCupMatch(homeName, awayName, marketProbs = null, ctx
   let advance = null;
   if (ctx.knockout) {
     const exp = expectedScore(homeElo + homeAdv, awayElo, true); // 0..1
-    const pHomeInExtra = clamp(0.5 + (exp - 0.5) * 0.5, 0.35, 0.65);
-    advance = {
-      home: r1(home + draw * pHomeInExtra),
-      away: r1(away + draw * (1 - pHomeInExtra)),
-    };
+    if (opts.knockoutOpts) {
+      // SHADOW: draw-inflation + penalty-shrink regime (knockoutRegime.js).
+      advance = applyKnockoutRegime({ home, draw, away, exp, lambdaHome, lambdaAway }, opts.knockoutOpts).advance;
+    } else {
+      const pHomeInExtra = clamp(0.5 + (exp - 0.5) * 0.5, 0.35, 0.65);
+      advance = {
+        home: r1(home + draw * pHomeInExtra),
+        away: r1(away + draw * (1 - pHomeInExtra)),
+      };
+    }
   }
 
   return {
