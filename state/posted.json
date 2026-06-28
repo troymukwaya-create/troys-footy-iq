@@ -1010,6 +1010,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1489420": {
+      "kind": "match",
+      "label": "Croatia 2–1 Ghana",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
