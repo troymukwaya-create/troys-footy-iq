@@ -20,7 +20,8 @@
     "apf_1489389",
     "apf_1539008",
     "apf_1489420",
-    "apf_1489419"
+    "apf_1489419",
+    "apf_1561329"
   ],
   "receipts": [
     "apf_1538999",
@@ -91,7 +92,8 @@
     "apf_1489415",
     "apf_1489422",
     "apf_1489420",
-    "apf_1539013"
+    "apf_1539013",
+    "apf_1489419"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1019,6 +1021,28 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1561329",
+      "label": "South Africa v Canada",
+      "at": "2026-06-28T16:48:33.633Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489419",
+      "label": "Colombia 0–0 Portugal",
+      "at": "2026-06-28T16:48:46.520Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -1026,30 +1050,6 @@
     "apf_1489418": {
       "kind": "prematch",
       "label": "Algeria v Austria",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1561329": {
-      "kind": "prematch",
-      "label": "South Africa v Canada",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489419": {
-      "kind": "match",
-      "label": "Colombia 0–0 Portugal",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
