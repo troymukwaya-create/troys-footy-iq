@@ -11,6 +11,8 @@ import {
 } from '../engine/perception.js';
 import { applyKnockoutRegime, inflateDraw, pHomeAdvances, KNOCKOUT_DEFAULTS } from '../engine/knockoutRegime.js';
 import { betaShrink, isotonic, buildCalibrationMap, applyCalibration, ece, calibrate } from '../engine/calibrationMap.js';
+import { softResult, updatePerfElo, deservedUpdate } from '../engine/perfElo.js';
+import { updateElo } from '../engine/eloLearning.js';
 
 let pass = 0, fail = 0; const fails = [];
 function check(name, cond, detail = '') {
@@ -107,6 +109,28 @@ check('betaShrink shrinks toward prior', near(betaShrink(8, 10, 0.5, 6), 11 / 16
 check('ece ≈ 0 on perfectly-calibrated samples', ece([{ p: 0.6, hit: 1 }, { p: 0.6, hit: 1 }, { p: 0.6, hit: 1 }, { p: 0.6, hit: 0 }, { p: 0.6, hit: 0 }]) < 0.001);
 // and detects miscalibration: p=0.6 but wins 5/5 ⇒ ECE ≈ 0.4
 check('ece flags an over-confident gap', ece([{ p: 0.6, hit: 1 }, { p: 0.6, hit: 1 }, { p: 0.6, hit: 1 }, { p: 0.6, hit: 1 }, { p: 0.6, hit: 1 }]) > 0.3);
+
+// ── 6. REMEMBER: perfElo soft-result ladder (pure math) ──
+console.log('\nPerfElo (deserved-result ladder):');
+check('softResult blends real + xG result 50/50', near(softResult(1, 0.85), 0.925) && near(softResult(0, 0.5), 0.25));
+check('softResult null on bad input', softResult(1, null) === null);
+{
+  // K=60 (world_cup), expected=0.5 (even), g=goalMultiplier(2)=1.5
+  //   shift = 60·1.5·(0.925−0.5) = 38.25 → 38
+  const u = updatePerfElo(1900, 1900, { resultPerf: 0.925, xgGoalDiff: 2, neutral: true, importance: 'world_cup' });
+  check('updatePerfElo applies K·g·(perf−expected), zero-sum', u.homeElo === 1938 && u.awayElo === 1862, JSON.stringify(u));
+  check('updatePerfElo null on bad result', updatePerfElo(1900, 1900, { resultPerf: NaN }) === null);
+}
+{
+  // THE perfElo lesson: home out-creates 2.4–0.6 xG but LOSES 0–1 to a deflection.
+  // Plain Elo punishes the loss in full; perfElo should punish far less.
+  const plain = updateElo(1900, 1900, 0, 1, { neutral: true, importance: 'world_cup' }); // delta ≈ −30
+  const out = deservedUpdate(1900, 1900, { goals: 0, xg: 2.4 }, { goals: 1, xg: 0.6 });    // delta ≈ −7
+  check('deservedUpdate punishes a deserved-but-unlucky loss far less than plain Elo', out && out.delta > plain.delta + 10, `perf ${out?.delta} vs plain ${plain.delta}`);
+  check('deservedUpdate tags the xG source', out?.source === 'xg');
+  check('deservedUpdate falls back to a shots proxy', deservedUpdate(1900, 1900, { goals: 1, shotsOnTarget: 7, shotsTotal: 16 }, { goals: 1, shotsOnTarget: 1, shotsTotal: 5 })?.source === 'shots-proxy');
+  check('deservedUpdate null with no xG and no shots (teach nothing)', deservedUpdate(1900, 1900, { goals: 1 }, { goals: 0 }) === null);
+}
 
 // ── Result ──
 console.log(`\n${fail === 0 ? '✅' : '❌'} ${pass} passed, ${fail} failed`);
