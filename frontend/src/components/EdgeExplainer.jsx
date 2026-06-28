@@ -7,32 +7,15 @@
 // slip, tomorrow the same button deep-links it.
 
 import React from 'react';
-import { EdgeIcon } from './BrandIcons.jsx';
+import { EdgePanel } from './fixture/edgeCards.jsx';
 
+// The Edge rail's lead: the "what is the edge" explainer + a live model-vs-market
+// demo bar (the oxblood IS the edge), from the Claude Design Home rail.
 export function EdgeExplainer() {
   return (
     <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid var(--border-subtle)' }}>
-      <h2 className="font-display" style={{ fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
-        <EdgeIcon size={17} style={{ color: 'var(--accent)' }} />
-        What's the edge?
-      </h2>
-      <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '8px 0 0' }}>
-        When our model rates a result <strong style={{ color: 'var(--text-primary)' }}>more likely than the bookmakers' odds imply</strong>,
-        that gap is the edge — the calls where the numbers lean your way.
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 10 }}>
-        {[
-          'Start with the ranked calls below',
-          'Tap any call to see the reasoning',
-          'Copy a slip to whichever bookmaker you already use',
-        ].map((step, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 11.5, color: 'var(--text-tertiary)' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--accent)', flexShrink: 0 }}>{i + 1}</span>
-            {step}
-          </div>
-        ))}
-      </div>
-      <p style={{ fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1.5, margin: '10px 0 0' }}>
+      <EdgePanel />
+      <p style={{ fontSize: 10.5, color: 'var(--text-muted)', lineHeight: 1.5, margin: '14px 0 0' }}>
         Oddyessa doesn't take bets — we show you where the value is, you place it where you play. 18+, bet responsibly.
       </p>
     </div>

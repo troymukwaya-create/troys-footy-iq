@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { motion } from 'motion/react';
-import { Sparkles, ArrowRight, Trophy, Gem, Shield, Rocket } from 'lucide-react';
+import { Sparkles, Trophy, Gem, Shield, Rocket } from 'lucide-react';
 import { useStore } from '../store/useStore.js';
+import { SlipCard } from './fixture/edgeCards.jsx';
 
 // ─── SANITY RAILS ────────────────────────────────────────────────────
 // A slip is a recommendation; a recommendation with a six-figure multiplier
@@ -32,6 +32,7 @@ function outcomeLeg(f, outcome) {
     matchLabel: `${f.homeTeam?.name} v ${f.awayTeam?.name}`,
     marketType: '1X2',
     outcome: label,
+    team: outcome === 'away' ? f.awayTeam?.name : f.homeTeam?.name,
     odds: Number(odds.toFixed(2)),
     modelProbability: mp,
     _edge: edge,
@@ -130,36 +131,26 @@ export function SuggestedSlips({ fixtures }) {
       <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.5 }}>
         Ready-made accas from the model — tap to load, tweak, then copy to your bookmaker.
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {slips.map((s, i) => {
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+        {slips.map((s) => {
           const m = slipMetrics(s.legs);
           const good = m.evPct > 1;
           return (
-            <motion.button
+            <SlipCard
               key={s.id}
               onClick={() => load(s.legs)}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                textAlign: 'left', width: '100%', cursor: 'pointer', padding: 12, borderRadius: 'var(--radius-md)',
-                background: s.highlight ? 'var(--accent-muted)' : 'var(--bg-raised)',
-                border: `1px solid ${s.highlight ? 'rgba(192,57,43,0.3)' : 'var(--border-subtle)'}`,
+              s={{
+                name: s.title,
+                desc: s.subtitle,
+                mult: `${m.odds.toFixed(2)}×`,
+                legs: s.legs.length,
+                legNations: s.legs.map(l => l.team).filter(Boolean),
+                model: `${Math.round(m.modelPct)}% model`,
+                tag: good ? `+${m.evPct.toFixed(0)}% edge` : 'fair value',
+                good,
+                highlight: s.highlight,
               }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}><s.icon size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} /> {s.title}</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>{m.odds.toFixed(2)}×</span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3, lineHeight: 1.4 }}>{s.subtitle}</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{s.legs.length} legs · {Math.round(m.modelPct)}% model</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: good ? '#22c55e' : 'var(--text-muted)' }}>
-                  {good ? `+${m.evPct.toFixed(0)}% edge` : 'fair value'} <ArrowRight size={12} />
-                </span>
-              </div>
-            </motion.button>
+            />
           );
         })}
       </div>

@@ -4,6 +4,30 @@ import { motion } from 'motion/react';
 import { useAIChat } from '../hooks/useQueries.js';
 import { QEDMark } from './QEDMark.jsx';
 import Spinner from './Spinner.jsx';
+import { FeaturedCall, EdgeRow } from './fixture/edgeCards.jsx';
+
+// "Today's Edge" calls — rank upcoming fixtures by the model's biggest win-side
+// disagreement with the market (the value edge). team = the side we back; mkt =
+// the market-implied price (model% − edge pts).
+function buildEdgeCalls(fixtures) {
+  return (fixtures || [])
+    .filter(f => f.probability?.probabilities && f.probability?.valueEdges
+      && f.status !== 'FINISHED' && f.status !== 'FT' && f.homeTeam?.name && f.awayTeam?.name)
+    .map(f => {
+      const p = f.probability.probabilities;
+      const e = f.probability.valueEdges;
+      const hE = e.home ?? -99, aE = e.away ?? -99;
+      const side = hE >= aE ? 'home' : 'away';
+      const edge = Math.round(Math.max(0, side === 'home' ? hE : aE));
+      const team = side === 'home' ? f.homeTeam.name : f.awayTeam.name;
+      const opp = side === 'home' ? f.awayTeam.name : f.homeTeam.name;
+      const pct = Math.round(side === 'home' ? p.home : p.away);
+      return { f, team, opp, pick: `${team} win`, pct, mkt: Math.max(0, pct - edge), edge };
+    })
+    .filter(c => c.edge >= 1)
+    .sort((a, b) => b.edge - a.edge)
+    .slice(0, 7);
+}
 
 /**
  * AIInsightsPanel — Right panel showing AI analysis.
@@ -33,62 +57,24 @@ export function AIInsightsPanel({ fixture, analysis, isLoading, fixtures = [], o
     setChatHistory(prev => [...prev, { role: 'assistant', content: reply }]);
   };
 
-  // ─── Empty state → AI Top Picks (always useful, even with nothing selected) ──
+  // ─── Empty state → "Today's Edge": the design's ranked value calls ──
   if (!fixture) {
-    const picks = (fixtures || [])
-      .filter(f => f.probability?.probabilities && f.status !== 'FINISHED' && f.status !== 'FT')
-      .map(f => {
-        const p = f.probability.probabilities;
-        const maxProb = Math.max(p.home ?? 0, p.draw ?? 0, p.away ?? 0);
-        const edges = f.probability.valueEdges;
-        const bestEdge = edges ? Math.max(edges.home ?? 0, edges.draw ?? 0, edges.away ?? 0) : 0;
-        const pick = (p.home >= p.draw && p.home >= p.away) ? `${f.homeTeam?.name} win`
-          : (p.away >= p.draw) ? `${f.awayTeam?.name} win` : 'Draw';
-        return { f, maxProb, bestEdge, pick, score: maxProb + Math.max(0, bestEdge) * 1.2 };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 6);
+    const calls = buildEdgeCalls(fixtures);
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 7 }}>
-            <Zap size={15} style={{ color: 'var(--accent)' }} /> Today’s Edge
+            <Zap size={15} style={{ color: 'var(--accent)' }} /> Today's Edge
           </h3>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>Our model’s strongest calls — ranked by confidence + value vs the bookies. Tap for the breakdown.</p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>Our model's strongest calls — ranked by value vs the bookies. Tap any for the breakdown.</p>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {picks.length === 0 && (
-            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', padding: '40px 0' }}>No matches to rate right now.</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {calls.length === 0 && (
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', padding: '40px 0' }}>No value edges to surface right now.</div>
           )}
-          {picks.map(({ f, maxProb, bestEdge, pick }, i) => (
-            <motion.button
-              key={f.id}
-              onClick={() => onSelect?.(f)}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
-              whileTap={{ scale: 0.98 }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
-                padding: '11px 12px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                background: 'var(--bg-raised)', border: '1px solid var(--border-subtle)',
-              }}
-            >
-              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', width: 18, flexShrink: 0 }}>{i + 1}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.homeTeam?.name} v {f.awayTeam?.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                  Pick: <strong style={{ color: 'var(--text-secondary)' }}>{pick}</strong> · {Math.round(maxProb)}%
-                  {bestEdge >= 5 && <span style={{ color: '#22c55e', fontWeight: 700 }}> · +{Math.round(bestEdge)} pts vs market</span>}
-                </div>
-                <div style={{ marginTop: 6, height: 4, borderRadius: 3, background: 'var(--bg-base)', overflow: 'hidden' }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(maxProb)}%` }} transition={{ duration: 0.6, delay: 0.15 + i * 0.04, ease: [0.16, 1, 0.3, 1] }} style={{ height: '100%', background: 'var(--accent)' }} />
-                </div>
-              </div>
-              <span style={{ fontSize: 13, color: 'var(--accent)', flexShrink: 0 }}>›</span>
-            </motion.button>
-          ))}
+          {calls.length > 0 && <FeaturedCall c={calls[0]} onClick={() => onSelect?.(calls[0].f)} />}
+          {calls.slice(1).map((c, i) => <EdgeRow key={c.f.id} n={i + 2} c={c} onClick={() => onSelect?.(c.f)} />)}
         </div>
       </div>
     );
