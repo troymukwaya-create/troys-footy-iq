@@ -95,7 +95,8 @@
     "apf_1539013",
     "apf_1489419",
     "apf_1489421",
-    "apf_1489418"
+    "apf_1489418",
+    "apf_1561329"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1067,21 +1068,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1561329": {
+    },
+    {
       "kind": "match",
+      "id": "apf_1561329",
       "label": "South Africa 0–1 Canada",
+      "at": "2026-06-28T22:19:12.565Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
