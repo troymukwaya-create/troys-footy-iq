@@ -191,7 +191,7 @@ export function StatusTag({ v, big }) {
   if (v.state === 'live') {
     return React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: 6 } },
       React.createElement('span', { className: 'odd-pulse', style: { width: 7, height: 7, borderRadius: '50%', background: T.accent, boxShadow: '0 0 0 0 ' + T.accent } }),
-      React.createElement('span', { style: { ...num(big ? 14 : 11, 600), color: T.accent } }, v.minute + "'"));
+      React.createElement('span', { style: { ...num(big ? 14 : 11, 600), color: T.accent } }, v.minute != null ? v.minute + "'" : 'LIVE'));
   }
   if (v.state === 'settled') {
     return React.createElement('span', { style: { ...label(big ? 10 : 9), color: T.t3 } }, 'Full time');

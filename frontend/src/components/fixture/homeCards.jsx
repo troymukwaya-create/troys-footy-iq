@@ -98,9 +98,9 @@ export function MatchOfDay({ v, t = {}, onSelect, onMouseEnter }) {
       <div style={{ position: 'relative' }}>
         <VersusHero v={v} t={t} h={176} seam={seamOf(t)} disc={32} codes codeSize={30} discTop={45} />
         <div style={{ position: 'absolute', top: 13, left: 22, right: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 6 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
             <Diamond s={7} c={t.accent || T.accent} />
-            <span style={{ ...label(10), color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.7)', whiteSpace: 'nowrap' }}>Match of the Day</span>
+            <span style={{ ...label(10), color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.7)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Match of the Day</span>
           </span>
           <span style={{ ...num(11, 500), color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 6px rgba(0,0,0,0.7)', letterSpacing: '0.04em', whiteSpace: 'nowrap', flexShrink: 0 }}>
             {v.state === 'live' ? `LIVE ${v.minute ? v.minute + "'" : ''}` : `KICKOFF ${v.kickoff}${v.countdown ? ' · ' + v.countdown : ''}`}
@@ -144,10 +144,10 @@ export function MatchBand({ v, t = {} }) {
     <div style={{ position: 'relative', isolation: 'isolate' }}>
       {t.flagBg && <FlagBleedBg home={v.home} away={v.away} on opacity={0.08} />}
       {live && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: t.accent || T.accent, zIndex: 8 }} />}
-      <VersusHero v={v} t={t} h={120} seam={seamOf(t)} disc={23} meta icon={live ? null : 'KickoffIcon'} codes codeSize={27} discTop={50} />
+      <VersusHero v={v} t={t} h={120} seam={seamOf(t)} disc={23} meta icon={v.state === 'upcoming' ? 'KickoffIcon' : null} codes codeSize={27} discTop={50} />
       <div style={{ position: 'relative', padding: '13px 18px 15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-          <span style={{ ...num(10.5, 400), color: T.t3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</span>
+          <span style={{ ...num(10.5, 400), color: T.t3, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</span>
           {v.lock && <LockChip label={v.lock} />}
         </div>
         <div style={{ marginBottom: 13 }}><Viz v={v} t={t} /></div>

@@ -37,7 +37,7 @@ function untilLabel(date, now) {
   const m = Math.floor(ms / 60000);
   if (m < 60) return `in ${m}m`;
   if (m < 48 * 60) return `in ${Math.floor(m / 60)}h ${m % 60}m`;
-  return `in ${Math.floor(m / 1440 / 60) || Math.floor(m / 1440)}d`;
+  return `in ${Math.floor(m / 1440)}d`;
 }
 
 // One line the model would actually say about this match.
@@ -187,6 +187,29 @@ function BoardRow({ f, now, onSelect }) {
 function bestEdgeOf(f) {
   const ve = f.probability?.valueEdges;
   return ve ? Math.max(ve.home ?? -99, ve.draw ?? -99, ve.away ?? -99) : -99;
+}
+
+// Build the broadcast `v` state-view the home cards (MatchOfDay / MatchBand)
+// consume: the fixtureView base + the board-computed extras. untilLabel returns
+// null for live/finished fixtures, so the countdown is guarded before upper-casing.
+function buildView(f, now) {
+  const v = fixtureView(f);
+  if (!v) return null;
+  const live = isLiveStatus(f.status);
+  const done = isDoneStatus(f.status);
+  const locked = !!f.probability?.locked;
+  const cd = untilLabel(f.date, now);
+  const bestEdge = bestEdgeOf(f);
+  const sl = scorelineSummary(f.probability);
+  return {
+    ...v,
+    venue: f.venue || '',
+    countdown: (!live && !done && cd) ? cd.toUpperCase() : null,
+    insight: verdictLine(f),
+    edge: bestEdge >= 5 ? `+${Math.round(bestEdge)} PTS VS MARKET` : null,
+    lock: done ? null : (locked ? 'LOCKED' : (live ? null : 'LOCKS T-10')),
+    scoreCall: sl?.confident ? `${sl.score} likely` : null,
+  };
 }
 
 function greetingFor(now) {
