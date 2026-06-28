@@ -985,13 +985,23 @@
       }
     }
   ],
-  "verdictWait": {
-    "apf_1489422": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1489418": {
       "kind": "prematch",
       "label": "Algeria v Austria",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1489422": {
+      "kind": "match",
+      "label": "Panama 0–2 England",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
