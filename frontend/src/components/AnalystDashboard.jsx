@@ -4,11 +4,11 @@ import BrierScoreHero from './BrierScoreHero.jsx';
 import { LedgerBreakdown } from './LedgerBreakdown.jsx';
 import TrackRecord from './TrackRecord.jsx';
 import { EmailCapture } from './EmailCapture.jsx';
-import { flagGradient, getMatchColor } from '../constants/nationColors.js';
-import FlagBleed, { hasFlags } from './FlagBleed.jsx';
+import { getMatchColor } from '../constants/nationColors.js';
 import MatchdayBoard from './MatchdayBoard.jsx';
 import { motion } from 'motion/react';
-import TeamMark from './TeamMark.jsx';
+import { fixtureView } from './fixture/oddData.js';
+import { VersusHero, T } from './fixture/primitives.jsx';
 import ScrollReveal from './reactbits/ScrollReveal.jsx';
 import GlassSurface from './reactbits/GlassSurface.jsx';
 import DecryptedText from './reactbits/DecryptedText.jsx';
@@ -55,148 +55,89 @@ function getInsight(fixture) {
 }
 
 // ─── INSIGHT CARD (competition browse view) ──────────────────────────
-// De-vibed per the council verdict: no cursor-glow sheen, no pill chips,
-// sharp corners, hard borders, at most ONE accent per card.
+// On the VersusHero seam motif — same brand identity as the home board and
+// the sidebar Ticket cards (was the old full flag-bleed). Seam header (flags
+// + codes + score/VS) → full names → probability → the model's read → edge.
 function InsightCard({ fixture, onSelect }) {
   const prob = fixture.probability?.probabilities;
   const insights = getInsight(fixture);
-  const isLive = fixture.status === 'IN_PLAY' || fixture.status === 'PAUSED';
   const homeBar = getMatchColor(fixture.homeTeam?.name);
   const awayBar = getMatchColor(fixture.awayTeam?.name);
   const ve = fixture.probability?.valueEdges;
   const bestEdge = ve ? Math.max(ve.home ?? 0, ve.draw ?? 0, ve.away ?? 0) : 0;
   const [hovered, setHovered] = React.useState(false);
-
-  const kickoff = fixture.date
-    ? new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : '';
-
-  const useFlagBleed = hasFlags(fixture.homeTeam?.name, fixture.awayTeam?.name);
+  const v = fixtureView(fixture);
 
   return (
     <div
       onClick={() => onSelect?.(fixture)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: useFlagBleed
-          ? '#0B0B0D'
-          : flagGradient(fixture.homeTeam?.name, fixture.awayTeam?.name, '#0B0B0D'),
-        border: '1px solid var(--border-default)',
-        borderRadius: 6,
-        padding: 'clamp(14px, 4vw, 18px) clamp(14px, 4vw, 20px)',
-        cursor: 'pointer',
-        transition: 'border-color 180ms ease',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-        position: 'relative',
-        overflow: 'hidden',
-        isolation: 'isolate',
+        background: T.raised,
+        border: '1px solid ' + (hovered ? 'var(--border-strong)' : 'var(--border-default)'),
+        borderRadius: 14, cursor: 'pointer', transition: 'border-color 180ms ease',
+        display: 'flex', flexDirection: 'column',
+        position: 'relative', overflow: 'hidden', isolation: 'isolate',
       }}
-      onMouseEnter={e => { setHovered(true); e.currentTarget.style.borderColor = 'var(--border-strong)'; }}
-      onMouseLeave={e => { setHovered(false); e.currentTarget.style.borderColor = 'var(--border-default)'; }}
     >
-      {useFlagBleed && (
-        <FlagBleed
-          home={fixture.homeTeam?.name}
-          away={fixture.awayTeam?.name}
-          opacity={hovered ? 0.85 : 0.72}
-        />
-      )}
-      {/* Top Row: Competition + Status */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          {fixture.league?.name || 'Match'}
-          {fixture.round ? ` · ${fixture.round}` : ''}
-        </span>
-        {isLive ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: MONO, fontSize: 10.5, fontWeight: 600, color: 'var(--success)' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', animation: 'pulse 1.5s infinite' }} />
-            {fixture.minute ? `${fixture.minute}′` : 'LIVE'}
-          </span>
-        ) : (
-          <span style={{ fontFamily: MONO, fontSize: 10.5, color: 'var(--text-tertiary)' }}>{kickoff}</span>
-        )}
-      </div>
-
-      {/* Teams */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
-        <TeamBlock team={fixture.homeTeam} align="left" />
-        <div style={{
-          fontFamily: MONO, fontSize: 12.5, fontWeight: 600, color: 'var(--text-tertiary)',
-          padding: '5px 10px', background: 'var(--bg-raised)',
-          border: '1px solid var(--border-default)', borderRadius: 4,
-          letterSpacing: '0.05em', flexShrink: 0, fontVariantNumeric: 'tabular-nums',
-        }}>
-          {isLive
-            ? `${fixture.score?.home ?? 0} – ${fixture.score?.away ?? 0}`
-            : 'VS'}
-        </div>
-        <TeamBlock team={fixture.awayTeam} align="right" />
-      </div>
-
-      {/* Probability bar — mono numbers, sharp fills */}
-      {prob && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 11, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-            <span>H <strong style={{ color: 'var(--text-primary)' }}>{Math.round(prob.home)}%</strong></span>
-            <span>D <strong style={{ color: 'var(--text-primary)' }}>{Math.round(prob.draw)}%</strong></span>
-            <span>A <strong style={{ color: 'var(--text-primary)' }}>{Math.round(prob.away)}%</strong></span>
-          </div>
-          <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.05)', display: 'flex', overflow: 'hidden' }}>
-            <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.home}%` }} viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} style={{ background: homeBar }} />
-            <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.draw}%` }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }} style={{ background: 'rgba(255,255,255,0.14)' }} />
-            <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.away}%` }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.16, ease: [0.16, 1, 0.3, 1] }} style={{ background: awayBar }} />
-          </div>
-        </div>
+      {v && (
+        <VersusHero v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5 }}
+          h={120} seam={[58, 42]} disc={23} meta codes codeSize={27} discTop={50} />
       )}
 
-      {/* Insights */}
-      {insights?.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {insights.map((text, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <span style={{ color: 'var(--accent)', fontSize: 13, lineHeight: 1.5, flexShrink: 0 }}>›</span>
-              <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{text}</span>
+      <div style={{ padding: 'clamp(13px,3.5vw,16px) clamp(14px,4vw,18px)', display: 'flex', flexDirection: 'column', gap: 13 }}>
+        {/* full team names — clarity for the browse grid */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fixture.homeTeam?.name}</span>
+          <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '0.8em', flexShrink: 0 }}>v</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fixture.awayTeam?.name}</span>
+        </div>
+
+        {/* Probability bar — mono numbers, team-coloured fills */}
+        {prob && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 11, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+              <span>H <strong style={{ color: 'var(--text-primary)' }}>{Math.round(prob.home)}%</strong></span>
+              <span>D <strong style={{ color: 'var(--text-primary)' }}>{Math.round(prob.draw)}%</strong></span>
+              <span>A <strong style={{ color: 'var(--text-primary)' }}>{Math.round(prob.away)}%</strong></span>
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{ height: 5, borderRadius: 2, background: 'rgba(255,255,255,0.05)', display: 'flex', overflow: 'hidden' }}>
+              <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.home}%` }} viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} style={{ background: homeBar }} />
+              <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.draw}%` }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }} style={{ background: 'rgba(255,255,255,0.14)' }} />
+              <motion.div initial={{ width: 0 }} whileInView={{ width: `${prob.away}%` }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.16, ease: [0.16, 1, 0.3, 1] }} style={{ background: awayBar }} />
+            </div>
+          </div>
+        )}
 
-      {/* Footer — at most ONE label (the market disagreement), mono + sharp.
-          When every card wears a badge, no card does. */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid var(--border-subtle)', minHeight: 24 }}>
-        <div>
-          {bestEdge >= 5 && (
-            <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 600, padding: '2.5px 8px', borderRadius: 3, color: 'var(--success)', border: '1px solid rgba(34,197,94,0.35)', letterSpacing: '0.04em' }}>
-              +{Math.round(bestEdge)} PTS VS MARKET
-            </span>
-          )}
+        {/* Insights */}
+        {insights?.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {insights.map((text, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ color: 'var(--accent)', fontSize: 13, lineHeight: 1.5, flexShrink: 0 }}>›</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Footer — at most ONE label (the market disagreement). */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 6, borderTop: '1px solid var(--border-subtle)', minHeight: 24 }}>
+          <div>
+            {bestEdge >= 5 && (
+              <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 600, padding: '2.5px 8px', borderRadius: 3, color: 'var(--success)', border: '1px solid rgba(34,197,94,0.35)', letterSpacing: '0.04em' }}>
+                +{Math.round(bestEdge)} PTS VS MARKET
+              </span>
+            )}
+          </div>
+          <span aria-hidden style={{
+            fontSize: 16, color: hovered ? 'var(--accent)' : 'var(--text-muted)',
+            transform: hovered ? 'translateX(3px)' : 'translateX(0)',
+            transition: 'transform 200ms ease, color 200ms ease',
+          }}>›</span>
         </div>
-        <span aria-hidden style={{
-          fontSize: 16, color: hovered ? 'var(--accent)' : 'var(--text-muted)',
-          transform: hovered ? 'translateX(3px)' : 'translateX(0)',
-          transition: 'transform 200ms ease, color 200ms ease',
-        }}>›</span>
       </div>
-    </div>
-  );
-}
-
-function TeamBlock({ team, align }) {
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      alignItems: align === 'right' ? 'flex-end' : 'flex-start',
-      gap: 6, flex: 1, minWidth: 0,
-    }}>
-      <TeamMark name={team?.name} crest={team?.crest} size={40} />
-      <span style={{
-        fontSize: 14, fontWeight: 600, color: 'var(--text-primary)',
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        maxWidth: '100%', textAlign: align,
-      }}>
-        {team?.name || '—'}
-      </span>
     </div>
   );
 }

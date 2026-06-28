@@ -79,7 +79,7 @@ export const NATION_ISO2 = {
 // those tiles flagless — resolve through accent folding + a normalised index
 // so every variant finds its flag.
 const normName = (s) => String(s || '')
-  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toLowerCase().replace(/[^a-z]/g, '');
 
 const EXTRA_ALIASES = {

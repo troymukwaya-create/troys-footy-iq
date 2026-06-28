@@ -7,16 +7,20 @@
 // row itself. Deep page stays one tap away inside the expanded panel.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, ArrowRight, Star } from 'lucide-react';
-import FlagBleed, { hasFlags } from './FlagBleed.jsx';
-import { getMatchColor } from '../constants/nationColors.js';
+import { ChevronDown, ChevronRight, ArrowRight } from 'lucide-react';
 import { track } from '../lib/analytics.js';
 import { scorelineSummary } from '../lib/scoreline.js';
-import { VersusHero, T } from './fixture/primitives.jsx';
+import { T } from './fixture/primitives.jsx';
 import { fixtureView } from './fixture/oddData.js';
+import { MatchOfDay, MatchBand } from './fixture/homeCards.jsx';
 
 const MONO = 'var(--font-mono)';
 const mono = { fontFamily: MONO, fontVariantNumeric: 'tabular-nums' };
+
+// Shared broadcast-card tweaks — nation colours, max density, the subtle
+// flag-bleed behind the body. Mirrors the approved Fixture Cards settings so
+// the home hero/bands never disagree with the sidebar's Ticket cards.
+const CARD_T = { accent: T.accent, colorMode: 'nation', density: 5, flagBg: true };
 
 const isLiveStatus = (s) => s === 'IN_PLAY' || s === 'PAUSED';
 const isDoneStatus = (s) => s === 'FINISHED' || s === 'FT';
@@ -63,27 +67,6 @@ function verdictLine(f) {
 function marketImplied(p, ve, key) {
   if (!p || !ve || ve[key] == null) return null;
   return Math.max(0, Math.min(100, p[key] - ve[key]));
-}
-
-function ProbBars({ f, compact }) {
-  const p = f.probability?.probabilities;
-  if (!p) return null;
-  const homeBar = getMatchColor(f.homeTeam?.name);
-  const awayBar = getMatchColor(f.awayTeam?.name);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: compact ? 10.5 : 11.5, color: 'var(--text-secondary)', ...mono }}>
-        <span>H <strong style={{ color: 'var(--text-primary)' }}>{Math.round(p.home)}%</strong></span>
-        <span>D <strong style={{ color: 'var(--text-primary)' }}>{Math.round(p.draw)}%</strong></span>
-        <span>A <strong style={{ color: 'var(--text-primary)' }}>{Math.round(p.away)}%</strong></span>
-      </div>
-      <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', display: 'flex', overflow: 'hidden', borderRadius: 2 }}>
-        <div style={{ width: `${p.home}%`, background: homeBar }} />
-        <div style={{ width: `${p.draw}%`, background: 'rgba(255,255,255,0.16)' }} />
-        <div style={{ width: `${p.away}%`, background: awayBar }} />
-      </div>
-    </div>
-  );
 }
 
 // The expanded receipt — everything worth knowing without leaving the board.
@@ -173,13 +156,8 @@ function ReceiptPanel({ f, onSelect }) {
 
 function BoardRow({ f, now, onSelect }) {
   const [open, setOpen] = useState(false);
-  const p = f.probability?.probabilities;
-  const live = isLiveStatus(f.status);
-  const done = isDoneStatus(f.status);
-  const locked = !!f.probability?.locked;
-  const until = untilLabel(f.date, now);
-  const ko = f.date ? new Date(f.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const useBleed = hasFlags(f.homeTeam?.name, f.awayTeam?.name);
+  const [hover, setHover] = useState(false);
+  const v = buildView(f, now);
 
   const toggle = () => {
     const next = !open;
@@ -187,58 +165,20 @@ function BoardRow({ f, now, onSelect }) {
     if (next) track('board_expand', { fixture_id: f.id, home_team: f.homeTeam?.name, away_team: f.awayTeam?.name });
   };
 
+  if (!v) return null;
   return (
-    <div style={{ border: '1px solid var(--border-default)', borderRadius: 6, overflow: 'hidden', isolation: 'isolate', position: 'relative', background: '#0B0B0D' }}>
+    <div style={{ border: '1px solid ' + (hover || open ? 'var(--border-strong)' : 'var(--border-default)'), borderRadius: 14, overflow: 'hidden', isolation: 'isolate', position: 'relative', background: T.raised, transition: 'border-color 180ms ease' }}>
       <div
         role="button" tabIndex={0} aria-expanded={open}
         onClick={toggle}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}
-        style={{ position: 'relative', isolation: 'isolate', padding: '12px 14px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10 }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{ cursor: 'pointer' }}
       >
-        {useBleed && <FlagBleed home={f.homeTeam?.name} away={f.awayTeam?.name} opacity={open ? 0.66 : 0.56} />}
-
-        {/* status line */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, ...mono, fontSize: 10, letterSpacing: '0.1em', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-          {live ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--success)', fontWeight: 600 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success)' }} className="animate-pulse" />
-              LIVE {f.minute ? `${f.minute}′` : ''}
-            </span>
-          ) : done ? (
-            <span style={{ fontWeight: 600 }}>FT {f.score?.home ?? f.fullTime?.home ?? ''}–{f.score?.away ?? f.fullTime?.away ?? ''}</span>
-          ) : (
-            <span>KICKOFF {ko}{until ? ` · ${until}` : ''}</span>
-          )}
-          <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            {!done && (locked ? (
-              <span style={{ color: 'var(--accent)', fontWeight: 600, border: '1px solid rgba(192,57,43,0.45)', padding: '1.5px 7px', borderRadius: 3 }}>LOCKED</span>
-            ) : !live && (
-              <span>LOCKS T-10</span>
-            ))}
-            <ChevronDown size={14} style={{ color: 'var(--text-tertiary)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 180ms ease' }} />
-          </span>
-        </div>
-
-        {/* teams */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 'clamp(14.5px, 3.9vw, 17px)', fontWeight: 700, color: 'var(--text-primary)' }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.homeTeam?.name}</span>
-          <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '0.8em' }}>v</span>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.awayTeam?.name}</span>
-          {f.venue && <span style={{ ...mono, marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 400 }} className="board-venue">{f.venue}</span>}
-        </div>
-
-        <ProbBars f={f} />
-
-        {/* one-line verdict (collapsed only — the panel says it with context) */}
-        {!open && verdictLine(f) && (
-          <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            <span style={{ color: 'var(--accent)', marginRight: 6 }}>›</span>{verdictLine(f)}
-          </div>
-        )}
+        <MatchBand v={v} t={CARD_T} />
       </div>
-
       {open && <ReceiptPanel f={f} onSelect={onSelect} />}
-      <style>{`@media (max-width: 560px) { .board-venue { display: none; } }`}</style>
     </div>
   );
 }
@@ -257,82 +197,12 @@ function greetingFor(now) {
 }
 
 // ─── MATCH OF THE DAY (featured hero) ────────────────────────────────
-// The one game to look at — our biggest market disagreement, or the next
-// to kick off when nothing stands out. Bigger than a board row, flag-bled,
-// opens the full analysis on click.
+// The one game to look at — our biggest market disagreement, or the next to
+// kick off when nothing stands out. The broadcast hero from the Home design.
 function HeroMatch({ f, now, onSelect }) {
-  const live = isLiveStatus(f.status);
-  const locked = !!f.probability?.locked;
-  const until = untilLabel(f.date, now);
-  const ko = f.date ? new Date(f.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const bestEdge = bestEdgeOf(f);
-  const sl = scorelineSummary(f.probability);
-  const v = fixtureView(f);
-
-  return (
-    <div
-      role="button" tabIndex={0}
-      onClick={() => onSelect?.(f)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(f); } }}
-      style={{
-        position: 'relative', isolation: 'isolate', overflow: 'hidden', cursor: 'pointer',
-        border: '1px solid rgba(192,57,43,0.45)', borderRadius: 12,
-        background: '#0B0B0D', display: 'flex', flexDirection: 'column', marginBottom: 22,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', ...mono, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', padding: 'clamp(13px,3.5vw,16px) clamp(15px,4vw,20px) 12px' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--accent)', fontWeight: 600 }}>
-          <Star size={11} fill="var(--accent)" /> Match of the day
-        </span>
-        <span style={{ color: 'var(--text-tertiary)' }}>
-          {live
-            ? <span style={{ color: 'var(--success)', fontWeight: 600 }}>LIVE {f.minute ? `${f.minute}′` : ''}</span>
-            : `Kickoff ${ko}${until ? ` · ${until}` : ''}`}
-        </span>
-      </div>
-
-      {/* The shared matchup motif — two flags on a diagonal seam, score/VS on the fold. */}
-      <div style={{ padding: '0 clamp(15px,4vw,20px)' }}>
-        <VersusHero v={v} t={{ accent: T.accent, colorMode: 'nation', density: 5, flagBg: false }}
-          h={150} radius={10} seam={[60, 40]} disc={26} codes codeSize={30} discTop={46} />
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 'clamp(16px, 4.4vw, 21px)', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.15, padding: '13px clamp(15px,4vw,20px) 0' }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.homeTeam?.name}</span>
-        <span style={{ color: 'var(--text-tertiary)', fontWeight: 500, fontSize: '0.72em' }}>v</span>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.awayTeam?.name}</span>
-        {f.league?.name && <span style={{ ...mono, marginLeft: 'auto', fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 400, whiteSpace: 'nowrap' }} className="board-venue">{f.league.name}</span>}
-      </div>
-
-      <div style={{ padding: '13px clamp(15px,4vw,20px) clamp(15px,4vw,20px)', display: 'flex', flexDirection: 'column', gap: 13 }}>
-      <ProbBars f={f} />
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        {bestEdge >= 5 && (
-          <span style={{ ...mono, fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 3, color: 'var(--success)', border: '1px solid rgba(34,197,94,0.35)' }}>
-            +{Math.round(bestEdge)} PTS VS MARKET
-          </span>
-        )}
-        {sl.confident
-          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 3, color: 'var(--accent)', background: 'var(--accent-muted)', border: '1px solid rgba(192,57,43,0.30)' }}>{sl.score} likely</span>
-          : <span style={{ ...mono, fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 3, color: 'var(--text-tertiary)', border: '1px solid var(--border-default)' }}>OPEN GAME</span>}
-        {!live && (locked
-          ? <span style={{ ...mono, fontSize: 10.5, fontWeight: 600, color: 'var(--accent)', border: '1px solid rgba(192,57,43,0.45)', padding: '3px 8px', borderRadius: 3 }}>LOCKED</span>
-          : <span style={{ ...mono, fontSize: 10.5, color: 'var(--text-tertiary)' }}>LOCKS T-10</span>)}
-      </div>
-
-      {verdictLine(f) && (
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-          <span style={{ color: 'var(--accent)', marginRight: 7 }}>›</span>{verdictLine(f)}.
-        </div>
-      )}
-
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, ...mono, fontSize: 10.5, letterSpacing: '0.08em', color: 'var(--accent)' }}>
-        FULL ANALYSIS <ArrowRight size={13} />
-      </div>
-      </div>
-    </div>
-  );
+  const v = buildView(f, now);
+  if (!v) return null;
+  return <MatchOfDay v={v} t={CARD_T} onSelect={() => onSelect?.(f)} />;
 }
 
 // ─── THE HOME BOARD ──────────────────────────────────────────────────
@@ -394,10 +264,10 @@ export function MatchdayBoard({ fixtures = [], onSelect }) {
   return (
     <section aria-label="Home board">
       <div className="animate-fade-in" style={{ marginBottom: 18 }}>
-        <h1 className="font-display" style={{ fontSize: 'clamp(22px, 5.5vw, 30px)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, lineHeight: 1.1 }}>
+        <h1 style={{ fontFamily: MONO, fontSize: 'clamp(24px, 6vw, 38px)', fontWeight: 600, letterSpacing: '-0.01em', margin: 0, lineHeight: 1.05, color: 'var(--text-primary)' }}>
           {greetingFor(now)}
         </h1>
-        <p style={{ fontFamily: MONO, fontSize: 11, letterSpacing: '0.04em', color: 'var(--text-tertiary)', margin: '6px 0 0' }}>
+        <p style={{ fontFamily: MONO, fontSize: 'clamp(11px, 2.6vw, 12.5px)', letterSpacing: '0.02em', color: 'var(--text-tertiary)', margin: '12px 0 0' }}>
           {dateStr} · {statusBits.join(' · ')}
         </p>
       </div>

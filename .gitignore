@@ -47,3 +47,8 @@ scripts/social/state.json
 
 # Vercel CLI link (do not commit)
 .vercel/
+
+# design-sync working dirs — build artifacts + pulled design bundle, not app code
+frontend/.ds-sync/
+frontend/ds-bundle/
+frontend/.design-sync/.cache/
