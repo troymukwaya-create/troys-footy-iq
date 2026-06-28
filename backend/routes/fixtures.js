@@ -162,6 +162,55 @@ async function getAllFixturesData() {
     }
   }
 
+  // ── RELEASED CLUB SEASONS (off-season pre-load) ─────────────────────────────
+  // In the European off-season the date-window fetches above return nothing, so a
+  // just-released next-season schedule (e.g. the 2026-27 Premier League, announced
+  // in June) would never appear — leagues sit blank between seasons. Pull each
+  // major league's upcoming season directly (one call per league, CACHED 12h since
+  // a released schedule barely changes) and merge the nearest fixtures — with the
+  // club crests API-Football ships — so PL/La Liga/etc. aren't empty. Non-fatal.
+  if (hasApsKey) {
+    try {
+      const seasonValid = await cacheService.getOrSet('club_season_upcoming_v1', async () => {
+        const SEASON_NEW = 2026; // API-Football season = start year (2026-27 → 2026)
+        const CLUB_CODES = ['PL', 'PD', 'BL1', 'SA', 'FL1'];
+        const nowMs = Date.now();
+        const seasonRaw = [];
+        for (const code of CLUB_CODES) {
+          const raw = await api.getLeagueSeasonFixtures(code, SEASON_NEW).catch(() => []);
+          const upcoming = (raw || [])
+            // Off-season gate: only surface fixtures BEYOND the live feed's own
+            // window (~14d). The live football-data/apisports feeds own anything
+            // sooner, so this can't double a match they also return (the two
+            // sources mint different ids for the same match, so id-dedup misses).
+            .filter(f => f.status === 'SCHEDULED'
+              && f.date && new Date(f.date).getTime() > nowMs + 14 * 86400000)
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .slice(0, 20); // the opening rounds — enough to make each league non-blank
+          seasonRaw.push(...upcoming);
+        }
+        // NO generic prediction here. A fixture months out has no real signal;
+        // an identical league-average strip on every card is the "fake number"
+        // that breaks the honesty/Brier moat. These ride as SCHEDULE (crest +
+        // date); the frontend shows "prediction nearer kickoff" — the real,
+        // form/market-aware number attaches once the match enters the live window.
+        return validateFixtureBatch(seasonRaw, 'apisports_club_season').valid;
+      }, 12 * 60 * 60);
+
+      const seenSeason = new Set(wcFixtures.map(f => f.id));
+      let mergedCount = 0;
+      for (const f of (seasonValid || [])) {
+        if (seenSeason.has(f.id)) continue;
+        seenSeason.add(f.id);
+        wcFixtures.push(f);
+        mergedCount++;
+      }
+      if (mergedCount) console.log(`[fixtures] 📅 Released club seasons: ${mergedCount} upcoming fixtures merged`);
+    } catch (e) {
+      console.warn('[fixtures] club-season pre-load failed (non-fatal):', e.message);
+    }
+  }
+
   // Merge the World Cup section into whatever the club feed returns.
   const mergeWc = (clubFixtures, source) => {
     if (!wcFixtures.length) return { fixtures: clubFixtures, source };
