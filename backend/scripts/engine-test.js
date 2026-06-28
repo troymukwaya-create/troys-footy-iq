@@ -25,6 +25,7 @@ import { outcome90 } from '../services/resultService.js';
 import { extractRedCards, suspendedPlayersForTeam } from '../engine/suspensions.js';
 import { extractTeamXg, blendFormWithXg } from '../engine/xgForm.js';
 import { motivationFactor, stakesTag } from '../engine/stakes.js';
+import { runScoredModelRegression } from './regression-scored-model.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -48,6 +49,15 @@ function markets(p) {
 }
 
 console.log('\n═══ ODDYESSA ENGINE STRENGTH TEST ═══\n');
+
+// ── 0. SAFETY INTERLOCK: the scored model must stay byte-identical ──
+// (Fan-Brain shadow build — proves wc-elo-market-v1 + the frozen 0.60 blend
+// are unchanged with all new flags off. Must pass before anything else.)
+console.log('Scored-model safety interlock:');
+{
+  const rg = runScoredModelRegression(() => {});
+  check('wc-elo-market-v1 byte-identical (shadow flags off)', rg.fail === 0, rg.fails.join(' | '));
+}
 
 // ── 1. Confidence on a coin-flip match is LOW ──
 console.log('Confidence honesty:');
