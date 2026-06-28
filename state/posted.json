@@ -1034,6 +1034,30 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1561329": {
+      "kind": "prematch",
+      "label": "South Africa v Canada",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1489419": {
+      "kind": "match",
+      "label": "Colombia 0–0 Portugal",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
