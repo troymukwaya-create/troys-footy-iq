@@ -89,7 +89,8 @@
     "apf_1489413",
     "apf_1489414",
     "apf_1489415",
-    "apf_1489422"
+    "apf_1489422",
+    "apf_1489420"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -995,6 +996,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489420",
+      "label": "Croatia 2–1 Ghana",
+      "at": "2026-06-28T10:57:10.213Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -1002,18 +1014,6 @@
     "apf_1489418": {
       "kind": "prematch",
       "label": "Algeria v Austria",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489420": {
-      "kind": "match",
-      "label": "Croatia 2–1 Ghana",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
