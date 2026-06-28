@@ -93,7 +93,8 @@
     "apf_1489422",
     "apf_1489420",
     "apf_1539013",
-    "apf_1489419"
+    "apf_1489419",
+    "apf_1489421"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1043,6 +1044,17 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489421",
+      "label": "Jordan 1–3 Argentina",
+      "at": "2026-06-28T18:58:16.903Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
@@ -1050,18 +1062,6 @@
     "apf_1489418": {
       "kind": "prematch",
       "label": "Algeria v Austria",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1489421": {
-      "kind": "match",
-      "label": "Jordan 1–3 Argentina",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
