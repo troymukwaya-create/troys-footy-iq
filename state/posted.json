@@ -94,7 +94,8 @@
     "apf_1489420",
     "apf_1539013",
     "apf_1489419",
-    "apf_1489421"
+    "apf_1489421",
+    "apf_1489418"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1055,21 +1056,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1489418": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1489418",
       "label": "Algeria v Austria",
+      "at": "2026-06-28T20:12:30.483Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
