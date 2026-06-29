@@ -96,7 +96,8 @@
     "apf_1489419",
     "apf_1489421",
     "apf_1489418",
-    "apf_1561329"
+    "apf_1561329",
+    "apf_1562344"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1079,24 +1080,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1562344": 1
-  },
-  "pending": {
-    "apf_1562344": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1562344",
       "label": "Brazil v Japan",
+      "at": "2026-06-29T21:02:13.078Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
-    },
+    }
+  ],
+  "verdictWait": {},
+  "pending": {
     "apf_1565176": {
       "kind": "prematch",
       "label": "Germany v Paraguay",
