@@ -1106,6 +1106,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1562345": {
+      "kind": "prematch",
+      "label": "Netherlands v Morocco",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
