@@ -1094,6 +1094,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1565176": {
+      "kind": "prematch",
+      "label": "Germany v Paraguay",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
