@@ -4,6 +4,9 @@ import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import adminApi, { getToken, clearToken, adminLogin } from '../api/adminClient.js';
 import { AdminCtx, useAdmin, Card, C } from '../components/admin/ui.jsx';
+import { Icon } from '../components/admin/icons.jsx';
+import MissionControl from './admin/MissionControl.jsx';
+import Engine from './admin/Engine.jsx';
 import Overview from './admin/Overview.jsx';
 import Ops from './admin/Ops.jsx';
 import Visitors from './admin/Visitors.jsx';
@@ -14,13 +17,15 @@ import Spend from './admin/Spend.jsx';
 import ApiUsage from './admin/ApiUsage.jsx';
 
 const NAV = [
-  { to: '/admin', label: 'Mission Control', end: true },
-  { to: '/admin/business', label: 'Business' },
-  { to: '/admin/visitors', label: 'Visitors' },
-  { to: '/admin/traffic', label: 'Traffic' },
-  { to: '/admin/predictions', label: 'Predictions' },
-  { to: '/admin/spend', label: 'Spend' },
-  { to: '/admin/api', label: 'API' },
+  { to: '/admin', label: 'Mission Control', icon: 'gauge', end: true },
+  { to: '/admin/engine', label: 'Engine', icon: 'brain' },
+  { to: '/admin/ops', label: 'Ops', icon: 'activity' },
+  { to: '/admin/business', label: 'Business', icon: 'trophy' },
+  { to: '/admin/visitors', label: 'Visitors', icon: 'users' },
+  { to: '/admin/traffic', label: 'Traffic', icon: 'globe' },
+  { to: '/admin/predictions', label: 'Predictions', icon: 'target' },
+  { to: '/admin/spend', label: 'Spend', icon: 'dollar' },
+  { to: '/admin/api', label: 'API', icon: 'server' },
 ];
 
 // ─── LOGIN ──────────────────────────────────────────────────────────
@@ -101,9 +106,9 @@ function Shell({ onLogout }) {
             <nav style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               {NAV.map(n => (
                 <NavLink key={n.to} to={n.to} end={n.end} style={({ isActive }) => ({
-                  fontSize: 12, padding: '5px 11px', borderRadius: 7, textDecoration: 'none',
+                  fontSize: 12, padding: '5px 11px', borderRadius: 7, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
                   color: isActive ? '#fff' : C.t2, background: isActive ? C.accent : 'transparent', fontWeight: isActive ? 600 : 500,
-                })}>{n.label}</NavLink>
+                })}>{n.icon && <Icon name={n.icon} size={13} />}{n.label}</NavLink>
               ))}
             </nav>
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -125,7 +130,9 @@ function Shell({ onLogout }) {
           )}
           <DemoBanner demo={demo} setDemo={setDemo} />
           <Routes>
-            <Route index element={<Ops />} />
+            <Route index element={<MissionControl />} />
+            <Route path="engine" element={<Engine />} />
+            <Route path="ops" element={<Ops />} />
             <Route path="business" element={<Overview />} />
             <Route path="visitors" element={<Visitors />} />
             <Route path="visitors/:id" element={<VisitorDetail />} />
