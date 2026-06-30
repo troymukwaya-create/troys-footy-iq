@@ -1117,13 +1117,35 @@
       }
     }
   ],
-  "verdictWait": {
-    "apf_1564789": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1565177": {
       "kind": "prematch",
       "label": "France v Sweden",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1567306": {
+      "kind": "prematch",
+      "label": "Mexico v Ecuador",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1564789": {
+      "kind": "match",
+      "label": "Ivory Coast 1–2 Norway",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
