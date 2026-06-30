@@ -98,7 +98,8 @@
     "apf_1489418",
     "apf_1561329",
     "apf_1562344",
-    "apf_1565176"
+    "apf_1565176",
+    "apf_1562345"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1103,23 +1104,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1562345": 1
-  },
-  "pending": {
-    "apf_1562345": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1562345",
       "label": "Netherlands v Morocco",
+      "at": "2026-06-30T08:46:08.877Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
