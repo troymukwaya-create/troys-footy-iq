@@ -13,7 +13,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import puppeteer from 'puppeteer-core';
-import { NATION_ISO2 } from '../../backend/constants/nationFlags.js';
+import { flagIso } from '../../backend/constants/nationFlags.js';
 import { gradeRow } from '../../backend/engine/grading.js';
 
 const API = process.env.ODDYESSA_API || 'https://troys-footy-iq-api.onrender.com/api';
@@ -24,7 +24,9 @@ mkdirSync(OUT, { recursive: true });
 const CHROME = process.env.CHROME_PATH
   || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-const iso = (name) => NATION_ISO2[name] || null;
+// Resolve through flagIso so provider name variants (e.g. "Cape Verde
+// Islands", "Türkiye") find their flag instead of blanking the bleed.
+const iso = (name) => flagIso(name);
 const flagEmoji = (name) => {
   const c = iso(name);
   if (!c || c.length !== 2) return '';
