@@ -66,8 +66,7 @@ jobs:
           # of publishing 404s.
           ok=false
           for attempt in 1 2 3 4 5; do
-            git fetch origin social-assets 2>/dev/null || true
-            git reset --hard origin/social-assets >/dev/null 2>&1 || true
+            git fetch origin social-assets 2>/dev/null && git reset --hard FETCH_HEAD >/dev/null 2>&1 || true
             mkdir -p "$DATE"
             cp "$GITHUB_WORKSPACE"/scripts/social/out/*.png "$DATE/" 2>/dev/null || true
             git add .
@@ -121,8 +120,7 @@ jobs:
           # persist rather than silently looping.
           ok=false
           for attempt in 1 2 3 4 5; do
-            git fetch origin social-assets 2>/dev/null || true
-            git reset --hard origin/social-assets >/dev/null 2>&1 || true
+            git fetch origin social-assets 2>/dev/null && git reset --hard FETCH_HEAD >/dev/null 2>&1 || true
             mkdir -p state
             cp "$STATE_SRC" state/posted.json
             git add state/posted.json
