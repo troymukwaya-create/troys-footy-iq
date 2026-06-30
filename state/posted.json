@@ -21,7 +21,8 @@
     "apf_1539008",
     "apf_1489420",
     "apf_1489419",
-    "apf_1561329"
+    "apf_1561329",
+    "apf_1567306"
   ],
   "receipts": [
     "apf_1538999",
@@ -1115,25 +1116,26 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1567306",
+      "label": "Mexico v Ecuador",
+      "at": "2026-06-30T22:56:37.939Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1564789": 1
+  },
   "pending": {
     "apf_1565177": {
       "kind": "prematch",
       "label": "France v Sweden",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1567306": {
-      "kind": "prematch",
-      "label": "Mexico v Ecuador",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
