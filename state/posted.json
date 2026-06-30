@@ -97,7 +97,8 @@
     "apf_1489421",
     "apf_1489418",
     "apf_1561329",
-    "apf_1562344"
+    "apf_1562344",
+    "apf_1565176"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1091,22 +1092,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1565176",
+      "label": "Germany v Paraguay",
+      "at": "2026-06-30T01:27:59.919Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1565176": {
-      "kind": "prematch",
-      "label": "Germany v Paraguay",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1562345": {
       "kind": "prematch",
       "label": "Netherlands v Morocco",
