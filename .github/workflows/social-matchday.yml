@@ -51,18 +51,37 @@ jobs:
       # State is committed AFTER publish so per-platform results are recorded.
       - name: host cards (images → social-assets) + IMAGE_BASE_URL
         run: |
-          if [ -f scripts/social/out/state-next.json ]; then
-            DATE=$(date -u +%F)
-            git config user.name "oddyessa-bot"
-            git config user.email "bot@oddyessa.com"
-            git fetch origin social-assets:social-assets 2>/dev/null || git branch social-assets
-            git worktree add /tmp/assets social-assets
-            mkdir -p "/tmp/assets/$DATE"
-            ls scripts/social/out/*.png >/dev/null 2>&1 && cp scripts/social/out/*.png "/tmp/assets/$DATE/" || true
-            cd /tmp/assets && git add . \
-              && (git commit -m "matchday images $(date -u +%FT%H:%M)" && git push origin social-assets) || echo "no new images"
-            cd "$GITHUB_WORKSPACE" && git worktree remove /tmp/assets --force || true
+          [ -f scripts/social/out/state-next.json ] || exit 0
+          ls scripts/social/out/*.png >/dev/null 2>&1 || { echo "no cards rendered this tick"; exit 0; }
+          DATE=$(date -u +%F)
+          git config user.name "oddyessa-bot"
+          git config user.email "bot@oddyessa.com"
+          git fetch origin social-assets:social-assets 2>/dev/null || git branch social-assets
+          git worktree add /tmp/assets social-assets
+          cd /tmp/assets
+          # social-assets has concurrent writers (e.g. social-ledger), so a naive
+          # push can be rejected (non-fast-forward). Rebuild our change on the
+          # freshest tip and retry; export IMAGE_BASE_URL ONLY once the images are
+          # truly hosted, so Instagram (which fetches by URL) skips cleanly instead
+          # of publishing 404s.
+          ok=false
+          for attempt in 1 2 3 4 5; do
+            git fetch origin social-assets 2>/dev/null || true
+            git reset --hard origin/social-assets >/dev/null 2>&1 || true
+            mkdir -p "$DATE"
+            cp "$GITHUB_WORKSPACE"/scripts/social/out/*.png "$DATE/" 2>/dev/null || true
+            git add .
+            if git diff --cached --quiet; then echo "images already hosted"; ok=true; break; fi
+            git commit -q -m "matchday images $(date -u +%FT%H:%M) (try $attempt)"
+            if git push origin HEAD:social-assets 2>&1; then echo "images hosted (attempt $attempt)"; ok=true; break; fi
+            echo "image push rejected — retrying on latest tip (attempt $attempt)"
+            sleep $((attempt * 2))
+          done
+          cd "$GITHUB_WORKSPACE" && git worktree remove /tmp/assets --force || true
+          if [ "$ok" = true ]; then
             echo "IMAGE_BASE_URL=https://raw.githubusercontent.com/${{ github.repository }}/social-assets/$DATE" >> "$GITHUB_ENV"
+          else
+            echo "::warning::card images could not be hosted after 5 attempts — IG skips this tick; X/Telegram still post (direct upload)."
           fi
       - name: publish whatever is due (records per-platform results)
         run: |
@@ -84,16 +103,39 @@ jobs:
       - name: commit posted-state (social-assets branch)
         if: always()
         run: |
-          if [ -f scripts/social/out/state-next.json ]; then
-            git config user.name "oddyessa-bot"
-            git config user.email "bot@oddyessa.com"
-            git fetch origin social-assets:social-assets 2>/dev/null || git branch social-assets
-            git worktree add /tmp/state social-assets
-            mkdir -p /tmp/state/state
-            cp scripts/social/out/state-next.json /tmp/state/state/posted.json
-            cd /tmp/state && git add . \
-              && (git commit -m "matchday state $(date -u +%FT%H:%M)" && git push origin social-assets) || echo "no state change"
-            cd "$GITHUB_WORKSPACE" && git worktree remove /tmp/state --force || true
+          STATE_SRC="$GITHUB_WORKSPACE/scripts/social/out/state-next.json"
+          [ -f "$STATE_SRC" ] || { echo "no state-next.json — nothing to record"; exit 0; }
+          git config user.name "oddyessa-bot"
+          git config user.email "bot@oddyessa.com"
+          git fetch origin social-assets:social-assets 2>/dev/null || git branch social-assets
+          git worktree add /tmp/state social-assets
+          cd /tmp/state
+          # THE DUPLICATE-POST FIX. posted.json is the dedup ledger. The old
+          # `... && git push || echo "no state change"` SWALLOWED a rejected push
+          # (a concurrent social-assets push — e.g. social-ledger — makes ours a
+          # non-fast-forward), so the tick went green WITHOUT recording what it
+          # posted and the next */5 tick re-posted everything that was due.
+          # matchday is the ONLY writer of posted.json (its runs are serialized by
+          # `concurrency`), so "ours wins" is always correct: rebuild our file on
+          # the freshest tip and retry, and FAIL LOUD if it ultimately cannot
+          # persist rather than silently looping.
+          ok=false
+          for attempt in 1 2 3 4 5; do
+            git fetch origin social-assets 2>/dev/null || true
+            git reset --hard origin/social-assets >/dev/null 2>&1 || true
+            mkdir -p state
+            cp "$STATE_SRC" state/posted.json
+            git add state/posted.json
+            if git diff --cached --quiet; then echo "posted-state already current — nothing to push"; ok=true; break; fi
+            git commit -q -m "matchday state $(date -u +%FT%H:%M) (try $attempt)"
+            if git push origin HEAD:social-assets 2>&1; then echo "posted-state pushed (attempt $attempt)"; ok=true; break; fi
+            echo "state push rejected — retrying on latest tip (attempt $attempt)"
+            sleep $((attempt * 2))
+          done
+          cd "$GITHUB_WORKSPACE" && git worktree remove /tmp/state --force || true
+          if [ "$ok" != true ]; then
+            echo "::error::posted-state could NOT be persisted after 5 attempts — the next tick may re-post. Failing the run so this is visible."
+            exit 1
           fi
       - name: keep the tick's pack as an artifact
         if: always()
