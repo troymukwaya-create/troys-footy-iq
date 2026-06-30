@@ -128,81 +128,97 @@
   .stamp.amber{border-color:var(--gold);color:var(--gold);background:rgba(234,179,8,.07);}
   .stamp.gold{border-color:var(--gold);color:var(--gold);background:rgba(234,179,8,.09);}
 
-  /* ── PRE-MATCH "THE CALL" — Seam design (Claude Design "The Call · Seam") ──
-     X 1600×900 + IG 1080×1350. Flags meet on a hard oxblood seam, giant
-     country codes as the hero, the call band + probability split below.
-     All selectors scoped under #prematch / #prematch-ig so the shared
-     classes (.bg .veil .code .band .foot …) never leak into the other cards. */
-  #prematch, #prematch-ig{
-    --surface:#0B0B0D; --cream:#F7F4EE; --vc:var(--ox);
+  /* ── "THE CALL" SEAM CARD — pre-match + post-match verdict ──────────────
+     Claude Design "The Call · Seam". Flags meet on a hard oxblood seam, giant
+     country codes as the hero. ONE card system, two uses:
+       • pre-match  → .codes show CODE v CODE, a call band + probability split
+       • verdict    → .codes show CODE <score> CODE, a verdict band + ledger
+     --vc is the accent (oxblood pre-match; green/steel/gold/red per verdict
+     state). Every selector is scoped under .seamcard so the shared class names
+     (.bg .veil .code .band .foot .score …) never leak into the ledger/receipt
+     cards above. Containers: #prematch(-ig) and #verdict(-ig). */
+  .seamcard{
+    --surface:#0B0B0D; --cream:#F7F4EE; --vc:var(--ox); --steel:#8A94A6;
     --t1:rgba(255,255,255,.92); --t2:rgba(255,255,255,.60);
     --t3:rgba(255,255,255,.38); --t4:rgba(255,255,255,.22);
     --b2:rgba(255,255,255,.10);
     position:relative;overflow:hidden;background:var(--surface);color:var(--t1);display:block;padding:0;}
-  #prematch{width:1600px;height:900px;}
-  #prematch-ig{width:1080px;height:1350px;}
-  #prematch .wm,#prematch-ig .wm{display:inline-flex;align-items:center;gap:13px;font-stretch:116%;
+  .seamcard.l{width:1600px;height:900px;}
+  .seamcard.p{width:1080px;height:1350px;}
+  .seamcard .wm{display:inline-flex;align-items:center;gap:13px;font-stretch:116%;
     font-weight:800;letter-spacing:-.01em;line-height:1;font-size:30px;color:var(--t1);}
-  #prematch .wm .o,#prematch-ig .wm .o{color:var(--ox);}
-  #prematch .bg,#prematch-ig .bg{position:absolute;inset:0;z-index:0;}
-  #prematch .bg .h,#prematch .bg .a,#prematch-ig .bg .h,#prematch-ig .bg .a{
-    position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(1.05);}
-  #prematch .bg .h{clip-path:polygon(0 0,60% 0,40% 100%,0 100%);}
-  #prematch .bg .a{clip-path:polygon(60% 0,100% 0,100% 100%,40% 100%);}
-  #prematch .seam,#prematch-ig .seam{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
-  #prematch .veil,#prematch-ig .veil{position:absolute;inset:0;z-index:1;
+  .seamcard .wm .o{color:var(--ox);}
+  .seamcard .bg{position:absolute;inset:0;z-index:0;}
+  .seamcard .bg .h,.seamcard .bg .a{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(1.05);}
+  .seamcard.l .bg .h{clip-path:polygon(0 0,60% 0,40% 100%,0 100%);}
+  .seamcard.l .bg .a{clip-path:polygon(60% 0,100% 0,100% 100%,40% 100%);}
+  .seamcard .seam{position:absolute;inset:0;width:100%;height:100%;z-index:1;}
+  .seamcard .veil{position:absolute;inset:0;z-index:1;
     background:linear-gradient(180deg,rgba(11,11,13,.30) 0%,rgba(11,11,13,.48) 44%,rgba(11,11,13,.95) 100%);}
-  #prematch .inner,#prematch-ig .inner{position:relative;z-index:2;height:100%;padding:54px 70px;
-    display:flex;flex-direction:column;}
-  #prematch .top,#prematch-ig .top{display:flex;justify-content:space-between;align-items:center;}
-  #prematch .kick,#prematch-ig .kick{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.18em;
-    color:var(--t2);text-transform:uppercase;}
-  #prematch .codes,#prematch-ig .codes{margin-top:auto;display:flex;align-items:flex-end;gap:30px;line-height:.8;}
-  #prematch .code,#prematch-ig .code{font-stretch:116%;font-weight:900;letter-spacing:-.03em;
-    text-shadow:0 6px 36px rgba(0,0,0,.6);}
-  #prematch .code{font-size:150px;}
-  #prematch .vs,#prematch-ig .vs{font-weight:700;font-size:52px;color:var(--t3);padding-bottom:24px;}
-  #prematch .sline,#prematch-ig .sline{margin-top:18px;display:inline-flex;align-items:center;gap:11px;
+  .seamcard .inner{position:relative;z-index:2;height:100%;padding:54px 70px;display:flex;flex-direction:column;}
+  .seamcard .top{display:flex;justify-content:space-between;align-items:center;}
+  .seamcard .kick{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.18em;color:var(--t2);text-transform:uppercase;}
+  .seamcard .codes{margin-top:auto;display:flex;align-items:flex-end;gap:30px;line-height:.8;}
+  .seamcard .code{font-stretch:116%;font-weight:900;font-size:150px;letter-spacing:-.03em;text-shadow:0 6px 36px rgba(0,0,0,.6);white-space:nowrap;}
+  .seamcard .vs{font-weight:700;font-size:52px;color:var(--t3);padding-bottom:24px;}
+  .seamcard .score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:116px;letter-spacing:-.03em;color:#fff;padding-bottom:8px;text-shadow:0 6px 30px rgba(0,0,0,.55);white-space:nowrap;}
+  .seamcard .sline{margin-top:18px;display:inline-flex;align-items:center;gap:11px;
     font-family:'IBM Plex Mono',monospace;font-size:20px;letter-spacing:.04em;color:var(--t2);}
-  #prematch .sline .k,#prematch-ig .sline .k{font-size:14px;letter-spacing:.18em;color:var(--t3);text-transform:uppercase;}
-  #prematch .sline b,#prematch-ig .sline b{color:var(--cream);font-weight:600;}
-  #prematch .matchup,#prematch-ig .matchup{font-stretch:110%;font-weight:600;font-size:28px;color:var(--t2);margin-top:14px;}
-  #prematch .band,#prematch-ig .band{margin-top:24px;display:flex;align-items:center;gap:34px;
+  .seamcard .sline .k{font-size:14px;letter-spacing:.18em;color:var(--t3);text-transform:uppercase;}
+  .seamcard .sline b{color:var(--cream);font-weight:600;}
+  .seamcard .matchup{font-stretch:110%;font-weight:600;font-size:28px;color:var(--t2);margin-top:14px;}
+  .seamcard .band{margin-top:24px;display:flex;align-items:center;gap:34px;
     background:rgba(11,11,13,.62);backdrop-filter:blur(9px);border:1px solid var(--b2);
     border-left:6px solid var(--vc);border-radius:16px;padding:24px 32px;}
-  #prematch .bL,#prematch-ig .bL{min-width:0;}
-  #prematch .bR,#prematch-ig .bR{margin-left:auto;}
-  #prematch .blab,#prematch-ig .blab{font-family:'IBM Plex Mono',monospace;font-size:16px;letter-spacing:.2em;
+  .seamcard .bL{min-width:0;}
+  .seamcard .bR{margin-left:auto;flex-shrink:0;}
+  .seamcard .blab{font-family:'IBM Plex Mono',monospace;font-size:16px;letter-spacing:.2em;
     color:var(--t3);display:flex;align-items:center;gap:11px;text-transform:uppercase;}
-  #prematch .brow,#prematch-ig .brow{display:flex;align-items:baseline;gap:18px;margin-top:10px;}
-  #prematch .pickn,#prematch-ig .pickn{font-stretch:116%;font-weight:800;font-size:52px;color:var(--ox);letter-spacing:-.015em;}
-  #prematch .pct,#prematch-ig .pct{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:46px;color:var(--t1);}
-  #prematch .conf,#prematch-ig .conf{margin-top:11px;display:inline-flex;align-items:center;gap:9px;
+  .seamcard .brow{display:flex;align-items:baseline;gap:18px;margin-top:10px;}
+  .seamcard .pickn{font-stretch:116%;font-weight:800;font-size:52px;color:var(--ox);letter-spacing:-.015em;}
+  .seamcard .pct{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:46px;color:var(--t1);}
+  .seamcard .conf{margin-top:11px;display:inline-flex;align-items:center;gap:9px;
     font-family:'IBM Plex Mono',monospace;font-size:16px;letter-spacing:.08em;color:var(--gold);text-transform:uppercase;}
-  #prematch .conf .dot,#prematch-ig .conf .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 9px var(--gold);}
-  #prematch .barwrap,#prematch-ig .barwrap{flex:0 0 600px;width:600px;}
-  #prematch .pmbar,#prematch-ig .pmbar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.08);}
-  #prematch .pmbar i,#prematch-ig .pmbar i{height:100%;}
-  #prematch .pmbar .pick,#prematch-ig .pmbar .pick{background:var(--ox);}
-  #prematch .pmbar .oth,#prematch-ig .pmbar .oth{background:rgba(255,255,255,.24);}
-  #prematch .pmbar .oth2,#prematch-ig .pmbar .oth2{background:rgba(255,255,255,.15);}
-  #prematch .pmbar i+i,#prematch-ig .pmbar i+i{border-left:2px solid var(--surface);}
-  #prematch .barlab,#prematch-ig .barlab{display:flex;justify-content:space-between;margin-top:11px;
+  .seamcard .conf .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 9px var(--gold);}
+  .seamcard .barwrap{flex:0 0 600px;width:600px;}
+  .seamcard .bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.08);}
+  .seamcard .bar i{height:100%;}
+  .seamcard .bar .pick{background:var(--ox);}
+  .seamcard .bar .oth{background:rgba(255,255,255,.24);}
+  .seamcard .bar .oth2{background:rgba(255,255,255,.15);}
+  .seamcard .bar i+i{border-left:2px solid var(--surface);}
+  .seamcard .barlab{display:flex;justify-content:space-between;margin-top:11px;
     font-family:'IBM Plex Mono',monospace;font-size:18px;color:var(--t2);}
-  #prematch .barlab b,#prematch-ig .barlab b{color:var(--t1);font-weight:600;}
-  #prematch .foot,#prematch-ig .foot{margin-top:22px;display:flex;justify-content:space-between;align-items:center;gap:24px;}
-  #prematch .foot .note,#prematch-ig .foot .note{font-size:18px;color:var(--t3);line-height:1.4;}
-  #prematch .foot .url,#prematch-ig .foot .url{font-family:'IBM Plex Mono',monospace;font-size:20px;color:var(--t2);white-space:nowrap;}
+  .seamcard .barlab b{color:var(--t1);font-weight:600;}
+  /* verdict band — post-match */
+  .seamcard .vchip{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:50%;background:var(--vc);color:#0B0B0D;font-weight:900;font-size:15px;}
+  .seamcard .verdict{font-stretch:116%;font-weight:900;font-size:60px;color:var(--vc);letter-spacing:-.015em;line-height:.95;margin-top:6px;}
+  .seamcard .vsub{font-size:23px;color:var(--t2);margin-top:11px;max-width:560px;}
+  .seamcard .vsub b{color:var(--t1);font-weight:600;}
+  .seamcard .ledger{display:flex;align-items:stretch;}
+  .seamcard .lc{padding:0 30px;display:flex;flex-direction:column;justify-content:center;}
+  .seamcard .lc+.lc{border-left:1px solid var(--b2);}
+  .seamcard .lc .lk{font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.16em;color:var(--t3);text-transform:uppercase;}
+  .seamcard .lc .lv{font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:700;color:var(--t1);margin-top:8px;letter-spacing:-.01em;line-height:1;white-space:nowrap;}
+  .seamcard .lc.final .lv{color:var(--vc);}
+  .seamcard .lc.brier .lv{font-size:30px;font-weight:600;color:var(--t2);}
+  .seamcard .foot{margin-top:22px;display:flex;justify-content:space-between;align-items:center;gap:24px;}
+  .seamcard .foot .note{font-size:18px;color:var(--t3);line-height:1.4;}
+  .seamcard .foot .url{font-family:'IBM Plex Mono',monospace;font-size:20px;color:var(--t2);white-space:nowrap;}
   /* portrait (IG 4:5) */
-  #prematch-ig .inner{padding:56px 58px;}
-  #prematch-ig .bg .h{clip-path:polygon(0 0,100% 0,100% 50%,0 64%);}
-  #prematch-ig .bg .a{clip-path:polygon(0 64%,100% 50%,100% 100%,0 100%);}
-  #prematch-ig .veil{background:linear-gradient(180deg,rgba(11,11,13,.18) 0%,rgba(11,11,13,.30) 40%,rgba(11,11,13,.62) 60%,rgba(11,11,13,.97) 100%);}
-  #prematch-ig .code{font-size:132px;}
-  #prematch-ig .codes{gap:24px;}
-  #prematch-ig .band{flex-direction:column;align-items:stretch;gap:22px;}
-  #prematch-ig .barwrap{flex:none;width:100%;}
-  #prematch-ig .bR{margin-left:0;}
+  .seamcard.p .inner{padding:56px 58px;}
+  .seamcard.p .bg .h{clip-path:polygon(0 0,100% 0,100% 50%,0 64%);}
+  .seamcard.p .bg .a{clip-path:polygon(0 64%,100% 50%,100% 100%,0 100%);}
+  .seamcard.p .veil{background:linear-gradient(180deg,rgba(11,11,13,.18) 0%,rgba(11,11,13,.30) 40%,rgba(11,11,13,.62) 60%,rgba(11,11,13,.97) 100%);}
+  .seamcard.p .code{font-size:132px;}
+  .seamcard.p .score{font-size:104px;}
+  .seamcard.p .codes{gap:24px;}
+  .seamcard.p .band{flex-direction:column;align-items:stretch;gap:22px;}
+  .seamcard.p .barwrap{flex:none;width:100%;}
+  .seamcard.p .bR{margin-left:0;}
+  .seamcard.p .ledger{justify-content:space-between;}
+  .seamcard.p .lc:first-child{padding-left:0;}
+  .seamcard.p .vsub{max-width:none;}
 </style>
 </head>
 <body>
@@ -210,8 +226,10 @@
 <div class="card" id="ledger"></div>
 <div class="card" id="ledger-ig"></div>
 <div class="card" id="receipt-stage"><div class="paper bleedwrap" id="paper"></div></div>
-<div class="card" id="prematch"></div>
-<div class="card" id="prematch-ig"></div>
+<div class="seamcard l" id="prematch"></div>
+<div class="seamcard p" id="prematch-ig"></div>
+<div class="seamcard l" id="verdict"></div>
+<div class="seamcard p" id="verdict-ig"></div>
 
 <script>
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -354,7 +372,7 @@
     const conf = PM_CONF[d.risk] || 'Lean';
     const predScore = d.scoreline ? String(d.scoreline).replace(/-/, '–') : null;   // hyphen → en-dash
     const seg = (k) => `<i class="${k === pickKey ? 'pick' : (k === 'draw' ? 'oth' : 'oth2')}" style="width:${Math.max(2, P[k])}%"></i>`;
-    const bar = `<div class="pmbar">${seg('home')}${seg('draw')}${seg('away')}</div>
+    const bar = `<div class="bar">${seg('home')}${seg('draw')}${seg('away')}</div>
         <div class="barlab"><span><b>${esc(d.homeAbbr)}</b> ${P.home}%</span><span>DRAW ${P.draw}%</span><span><b>${esc(d.awayAbbr)}</b> ${P.away}%</span></div>`;
     const sline = predScore
       ? `<div class="sline"><span class="k">Our scoreline</span><b>${esc(predScore)}</b><span style="color:var(--t4)">·</span>${d.scorelinePct ? `${Math.round(d.scorelinePct)}% chance, ` : ''}most likely result</div>`
@@ -384,6 +402,46 @@
   };
   window.renderPrematch = (d) => { document.getElementById('prematch').innerHTML = pmCard(d, 'l'); };
   window.renderPrematchIG = (d) => { document.getElementById('prematch-ig').innerHTML = pmCard(d, 'p'); };
+
+  // POST-MATCH "THE VERDICT" — same Seam card, graded state. Drives every
+  // accent + glyph + headline + honest note straight off backend/engine/grading
+  // (gradeRow), so the card can never contradict the ledger. The 4 grading
+  // states map to the verdict accent --vc:
+  //   hit → green "Called it" · range → steel "Inside our range"
+  //   amber → gold "Against the read" · miss → red "Missed"
+  //   d: {kicker, home, away, codeH, codeA, meta, ft, predScore, brier,
+  //       glyph, verdict, note, vc, hIso, aIso}
+  const vCard = (d, fmt) => `
+      <div class="bg"><div class="h" style="background-image:url(${PMFLAG(d.hIso)})"></div><div class="a" style="background-image:url(${PMFLAG(d.aIso)})"></div></div>
+      ${pmSeam(fmt)}
+      <div class="veil"></div>
+      <div class="inner">
+        <div class="top">${pmLogo}<span class="kick">${esc(d.kicker)}</span></div>
+        <div class="codes"><span class="code">${esc(d.codeH)}</span><span class="score">${esc(d.ft)}</span><span class="code">${esc(d.codeA)}</span></div>
+        ${d.predScore ? `<div class="sline"><span class="k">We called</span><b>${esc(d.predScore)}</b><span style="color:var(--t4)">·</span>actual result above</div>` : ''}
+        <div class="matchup">${esc(d.home)} v ${esc(d.away)}${d.meta ? ' · ' + esc(d.meta) : ''}</div>
+        <div class="band">
+          <div class="bL">
+            <div class="blab"><span class="vchip">${d.glyph}</span>Full time · ${esc(d.codeH)} ${esc(String(d.ft).replace('–', ' – '))} ${esc(d.codeA)}</div>
+            <div class="verdict">${esc(d.verdict)}</div>
+            <div class="vsub">${esc(d.note)}</div>
+          </div>
+          <div class="bR">
+            <div class="ledger">
+              <div class="lc"><div class="lk">Predicted</div><div class="lv">${esc(d.predScore || '—')}</div></div>
+              <div class="lc final"><div class="lk">Full time</div><div class="lv">${esc(d.ft)}</div></div>
+              <div class="lc brier"><div class="lk">Brier</div><div class="lv">${esc(d.brier)}</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <span class="note">${esc(d.footNote || 'Filed before kickoff · graded in public.')}</span>
+          <span class="url">oddyessa.com</span>
+        </div>
+      </div>`;
+  const renderV = (id, d, fmt) => { const el = document.getElementById(id); el.style.setProperty('--vc', d.vc || 'var(--ox)'); el.innerHTML = vCard(d, fmt); };
+  window.renderVerdict = (d) => renderV('verdict', d, 'l');
+  window.renderVerdictIG = (d) => renderV('verdict-ig', d, 'p');
 
   window.imagesReady = async () => {
     const urls = [...document.querySelectorAll('[style*="background-image"]')]

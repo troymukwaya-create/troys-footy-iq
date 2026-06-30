@@ -359,26 +359,42 @@ async function generateMatch(externalId) {
   const ft = `${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals}`;
   const firstMiss = isMiss && stats && (stats.total - stats.correct) === 1;
 
-  const headline = called && exact ? { a: 'Called it.', b: 'Exact score, again.' }
-    : called ? { a: 'Called it.', b: 'The ledger grows.' }
-    : tier === 'IN_RANGE' && exact ? { a: 'Lean broke.', b: 'Scoreline nailed.' }
-    : tier === 'IN_RANGE' ? { a: 'Inside our range.', b: 'The result we priced.' }
-    : tier === 'AGAINST' && exact ? { a: 'Wrong lean.', b: 'Right score.' }
-    : tier === 'AGAINST' ? { a: 'Against the read.', b: 'Printed anyway.' }
-    : exact ? { a: 'The call missed.', b: 'The scoreline didn’t.' }
-    : { a: 'A genuine miss.', b: 'Printed anyway.' };
-
-  const row = {
-    abbr: `${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)}`,
-    res,
-    line: `<b>${lean} @ ${pct(leanP)}</b>${exact ? ` · scoreline ${verdict.scoreline.actual} called exact` : ''}`,
-    brier: Number(s.brier_score).toFixed(3),
-    hIso: iso(s.home_team), aIso: iso(s.away_team),
-    hg: s.ft_home_goals ?? s.home_goals, ag: s.ft_away_goals ?? s.away_goals,
+  // ── verdict card (Seam "THE VERDICT") — every accent, glyph, headline and
+  //    honest note comes straight off gradeRow (g), so the card can never
+  //    contradict the ledger/receipt grading. 4 states → verdict accent:
+  //    hit→green "Called it" · range→steel "Inside our range" ·
+  //    amber→gold "Against the read" · miss→red "Missed". ─────────────────
+  // Short verdict label + glyph + honest note + foot, keyed off the 4-state
+  // grade (res). Matches Troy's the-call-{2,3} cards ("Called it" / "Missed");
+  // the steel/amber states extend them for IN_RANGE / AGAINST so a result we
+  // priced is never stamped red. The honest detail lives in the sub-line (the
+  // grade's own blurb), so the big label stays one tight word/phrase.
+  const V_LABEL = { hit: 'Called it', range: 'Inside our range', amber: 'Against the read', miss: 'Missed' };
+  const V_GLYPH = { hit: '✓', range: '≈', amber: '±', miss: '✕' };
+  const V_FOOT = {
+    hit: 'Filed before kickoff · graded in public.',
+    range: 'The result we priced — on the record.',
+    amber: 'Against our read — on the record anyway.',
+    miss: 'On the record anyway — we grade every call.',
   };
-  const note = stats && stats.total < 20
-    ? `n = ${stats.total}. It’s early. The ledger doesn’t care how it looks.`
-    : 'Every result, in the same font.';
+  const V_TONE_VC = { green: 'var(--green)', steel: 'var(--steel)', amber: 'var(--gold)', red: 'var(--red)', gold: 'var(--gold)' };
+  const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const md = new Date(s.match_date);
+  const verdictCard = {
+    kicker: 'THE VERDICT · WORLD CUP 2026',
+    home: s.home_team, away: s.away_team,
+    codeH: abbr(s.home_team), codeA: abbr(s.away_team),
+    meta: `${md.getUTCDate()} ${MON[md.getUTCMonth()]} ${md.getUTCFullYear()}`,
+    ft,
+    predScore: verdict?.scoreline?.predicted ? String(verdict.scoreline.predicted).replace('-', '–') : null,
+    brier: Number(s.brier_score).toFixed(2),
+    glyph: V_GLYPH[res] || '•',
+    verdict: V_LABEL[res] || 'Settled',
+    note: g?.blurb || `We said ${lean} (${pct(leanP)}). It finished ${ft}.`,
+    footNote: V_FOOT[res] || 'Filed before kickoff · graded in public.',
+    vc: V_TONE_VC[g?.tone] || 'var(--ox)',
+    hIso: iso(s.home_team), aIso: iso(s.away_team),
+  };
 
   const items = [
     { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res },
@@ -391,22 +407,13 @@ async function generateMatch(externalId) {
   const he = flagEmoji(s.home_team), ae = flagEmoji(s.away_team);
 
   await withPage(async (page) => {
-    await page.evaluate((d) => window.renderLedger(d), {
-      results: [row], headline,
-      kicker: `WORLD CUP 2026 · TONIGHT’S RECEIPT · ${new Date().toISOString().slice(0, 10)}`,
-      note, ours: stats ? stats.brier : 0.187,
-    });
+    await page.evaluate((d) => window.renderVerdict(d), verdictCard);
     await page.evaluate(() => window.imagesReady());
-    await (await page.$('#ledger')).screenshot({ path: path.join(OUT, 'match-x.png') });
+    await (await page.$('#verdict')).screenshot({ path: path.join(OUT, 'match-verdict.png') });
 
-    await page.evaluate((d) => window.renderLedgerIG(d), {
-      results: [row], headline,
-      kickerShort: 'TONIGHT’S RECEIPT',
-      note: stats && stats.total < 20 ? `n = ${stats.total}. It’s early.` : 'Every result, in the same font.',
-      ours: stats ? stats.brier : 0.187,
-    });
+    await page.evaluate((d) => window.renderVerdictIG(d), verdictCard);
     await page.evaluate(() => window.imagesReady());
-    await (await page.$('#ledger-ig')).screenshot({ path: path.join(OUT, 'match-ig-raw.png') });
+    await (await page.$('#verdict-ig')).screenshot({ path: path.join(OUT, 'match-verdict-ig-raw.png') });
 
     await page.evaluate((r) => window.renderReceipt(r), {
       title: `${he} ${s.home_team} v ${s.away_team} ${ae}`,
@@ -438,7 +445,7 @@ async function generateMatch(externalId) {
       console.warn(`ffmpeg unavailable — ${dst} is the raw render`);
     }
   };
-  finish('match-ig-raw.png', 'match-ig.png');
+  finish('match-verdict-ig-raw.png', 'match-verdict-ig.png');
   finish('match-receipt.png', 'match-receipt-ig.png');
 
   // evening-voice captions, platform-adapted. The match STORY — how the
@@ -498,8 +505,8 @@ async function generateMatch(externalId) {
     caption: caption + '\n\n' + tags.tg,
     captionX: xCap,
     hashtagsIG: tags.ig,
-    images: ['match-x.png', 'match-receipt.png'],
-    imagesIG: ['match-ig.png', 'match-receipt-ig.png'],
+    images: ['match-verdict.png', 'match-receipt.png'],
+    imagesIG: ['match-verdict-ig.png', 'match-receipt-ig.png'],
   }, null, 2));
   console.log(`match receipt generated for ${externalId}: ${res}${exact ? ' + exact scoreline' : ''}`);
 }
