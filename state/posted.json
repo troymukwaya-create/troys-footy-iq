@@ -1154,5 +1154,18 @@
     }
   ],
   "verdictWait": {},
-  "pending": {}
+  "pending": {
+    "apf_1567306": {
+      "kind": "match",
+      "label": "Mexico 2–0 Ecuador",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
