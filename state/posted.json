@@ -101,7 +101,8 @@
     "apf_1562344",
     "apf_1565176",
     "apf_1562345",
-    "apf_1564789"
+    "apf_1564789",
+    "apf_1565177"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1139,23 +1140,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1565177": 1
-  },
-  "pending": {
-    "apf_1565177": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1565177",
       "label": "France v Sweden",
+      "at": "2026-07-01T08:33:25.983Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
