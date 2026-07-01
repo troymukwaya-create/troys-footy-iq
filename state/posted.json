@@ -102,7 +102,8 @@
     "apf_1565176",
     "apf_1562345",
     "apf_1564789",
-    "apf_1565177"
+    "apf_1565177",
+    "apf_1567306"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1151,13 +1152,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567306",
+      "label": "Mexico 2–0 Ecuador",
+      "at": "2026-07-01T13:55:37.577Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1567306": {
-      "kind": "match",
-      "label": "Mexico 2–0 Ecuador",
+    "apf_1567307": {
+      "kind": "prematch",
+      "label": "England v Congo DR",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
