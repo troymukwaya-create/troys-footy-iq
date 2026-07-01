@@ -1177,6 +1177,21 @@
       }
     }
   ],
-  "verdictWait": {},
-  "pending": {}
+  "verdictWait": {
+    "apf_1567308": 1
+  },
+  "pending": {
+    "apf_1562586": {
+      "kind": "prematch",
+      "label": "USA v Bosnia & Herzegovina",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
