@@ -417,20 +417,6 @@ async function generateMatch(externalId) {
     await page.evaluate(() => window.imagesReady());
     await (await page.$('#verdict-ig')).screenshot({ path: path.join(OUT, 'match-verdict-ig-raw.png') });
 
-    await page.evaluate((r) => window.renderReceipt(r), {
-      title: `${he} ${s.home_team} v ${s.away_team} ${ae}`,
-      ft,
-      kicker: 'MATCH RECEIPT · WORLD CUP 2026',
-      meta: `${new Date(s.match_date).toISOString().slice(0, 10).toUpperCase()} · LOCKED BEFORE KICKOFF`,
-      items,
-      brier: Number(s.brier_score).toFixed(4),
-      stampText: g?.stampText || 'SETTLED',
-      stampTone: stampClassOf(g, called),
-      stampMiss: isMiss,
-      hIso: iso(s.home_team), aIso: iso(s.away_team),
-    });
-    await page.evaluate(() => window.imagesReady());
-    await (await page.$('#receipt-stage')).screenshot({ path: path.join(OUT, 'match-receipt.png') });
   });
 
   // IG-native finishing (exact 1080×1350); local machines without ffmpeg
@@ -448,7 +434,6 @@ async function generateMatch(externalId) {
     }
   };
   finish('match-verdict-ig-raw.png', 'match-verdict-ig.png');
-  finish('match-receipt.png', 'match-receipt-ig.png');
 
   // evening-voice captions, platform-adapted. The match STORY — how the
   // game met or broke our call, in our voice — leads when the engine
@@ -507,8 +492,8 @@ async function generateMatch(externalId) {
     caption: caption + '\n\n' + tags.tg,
     captionX: xCap,
     hashtagsIG: tags.ig,
-    images: ['match-verdict.png', 'match-receipt.png'],
-    imagesIG: ['match-verdict-ig.png', 'match-receipt-ig.png'],
+    images: ['match-verdict.png'],
+    imagesIG: ['match-verdict-ig.png'],
   }, null, 2));
   console.log(`match receipt generated for ${externalId}: ${res}${exact ? ' + exact scoreline' : ''}`);
 }

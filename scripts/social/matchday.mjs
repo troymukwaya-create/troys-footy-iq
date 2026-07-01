@@ -3,10 +3,10 @@
 // generates it via generate.mjs; the workflow hosts + publishes.
 //
 //   1. ENGINE CHECK   — /health must be green before we post anything.
-//   2. PRE-MATCH      — every WC game gets its call card ~3h before
-//                       kickoff (capture band 110–210 min pre-KO).
-//   3. POST-MATCH     — every scored game gets its receipt within one
-//                       tick of the engine grading it.
+//   2. PRE-MATCH      — every WC game gets its call card ~2h before
+//                       kickoff (capture band 105–135 min pre-KO).
+//   3. POST-MATCH     — every scored game gets its verdict card ~1h
+//                       after the final whistle (held to KO + ~2h55m).
 //   4. SCORING ALARM  — a finished game still ungraded ~5.5h after
 //                       kickoff turns the run red (Troy gets the email).
 //
@@ -31,7 +31,13 @@ const OUT = path.join(DIR, 'out');
 mkdirSync(OUT, { recursive: true });
 
 const STATE_PATH = process.env.STATE_PATH || path.join(DIR, 'state.json');
-const PRE_MIN = 110, PRE_MAX = 210;          // pre-match capture band, minutes before KO
+// Pre-match "The Call" posts at the first tick a game is <= PRE_MAX out (so it
+// posts AT the 2h mark, never earlier), with PRE_MIN as a floor so a missed
+// tick still gets a card out (down to 45 min pre-KO) rather than skipping the
+// game entirely. Exact 2h timing needs the 5-min heartbeat armed (GITHUB_TOKEN
+// in Render); on GitHub's throttled ~2h cron the wide floor is the safety net.
+const PRE_MIN = 45, PRE_MAX = 120;           // pre-match capture band: post ~2h before KO (Troy's spec)
+const RECEIPT_AFTER_KO_MIN = 175;            // hold the verdict until ~1h after full time (KO + ~2h55m)
 const SCORING_GRACE_MIN = 330;               // KO + 5.5h without a grade = alarm
 
 async function getJson(url) {
@@ -179,16 +185,19 @@ if (duePre.length) {
   if (duePre.length > 1) console.log(`${duePre.length - 1} more pre-match due — next tick takes the next one`);
 }
 
-// ── 3. receipt due? ──────────────────────────────────────────────────
-// Verdict-wait: the scoreline/market verdict + match story are built live
-// from the locked row and the final score, so they are ready as soon as
-// the game is graded. Hold at most ONE tick (~5 min) for any lag, then
-// post regardless — the 15-min target leaves no room for a long hold.
+// ── 3. verdict due? ──────────────────────────────────────────────────
+// The verdict card posts ~1h after the final whistle (RECEIPT_AFTER_KO_MIN
+// gate below), so by the time an item is due the game is long graded and the
+// scoreline/market verdict + story are ready. verdictWait stays as a tiny
+// safety hold for the rare case a grade lags the gate.
 state.verdictWait = state.verdictWait || {};
 const MAX_VERDICT_HOLDS = 1;
 const dueReceipt = settled
   .filter(s => !state.receipts.includes(s.match_external_id)
-    && new Date(s.match_date).getTime() > now - 48 * 3600 * 1000)
+    && new Date(s.match_date).getTime() > now - 48 * 3600 * 1000
+    // Troy's spec: post the verdict ~1h after the final whistle, not ASAP.
+    // FT ≈ KO + ~1h55m, so hold until KO + RECEIPT_AFTER_KO_MIN (~2h55m).
+    && (now - new Date(s.match_date).getTime()) / 60000 >= RECEIPT_AFTER_KO_MIN)
   .sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
 if (dueReceipt.length) {
   const s = dueReceipt[0];

@@ -246,9 +246,12 @@ for (const [name, fn] of [['telegram', postTelegram], ['x', postX], ['instagram'
   catch (e) { results[name] = 'failed'; failed = true; console.error(`${name}: ${e.message}`); }
 }
 recordResults(results);
+const anyOk = Object.values(results).some(v => v === 'ok');
 // Matchday items (with a stamped id) record failures in state and retry
 // next tick, so they must NOT abort the workflow before state is committed
-// — exit 0. The daily ledger/picks runs have no stateful retry, so keep the
-// red run there as the failure signal.
-if (failed) console.error(`publish ${kind}: one or more platforms failed${ITEM_ID ? ' — recorded for retry' : ''}`);
-process.exit(failed && !ITEM_ID ? 1 : 0);
+// — exit 0. The daily ledger/picks runs have no stateful retry, so the red
+// run is their failure signal — BUT a single rate-limited/blocked platform
+// (e.g. Instagram's Meta "action is blocked") must not red the whole job when
+// Telegram/X posted fine. Only fail the run when EVERY platform failed.
+if (failed) console.error(`publish ${kind}: one or more platforms failed${ITEM_ID ? ' — recorded for retry' : anyOk ? ' — but others posted, run stays green' : ''}`);
+process.exit(failed && !ITEM_ID && !anyOk ? 1 : 0);
