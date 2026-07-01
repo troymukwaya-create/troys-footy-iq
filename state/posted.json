@@ -103,7 +103,8 @@
     "apf_1562345",
     "apf_1564789",
     "apf_1565177",
-    "apf_1567306"
+    "apf_1567306",
+    "apf_1567307"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1163,21 +1164,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1567307": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567307",
       "label": "England v Congo DR",
+      "at": "2026-07-01T18:17:43.214Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
