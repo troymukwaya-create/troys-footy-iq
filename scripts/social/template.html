@@ -39,55 +39,88 @@
     background:linear-gradient(180deg,rgba(11,11,13,.28) 0%,rgba(11,11,13,.46) 55%,rgba(11,11,13,.68) 100%);}
   .lrow .veil{background:linear-gradient(180deg,rgba(11,11,13,.5) 0%,rgba(11,11,13,.62) 55%,rgba(11,11,13,.75) 100%) !important;}
 
-  /* ═══ LEDGER 1600×900 ═══ */
-  #ledger{width:1600px;height:900px;padding:64px 72px;display:flex;flex-direction:column;}
-  #ledger .top{display:flex;justify-content:space-between;align-items:center;}
-  #ledger .kicker{font-family:'IBM Plex Mono',monospace;font-size:19px;letter-spacing:.14em;color:var(--t60);}
-  #ledger h1{font-stretch:116%;font-weight:800;font-size:80px;line-height:1.04;color:var(--t92);margin-top:38px;}
-  #ledger h1 .ox{color:var(--ox);}
-  .ledgerrows{margin-top:40px;display:flex;flex-direction:column;gap:13px;}
-  .lrow{position:relative;display:flex;align-items:center;gap:26px;background:var(--card);border:1px solid var(--rule);
-    border-radius:14px;padding:20px 28px;overflow:hidden;}
-  .lrow .score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:27px;color:var(--t92);min-width:320px;}
-  .lrow .call{font-size:21px;color:var(--t60);flex:1;}
-  .lrow .call b{color:var(--t92);font-weight:600;}
-  .lrow .brier{font-family:'IBM Plex Mono',monospace;font-size:22px;color:var(--t60);text-align:right;}
-  .lrow .brier b{color:var(--t92);font-weight:600;}
-  .tick{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;}
+  /* ═══ MORNING LEDGER — Seam family ═══════════════════════════════════
+     Re-skinned to match the "The Call · Seam" pre-match / verdict cards:
+     dark chrome, crisp flag-SEAM tiles (a miniature of the hero card's
+     flag seam — no more blurred bleed), verdict chips, and oxblood
+     state accents, laid out as the day's results list. */
+  #ledger,#ledger-ig{--surface:#0B0B0D;--cream:#F7F4EE;--steel:#8A94A6;
+    --t1:rgba(255,255,255,.92);--t2:rgba(255,255,255,.58);--t3:rgba(255,255,255,.36);
+    --b2:rgba(255,255,255,.10);background:var(--surface);}
+  /* crisp flag-seam tile — the hero seam, miniaturised */
+  .fpair{position:relative;border-radius:9px;overflow:hidden;flex-shrink:0;border:1px solid rgba(255,255,255,.14);}
+  .fpair .fc{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(1.05);}
+  .fpair .h{clip-path:polygon(0 0,60% 0,40% 100%,0 100%);}
+  .fpair .a{clip-path:polygon(60% 0,100% 0,100% 100%,40% 100%);}
+  .fpair .ln{position:absolute;inset:0;}
+  /* verdict chip — ✓ called · ≈ inside our range · ± against the read · ✗ miss */
+  .tick{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
   .tick.hit{background:rgba(34,197,94,.12);border:2px solid var(--green);color:var(--green);}
   .tick.miss{background:rgba(239,68,68,.12);border:2px solid var(--red);color:var(--red);}
-  .tick.range{background:rgba(138,148,166,.14);border:2px solid #8A94A6;color:#AAB2C0;}
+  .tick.range{background:rgba(138,148,166,.14);border:2px solid var(--steel);color:#AAB2C0;}
   .tick.amber{background:rgba(234,179,8,.12);border:2px solid var(--gold);color:var(--gold);}
-  .track-wrap{margin-top:46px;}
-  .track-labels{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:17px;letter-spacing:.1em;color:var(--t36);margin-bottom:14px;}
+  /* row = a mini seam band; --rc is the verdict-state accent */
+  .lrow{display:flex;align-items:center;gap:26px;background:rgba(20,22,27,.85);
+    border:1px solid var(--b2);border-left:5px solid var(--rc,var(--ox));border-radius:14px;}
+  .lrow .mid{flex:1;min-width:0;}
+  .lscore{display:flex;align-items:baseline;gap:13px;line-height:1;white-space:nowrap;}
+  .lscore .c{font-weight:800;color:var(--cream);letter-spacing:-.01em;}
+  .lscore .s{font-family:'IBM Plex Mono',monospace;font-weight:700;color:#fff;letter-spacing:-.01em;}
+  .lrow .call{color:var(--t2);}
+  .lrow .call b{color:var(--t1);font-weight:600;}
+  .lrow .brier{font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--t3);text-align:right;flex-shrink:0;text-transform:uppercase;}
+  .lrow .brier b{display:block;letter-spacing:-.01em;color:var(--t1);font-weight:700;}
+  /* honest Brier scale */
+  .track-wrap{margin-top:auto;}
+  .track-labels{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--t3);}
   .track{position:relative;height:10px;border-radius:5px;
     background:linear-gradient(90deg,rgba(34,197,94,.55),rgba(234,179,8,.4) 60%,rgba(239,68,68,.45));}
   .marker{position:absolute;top:50%;transform:translate(-50%,-50%);}
-  .marker .dot{width:26px;height:26px;border-radius:50%;background:var(--ox);border:5px solid #0B0B0D;box-shadow:0 0 0 2px var(--ox),0 6px 18px rgba(168,52,74,.5);}
-  .marker .tag{position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--t92);font-weight:600;}
+  .marker .dot{width:24px;height:24px;border-radius:50%;background:var(--ox);border:5px solid #0B0B0D;box-shadow:0 0 0 2px var(--ox),0 6px 18px rgba(168,52,74,.5);}
+  .marker .tag{position:absolute;top:34px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--t1);}
   .marker .tag span{color:var(--ox);font-weight:700;}
-  #ledger .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;}
-  #ledger .foot .note{font-size:19px;color:var(--t36);}
-  #ledger .foot .url{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--t60);}
 
+  /* ── X 1600×900 ── */
+  #ledger{width:1600px;height:900px;padding:60px 70px;display:flex;flex-direction:column;}
+  #ledger .top{display:flex;justify-content:space-between;align-items:center;}
+  #ledger .kicker{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.16em;color:var(--t2);text-transform:uppercase;}
+  #ledger h1{font-weight:800;font-size:70px;line-height:1.05;color:var(--t1);margin-top:28px;letter-spacing:-.01em;}
+  #ledger h1 .ox{color:var(--ox);}
+  #ledger .ledgerrows{margin-top:32px;display:flex;flex-direction:column;gap:13px;}
+  #ledger .lrow{gap:26px;padding:17px 30px;}
+  #ledger .fpair{width:104px;height:58px;}
+  #ledger .tick{width:42px;height:42px;font-size:22px;}
+  #ledger .lscore .c{font-size:34px;} #ledger .lscore .s{font-size:32px;}
+  #ledger .lrow .call{font-size:19px;margin-top:9px;}
+  #ledger .lrow .brier{font-size:14px;}
+  #ledger .lrow .brier b{font-size:30px;margin-top:5px;}
+  #ledger .track-wrap{padding-top:34px;}
+  #ledger .track-labels{font-size:16px;margin-bottom:14px;}
+  #ledger .marker .tag{font-size:19px;}
+  #ledger .foot{margin-top:60px;display:flex;justify-content:space-between;align-items:flex-end;}
+  #ledger .foot .note{font-size:18px;color:var(--t3);}
+  #ledger .foot .url{font-family:'IBM Plex Mono',monospace;font-size:20px;color:var(--t2);}
 
-  /* ═══ LEDGER IG 1080×1350 (4:5 native) ═══ */
-  #ledger-ig{width:1080px;height:1350px;padding:64px 60px;display:flex;flex-direction:column;}
-  #ledger-ig .kicker{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.14em;color:rgba(255,255,255,.6);}
-  #ledger-ig h1{font-stretch:116%;font-weight:800;font-size:78px;line-height:1.05;color:var(--t92);margin-top:36px;}
+  /* ── IG 1080×1350 (4:5 native) ── */
+  #ledger-ig{width:1080px;height:1350px;padding:62px 58px;display:flex;flex-direction:column;}
+  #ledger-ig .top{display:flex;justify-content:space-between;align-items:center;}
+  #ledger-ig .kicker{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.16em;color:var(--t2);text-transform:uppercase;}
+  #ledger-ig h1{font-weight:800;font-size:74px;line-height:1.06;color:var(--t1);margin-top:30px;letter-spacing:-.01em;}
   #ledger-ig h1 .ox{color:var(--ox);}
-  #ledger-ig .igrow{position:relative;overflow:hidden;background:#14161B;border:1px solid var(--rule);border-radius:16px;padding:24px 26px;}
-  #ledger-ig .igrows{margin-top:42px;display:flex;flex-direction:column;gap:16px;}
-  #ledger-ig .igrow .line1{display:flex;align-items:center;gap:18px;}
-  #ledger-ig .igrow .score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:33px;color:#fff;flex:1;}
-  #ledger-ig .igrow .brier{font-family:'IBM Plex Mono',monospace;font-size:21px;color:rgba(255,255,255,.72);}
-  #ledger-ig .igrow .line2{font-size:23px;color:rgba(255,255,255,.78);margin-top:10px;}
-  #ledger-ig .igrow .line2 b{color:#fff;}
-  #ledger-ig .track-wrap{margin-top:52px;}
-  #ledger-ig .track-labels{font-size:18px;}
-  #ledger-ig .foot{margin-top:auto;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;}
-  #ledger-ig .foot .note{font-size:20px;color:rgba(255,255,255,.45);}
-  #ledger-ig .foot .url{font-family:'IBM Plex Mono',monospace;font-size:22px;color:rgba(255,255,255,.7);}
+  #ledger-ig .igrows{margin-top:40px;display:flex;flex-direction:column;gap:16px;}
+  #ledger-ig .lrow{gap:24px;padding:22px 28px;border-radius:16px;}
+  #ledger-ig .fpair{width:108px;height:62px;}
+  #ledger-ig .tick{width:44px;height:44px;font-size:23px;}
+  #ledger-ig .lscore .c{font-size:36px;} #ledger-ig .lscore .s{font-size:34px;}
+  #ledger-ig .lrow .call{font-size:21px;margin-top:10px;}
+  #ledger-ig .lrow .brier{font-size:14px;}
+  #ledger-ig .lrow .brier b{font-size:30px;margin-top:5px;}
+  #ledger-ig .track-wrap{padding-top:44px;}
+  #ledger-ig .track-labels{font-size:17px;margin-bottom:14px;}
+  #ledger-ig .marker .tag{font-size:19px;}
+  #ledger-ig .foot{margin-top:28px;display:flex;flex-direction:column;gap:9px;align-items:center;text-align:center;}
+  #ledger-ig .foot .note{font-size:19px;color:var(--t3);}
+  #ledger-ig .foot .url{font-family:'IBM Plex Mono',monospace;font-size:21px;color:var(--t2);}
 
   /* ═══ RECEIPT 1080×1350 ═══ */
   #receipt-stage{width:1080px;height:1350px;background:var(--page);display:flex;align-items:center;justify-content:center;}
@@ -145,7 +178,7 @@
     position:relative;overflow:hidden;background:var(--surface);color:var(--t1);display:block;padding:0;}
   .seamcard.l{width:1600px;height:900px;}
   .seamcard.p{width:1080px;height:1350px;}
-  .seamcard .wm{display:inline-flex;align-items:center;gap:13px;font-stretch:116%;
+  .seamcard .wm{display:inline-flex;align-items:center;gap:13px;
     font-weight:800;letter-spacing:-.01em;line-height:1;font-size:30px;color:var(--t1);}
   .seamcard .wm .o{color:var(--ox);}
   .seamcard .bg{position:absolute;inset:0;z-index:0;}
@@ -159,14 +192,14 @@
   .seamcard .top{display:flex;justify-content:space-between;align-items:center;}
   .seamcard .kick{font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.18em;color:var(--t2);text-transform:uppercase;}
   .seamcard .codes{margin-top:auto;display:flex;align-items:flex-end;gap:30px;line-height:.8;}
-  .seamcard .code{font-stretch:116%;font-weight:900;font-size:150px;letter-spacing:-.03em;text-shadow:0 6px 36px rgba(0,0,0,.6);white-space:nowrap;}
+  .seamcard .code{font-weight:900;font-size:150px;letter-spacing:-.03em;text-shadow:0 6px 36px rgba(0,0,0,.6);white-space:nowrap;}
   .seamcard .vs{font-weight:700;font-size:52px;color:var(--t3);padding-bottom:24px;}
   .seamcard .score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:116px;letter-spacing:-.03em;color:#fff;padding-bottom:8px;text-shadow:0 6px 30px rgba(0,0,0,.55);white-space:nowrap;}
   .seamcard .sline{margin-top:18px;display:inline-flex;align-items:center;gap:11px;
     font-family:'IBM Plex Mono',monospace;font-size:20px;letter-spacing:.04em;color:var(--t2);}
   .seamcard .sline .k{font-size:14px;letter-spacing:.18em;color:var(--t3);text-transform:uppercase;}
   .seamcard .sline b{color:var(--cream);font-weight:600;}
-  .seamcard .matchup{font-stretch:110%;font-weight:600;font-size:28px;color:var(--t2);margin-top:14px;}
+  .seamcard .matchup{font-weight:600;font-size:28px;color:var(--t2);margin-top:14px;}
   .seamcard .band{margin-top:24px;display:flex;align-items:center;gap:34px;
     background:rgba(11,11,13,.62);backdrop-filter:blur(9px);border:1px solid var(--b2);
     border-left:6px solid var(--vc);border-radius:16px;padding:24px 32px;}
@@ -175,7 +208,7 @@
   .seamcard .blab{font-family:'IBM Plex Mono',monospace;font-size:16px;letter-spacing:.2em;
     color:var(--t3);display:flex;align-items:center;gap:11px;text-transform:uppercase;}
   .seamcard .brow{display:flex;align-items:baseline;gap:18px;margin-top:10px;}
-  .seamcard .pickn{font-stretch:116%;font-weight:800;font-size:52px;color:var(--ox);letter-spacing:-.015em;}
+  .seamcard .pickn{font-weight:800;font-size:52px;color:var(--ox);letter-spacing:-.015em;}
   .seamcard .pct{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:46px;color:var(--t1);}
   .seamcard .conf{margin-top:11px;display:inline-flex;align-items:center;gap:9px;
     font-family:'IBM Plex Mono',monospace;font-size:16px;letter-spacing:.08em;color:var(--gold);text-transform:uppercase;}
@@ -192,7 +225,7 @@
   .seamcard .barlab b{color:var(--t1);font-weight:600;}
   /* verdict band — post-match */
   .seamcard .vchip{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:50%;background:var(--vc);color:#0B0B0D;font-weight:900;font-size:15px;}
-  .seamcard .verdict{font-stretch:116%;font-weight:900;font-size:60px;color:var(--vc);letter-spacing:-.015em;line-height:.95;margin-top:6px;}
+  .seamcard .verdict{font-weight:900;font-size:60px;color:var(--vc);letter-spacing:-.015em;line-height:.95;margin-top:6px;}
   .seamcard .vsub{font-size:23px;color:var(--t2);margin-top:11px;max-width:560px;}
   .seamcard .vsub b{color:var(--t1);font-weight:600;}
   .seamcard .ledger{display:flex;align-items:stretch;}
@@ -207,9 +240,9 @@
   .seamcard .foot .url{font-family:'IBM Plex Mono',monospace;font-size:20px;color:var(--t2);white-space:nowrap;}
   /* portrait (IG 4:5) */
   .seamcard.p .inner{padding:56px 58px;}
-  .seamcard.p .bg .h{clip-path:polygon(0 0,100% 0,100% 50%,0 64%);}
-  .seamcard.p .bg .a{clip-path:polygon(0 64%,100% 50%,100% 100%,0 100%);}
-  .seamcard.p .veil{background:linear-gradient(180deg,rgba(11,11,13,.18) 0%,rgba(11,11,13,.30) 40%,rgba(11,11,13,.62) 60%,rgba(11,11,13,.97) 100%);}
+  .seamcard.p .bg .h{clip-path:polygon(0 0,58% 0,42% 100%,0 100%);}
+  .seamcard.p .bg .a{clip-path:polygon(58% 0,100% 0,100% 100%,42% 100%);}
+  .seamcard.p .veil{background:linear-gradient(180deg,rgba(11,11,13,.34) 0%,rgba(11,11,13,.26) 30%,rgba(11,11,13,.60) 62%,rgba(11,11,13,.97) 100%);}
   .seamcard.p .code{font-size:132px;}
   .seamcard.p .score{font-size:104px;}
   .seamcard.p .codes{gap:24px;}
@@ -246,15 +279,21 @@
 
   // data.results: [{abbr, hg, ag, hit, line, brier, hIso, aIso}]
   // data.headline {a, b}, kicker, note, ours (brier float)
+  // Seam-family row helpers (shared by the X + IG ledger). Verdict-state
+  // accent + a crisp flag-SEAM tile (hero seam, miniaturised) + verdict chip
+  // + code·score·code — no blurred bleed.
+  const RC = { hit: '#22C55E', range: '#8A94A6', amber: '#EAB308', miss: '#EF4444' };
+  const fpair = (h, a) => (h && a)
+    ? `<div class="fpair"><div class="fc h" style="background-image:url(https://flagcdn.com/w320/${h}.png)"></div><div class="fc a" style="background-image:url(https://flagcdn.com/w320/${a}.png)"></div><svg class="ln" viewBox="0 0 100 60" preserveAspectRatio="none"><line x1="60" y1="0" x2="40" y2="60" stroke="#C0392B" stroke-width="2.5" style="filter:drop-shadow(0 0 5px #C0392B)"/></svg></div>`
+    : `<div class="fpair"></div>`;
+  const lrows = (results) => results.map(r => {
+    const st = RES(r), p = String(r.abbr).split(' ');
+    return `<div class="lrow" style="--rc:${RC[st] || '#A8344A'}">${fpair(r.hIso, r.aIso)}<div class="tick ${st}">${GLYPH[st]}</div><div class="mid"><div class="lscore"><span class="c">${esc(p[0] || '')}</span><span class="s">${esc(p[1] || '')}</span><span class="c">${esc(p[2] || '')}</span></div><div class="call">${r.line}</div></div><div class="brier">Brier<b>${esc(r.brier)}</b></div></div>`;
+  }).join('');
+
+  // data.results: [{abbr, res|hit, line, brier, hIso, aIso}]
+  // data.headline {a, b}, kicker, note, ours (brier float)
   window.renderLedger = (d) => {
-    const rows = d.results.map(r => `
-      <div class="lrow bleedwrap" style="background:#14161B">
-        ${bleed(r.hIso, r.aIso, '.28')}
-        <div class="tick ${RES(r)}">${GLYPH[RES(r)]}</div>
-        <div class="score">${esc(r.abbr)}</div>
-        <div class="call">${r.line}</div>
-        <div class="brier">BRIER <b>${r.brier}</b></div>
-      </div>`).join('');
     const pos = Math.max(2, Math.min(98, (d.ours / 0.25) * 100));
     document.getElementById('ledger').innerHTML = `
       <div class="top">
@@ -267,7 +306,7 @@
         <div class="kicker">${esc(d.kicker)}</div>
       </div>
       <h1>${esc(d.headline.a)}<br><span class="ox">${esc(d.headline.b)}</span></h1>
-      <div class="ledgerrows">${rows}</div>
+      <div class="ledgerrows">${lrows(d.results)}</div>
       <div class="track-wrap">
         <div class="track-labels"><span>PERFECT 0.000</span><span>COIN FLIP 0.222</span></div>
         <div class="track">
@@ -315,19 +354,9 @@
 
 
   window.renderLedgerIG = (d) => {
-    const rows = d.results.map(r => `
-      <div class="igrow bleedwrap">
-        ${bleed(r.hIso, r.aIso, '.3')}
-        <div class="line1">
-          <div class="tick ${RES(r)}">${GLYPH[RES(r)]}</div>
-          <div class="score">${esc(r.abbr)}</div>
-          <div class="brier">${r.brier}</div>
-        </div>
-        <div class="line2">${r.line}</div>
-      </div>`).join('');
     const pos = Math.max(2, Math.min(98, (d.ours / 0.25) * 100));
     document.getElementById('ledger-ig').innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="top">
         <div>
           <svg width="46" height="46" viewBox="0 0 100 100" style="vertical-align:middle;margin-right:13px">
             <path d="M 57.25 22.95 A 28 28 0 1 0 77.05 42.75" fill="none" stroke="#F7F4EE" stroke-width="9" stroke-linecap="round"/>
@@ -338,8 +367,8 @@
       </div>
       <div style="margin:auto 0">
         <h1 style="margin-top:0">${esc(d.headline.a)}<br><span class="ox">${esc(d.headline.b)}</span></h1>
-        <div class="igrows">${rows}</div>
-        <div class="track-wrap">
+        <div class="igrows">${lrows(d.results)}</div>
+        <div class="track-wrap" style="margin-top:48px">
           <div class="track-labels"><span>PERFECT 0.000</span><span>COIN FLIP 0.222</span></div>
           <div class="track">
             <div class="marker" style="left:${pos}%"><div class="dot"></div><div class="tag">OURS <span>${d.ours.toFixed(3)}</span></div></div>
@@ -360,7 +389,7 @@
   const PM_CONF = { HIGH: 'Lean', MEDIUM: 'Edge', LOW: 'Strong' };   // model conviction label
   const pmLogo = `<span class="wm"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 57 23 A 28 28 0 1 0 77 43" fill="none" stroke="#F7F4EE" stroke-width="10" stroke-linecap="round"/><circle cx="70" cy="30" r="8.5" fill="#A8344A"/></svg><span><span class="o">Odd</span>yessa</span></span>`;
   const pmSeam = (fmt) => fmt === 'p'
-    ? `<svg class="seam" viewBox="0 0 1080 1350" preserveAspectRatio="none"><line x1="1080" y1="675" x2="0" y2="864" stroke="#C0392B" stroke-width="5" style="filter:drop-shadow(0 0 16px #C0392B)"/></svg>`
+    ? `<svg class="seam" viewBox="0 0 1080 1350" preserveAspectRatio="none"><line x1="626" y1="0" x2="454" y2="1350" stroke="#C0392B" stroke-width="5" style="filter:drop-shadow(0 0 16px #C0392B)"/></svg>`
     : `<svg class="seam" viewBox="0 0 1600 900" preserveAspectRatio="none"><line x1="960" y1="0" x2="640" y2="900" stroke="#C0392B" stroke-width="6" style="filter:drop-shadow(0 0 20px #C0392B)"/></svg>`;
   // flags meet on the seam — full-bleed (FLAG = high-res), not the blurred bleed
   const PMFLAG = (c) => c ? `https://flagcdn.com/w1280/${c}.png` : '';
