@@ -1202,5 +1202,18 @@
     }
   ],
   "verdictWait": {},
-  "pending": {}
+  "pending": {
+    "apf_1567311": {
+      "kind": "prematch",
+      "label": "Spain v Austria",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
