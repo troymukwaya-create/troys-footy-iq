@@ -45,6 +45,10 @@ function timeline(events, homeName, awayName) {
     const teamName = e?.team?.name || null;
     const type = e?.type || '';
     const detail = e?.detail || '';
+    // Penalty-SHOOTOUT kicks arrive as Goal events too (API-Football marks
+    // them in `comments`) — they are not match goals and would poison the
+    // comeback/late-goal story logic on knockout games.
+    if (/penalty shootout/i.test(e?.comments || e?.comment || '')) continue;
     if (type === 'Goal' && detail !== 'Missed Penalty') {
       // An own goal counts for the OTHER team.
       const isOwn = /own goal/i.test(detail);

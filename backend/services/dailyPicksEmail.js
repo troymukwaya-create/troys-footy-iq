@@ -203,11 +203,22 @@ export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date(
         ? `How we did yesterday — ${nRight} of ${receipts.length} right`
         : 'The World Cup rests today — so do we';
 
+  // Knockout decider — plain words: who actually went through when the 90'
+  // score (shown on the tile, what we grade) didn't decide it.
+  const deciderLine = (rcp) => {
+    const w = rcp.decided_winner === 'HOME' ? rcp.home_team : rcp.decided_winner === 'AWAY' ? rcp.away_team : null;
+    if (!w) return '';
+    if (rcp.decided_by === 'PEN') return `${w} went through${rcp.pen_home_goals != null ? ` ${rcp.pen_home_goals}–${rcp.pen_away_goals}` : ''} on penalties.`;
+    if (rcp.decided_by === 'AET') return `${w} won it ${rcp.home_goals}–${rcp.away_goals} in extra time.`;
+    return '';
+  };
+
   // ── Yesterday: settled tiles ──
   const receiptTiles = receipts.map(rcp => {
     const hit = !!rcp.prediction_correct;
     const lean = leanOf(rcp);
     const exact = rcp.scoreline_exact; // optional flag if provided upstream
+    const decided = deciderLine(rcp);
     return `
     <div style="${tileStyle(rcp.home_team, rcp.away_team)}">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -220,6 +231,7 @@ export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date(
       </tr></table>
       <div style="color:#aeb3bc;font-size:13.5px;margin-top:6px;line-height:1.5">
         We said <b style="color:#fff">${esc(lean.name)}</b> (${fmtPct(lean.p)} sure) — ${hit ? 'and that’s how it went.' : 'we were wrong. It stays on the record.'}
+        ${decided ? `<br><span style="color:#F7F4EE">${esc(decided)}</span>` : ''}
         ${exact ? `<br><span style="color:#EAB308">We even called the exact score.</span>` : ''}
       </div>
     </div>`;
@@ -284,7 +296,8 @@ export function buildDailyPicksEmail({ slate, receipts, ledger, date = new Date(
       `YESTERDAY: WE GOT ${nRight} OF ${receipts.length} RIGHT`,
       ...receipts.map(rcp => {
         const lean = leanOf(rcp);
-        return `${rcp.prediction_correct ? '[RIGHT]' : '[WRONG]'} ${rcp.home_team} ${rcp.hg}-${rcp.ag} ${rcp.away_team} — we said ${lean.name} (${fmtPct(lean.p)} sure)`;
+        const decided = deciderLine(rcp);
+        return `${rcp.prediction_correct ? '[RIGHT]' : '[WRONG]'} ${rcp.home_team} ${rcp.hg}-${rcp.ag} ${rcp.away_team} — we said ${lean.name} (${fmtPct(lean.p)} sure)${decided ? ` — ${decided}` : ''}`;
       }),
       ledger ? `This World Cup so far: ${ledger.correct} of ${ledger.total} winners called.` : '',
       '',
