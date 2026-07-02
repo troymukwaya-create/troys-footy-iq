@@ -1214,6 +1214,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1567309": {
+      "kind": "prematch",
+      "label": "Portugal v Croatia",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
