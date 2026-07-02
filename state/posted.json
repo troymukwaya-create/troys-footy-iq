@@ -105,7 +105,8 @@
     "apf_1565177",
     "apf_1567306",
     "apf_1567307",
-    "apf_1567308"
+    "apf_1567308",
+    "apf_1562586"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1187,21 +1188,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1562586": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1562586",
       "label": "USA v Bosnia & Herzegovina",
+      "at": "2026-07-02T10:21:38.831Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
