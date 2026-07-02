@@ -195,8 +195,14 @@
   .seamcard .code{font-weight:900;font-size:150px;letter-spacing:-.03em;text-shadow:0 6px 36px rgba(0,0,0,.6);white-space:nowrap;}
   .seamcard .vs{font-weight:700;font-size:52px;color:var(--t3);padding-bottom:24px;}
   .seamcard .score{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:116px;letter-spacing:-.03em;color:#fff;padding-bottom:8px;text-shadow:0 6px 30px rgba(0,0,0,.55);white-space:nowrap;}
+  /* knockout decider — "Belgium win 4–2 on penalties" under the hero score */
+  .seamcard .decider{margin-top:16px;display:inline-flex;align-items:center;gap:12px;
+    font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:26px;letter-spacing:.02em;color:var(--cream);
+    text-shadow:0 3px 18px rgba(0,0,0,.6);}
+  .seamcard .decider .ddot{color:var(--gold);font-size:16px;text-shadow:0 0 10px var(--gold);}
   .seamcard .sline{margin-top:18px;display:inline-flex;align-items:center;gap:11px;
     font-family:'IBM Plex Mono',monospace;font-size:20px;letter-spacing:.04em;color:var(--t2);}
+  .seamcard .decider + .sline{margin-top:12px;}
   .seamcard .sline .k{font-size:14px;letter-spacing:.18em;color:var(--t3);text-transform:uppercase;}
   .seamcard .sline b{color:var(--cream);font-weight:600;}
   .seamcard .matchup{font-weight:600;font-size:28px;color:var(--t2);margin-top:14px;}
@@ -424,7 +430,7 @@
           <div class="bR barwrap">${bar}</div>
         </div>
         <div class="foot">
-          <span class="note">Locked before kickoff — every call graded in public, win or lose.</span>
+          <span class="note">${esc(d.footNote || 'Locked before kickoff — every call graded in public, win or lose.')}</span>
           <span class="url">oddyessa.com</span>
         </div>
       </div>`;
@@ -447,18 +453,20 @@
       <div class="inner">
         <div class="top">${pmLogo}<span class="kick">${esc(d.kicker)}</span></div>
         <div class="codes"><span class="code">${esc(d.codeH)}</span><span class="score">${esc(d.ft)}</span><span class="code">${esc(d.codeA)}</span></div>
-        ${d.predScore ? `<div class="sline"><span class="k">We called</span><b>${esc(d.predScore)}</b><span style="color:var(--t4)">·</span>actual result above</div>` : ''}
+        ${d.decider ? `<div class="decider"><span class="ddot">●</span>${esc(d.decider)}</div>` : ''}
+        ${d.predScore ? `<div class="sline"><span class="k">We called</span><b>${esc(d.predScore)}</b><span style="color:var(--t4)">·</span>${d.decider ? '90-minute result above' : 'actual result above'}</div>` : ''}
         <div class="matchup">${esc(d.home)} v ${esc(d.away)}${d.meta ? ' · ' + esc(d.meta) : ''}</div>
         <div class="band">
           <div class="bL">
-            <div class="blab"><span class="vchip">${d.glyph}</span>Full time · ${esc(d.codeH)} ${esc(String(d.ft).replace('–', ' – '))} ${esc(d.codeA)}</div>
+            <div class="blab"><span class="vchip">${d.glyph}</span>${d.decider ? 'After 90' : 'Full time'} · ${esc(d.codeH)} ${esc(String(d.ft).replace('–', ' – '))} ${esc(d.codeA)}</div>
             <div class="verdict">${esc(d.verdict)}</div>
             <div class="vsub">${esc(d.note)}</div>
           </div>
           <div class="bR">
             <div class="ledger">
               <div class="lc"><div class="lk">Predicted</div><div class="lv">${esc(d.predScore || '—')}</div></div>
-              <div class="lc final"><div class="lk">Full time</div><div class="lv">${esc(d.ft)}</div></div>
+              <div class="lc final"><div class="lk">${d.decider ? 'After 90' : 'Full time'}</div><div class="lv">${esc(d.ft)}</div></div>
+              ${d.pens ? `<div class="lc"><div class="lk">Pens</div><div class="lv">${esc(d.pens)}</div></div>` : ''}
               <div class="lc brier"><div class="lk">Brier</div><div class="lv">${esc(d.brier)}</div></div>
             </div>
           </div>

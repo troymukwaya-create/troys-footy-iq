@@ -149,6 +149,15 @@ async function generateLedger() {
   const nRange = settled.filter(s => tierOf(s) === 'IN_RANGE').length;   // inside our range
   const nMissed = settled.filter(s => grades[s.match_external_id]?.stampMiss).length; // genuine reds
 
+  // Knockout decider marker for a row — the ledger scores on the 90' result
+  // but must still say who actually went through ("BEL won on pens").
+  const deciderNote = (s) => {
+    const w = s.decided_winner === 'HOME' ? s.home_team : s.decided_winner === 'AWAY' ? s.away_team : null;
+    if (!w) return '';
+    if (s.decided_by === 'PEN') return ` · ${abbr(w)} won on pens${s.pen_home_goals != null ? ` ${s.pen_home_goals}–${s.pen_away_goals}` : ''}`;
+    if (s.decided_by === 'AET') return ` · ${abbr(w)} won in extra time`;
+    return '';
+  };
   const rows = settled.map(s => {
     const v = verdicts[s.match_external_id];
     const g = grades[s.match_external_id];
@@ -160,7 +169,7 @@ async function generateLedger() {
     return {
       abbr: `${abbr(s.home_team)} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${abbr(s.away_team)}`,
       res: g?.res || (s.prediction_correct ? 'hit' : 'miss'),
-      line: `<b>${lean} @ ${pct(leanP)}</b>${extra}`,
+      line: `<b>${lean} @ ${pct(leanP)}</b>${extra}${deciderNote(s)}`,
       brier: Number(s.brier_score).toFixed(3),
       hIso: iso(s.home_team), aIso: iso(s.away_team),
       hg: s.ft_home_goals ?? s.home_goals, ag: s.ft_away_goals ?? s.away_goals,
@@ -207,6 +216,8 @@ async function generateLedger() {
       const items = [
         { lab: `CALL — ${lean === 'Draw' ? 'DRAW' : abbr(lean) + ' WIN'}`, val: pct(leanP), res: callRes },
         ...(g?.blurb && callRes !== 'hit' ? [{ sub: g.blurb.toLowerCase() }] : []),
+        // knockout decider — the receipt grades the 90' score but says who went through
+        ...(deciderNote(s) ? [{ sub: deciderNote(s).replace(/^ · /, '').toLowerCase() }] : []),
         // Scoreline is its own call: exact = gold hit, otherwise neutral (a
         // non-exact scoreline is never a "miss" — exact scores are ~1-in-8).
         ...(v?.scoreline ? [{ lab: `SCORELINE ${v.scoreline.predicted}`, val: pct(v.scoreline.predictedProb), res: v.scoreline.exact ? 'hit' : 'range' },
@@ -250,7 +261,7 @@ async function generateLedger() {
       const lean = { HOME: s.home_team, DRAW: 'a draw', AWAY: s.away_team }[s.predicted_outcome];
       const leanP = { HOME: s.prob_home, DRAW: s.prob_draw, AWAY: s.prob_away }[s.predicted_outcome];
       const mark = MARK[g?.res] ?? (s.prediction_correct ? ' ✓' : ' ✗');
-      return `${flagEmoji(s.home_team)} ${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team} ${flagEmoji(s.away_team)} — we said ${lean} (${pct(leanP)})${mark}${v?.scoreline?.exact ? ' · exact score called' : ''}`;
+      return `${flagEmoji(s.home_team)} ${s.home_team} ${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals} ${s.away_team} ${flagEmoji(s.away_team)} — we said ${lean} (${pct(leanP)})${mark}${v?.scoreline?.exact ? ' · exact score called' : ''}${deciderNote(s)}`;
     }),
     '',
     stats ? `This World Cup so far: ${stats.correct} of ${stats.total} winners called outright — every result graded in public.` : '',
@@ -361,6 +372,24 @@ async function generateMatch(externalId) {
   const ft = `${s.ft_home_goals ?? s.home_goals}–${s.ft_away_goals ?? s.away_goals}`;
   const firstMiss = isMiss && stats && (stats.total - stats.correct) === 1;
 
+  // ── knockout decider (AET/pens) — display-only, never grading ────────
+  // The 1X2 call + Brier settle on the 90' score (ft above), but a knockout
+  // that goes to extra time/penalties must SAY so — a "2–2 · inside our
+  // range" card with no pens mention looks blind to what every fan watched.
+  // Row fields land via /results/recent (decided_by, pen_*, decided_winner);
+  // verdict.decided is the fallback while a row predates the backfill.
+  const decidedBy = s.decided_by || verdict?.decided?.by || 'FT';
+  const decWinner = s.decided_winner || verdict?.decided?.winner || null;
+  const penH = s.pen_home_goals ?? verdict?.decided?.penalty?.home ?? null;
+  const penA = s.pen_away_goals ?? verdict?.decided?.penalty?.away ?? null;
+  const advancedName = decWinner === 'HOME' ? s.home_team : decWinner === 'AWAY' ? s.away_team : null;
+  const decider = decidedBy === 'PEN' && advancedName
+    ? `${advancedName} win ${penH != null ? `${penH}–${penA} ` : ''}on penalties`
+    : decidedBy === 'AET' && advancedName
+      ? `${advancedName} win it ${s.home_goals}–${s.away_goals} in extra time`
+      : null;
+  const pens = decidedBy === 'PEN' && penH != null ? `${penH}–${penA}` : null;
+
   // ── verdict card (Seam "THE VERDICT") — every accent, glyph, headline and
   //    honest note comes straight off gradeRow (g), so the card can never
   //    contradict the ledger/receipt grading. 4 states → verdict accent:
@@ -396,6 +425,7 @@ async function generateMatch(externalId) {
     footNote: V_FOOT[res] || 'Filed before kickoff · graded in public.',
     vc: V_TONE_VC[g?.tone] || 'var(--ox)',
     hIso: iso(s.home_team), aIso: iso(s.away_team),
+    decider, pens,
   };
 
   const items = [
@@ -456,7 +486,7 @@ async function generateMatch(externalId) {
     ? `The scoreline, though: ${verdict.scoreline.actual} was the top of our grid before kickoff (${pct(verdict.scoreline.predictedProb)}).`
     : null;
   const caption = [
-    `Tonight: ${he} ${s.home_team} ${ft} ${s.away_team} ${ae}`,
+    `Tonight: ${he} ${s.home_team} ${ft} ${s.away_team} ${ae}${decider ? ` — ${decider}` : ''}`,
     '',
     body,
     ...(scorelineNote ? ['', scorelineNote] : []),
@@ -476,8 +506,13 @@ async function generateMatch(externalId) {
     : (called ? `Winner ✓ called — ${lean} ${pct(leanP)}.`
       : isMiss ? `The call missed — we said ${lean} ${pct(leanP)}. Printed anyway.`
       : `We said ${lean} ${pct(leanP)}. The result sat inside our range.`);
+  // Short pens/ET marker for the 280-char X budget ("BEL win 4–2 on pens").
+  const xDecider = decidedBy === 'PEN' && advancedName
+    ? ` (${abbr(advancedName)} win${penH != null ? ` ${penH}–${penA}` : ''} on pens)`
+    : decidedBy === 'AET' && advancedName
+      ? ` (${abbr(advancedName)} win ${s.home_goals}–${s.away_goals} AET)` : '';
   let xCap = [
-    `Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}`,
+    `Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}${xDecider}`,
     '',
     xBody,
     '',
@@ -485,8 +520,8 @@ async function generateMatch(externalId) {
     '',
     tags.x,
   ].join('\n');
-  if (xCap.length > 278) xCap = [`Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}`, '', xBody, '', tags.x].join('\n');
-  if (xCap.length > 278) xCap = `Tonight: ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} — ${called ? 'called ✓' : isMiss ? 'the call missed, printed anyway' : 'inside our range'}${exact ? ' · exact score ✓' : ''}. Receipts attached.\n\n${tags.x}`;
+  if (xCap.length > 278) xCap = [`Tonight: ${he} ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)} ${ae}${xDecider}`, '', xBody, '', tags.x].join('\n');
+  if (xCap.length > 278) xCap = `Tonight: ${abbr(s.home_team)} ${ft} ${abbr(s.away_team)}${xDecider} — ${called ? 'called ✓' : isMiss ? 'the call missed, printed anyway' : 'inside our range'}${exact ? ' · exact score ✓' : ''}. Receipts attached.\n\n${tags.x}`;
 
   writeFileSync(path.join(OUT, 'match.json'), JSON.stringify({
     caption: caption + '\n\n' + tags.tg,
@@ -558,6 +593,15 @@ async function generatePrematch(externalId) {
     scoreline: top?.score || null, scorelinePct: top?.probability || null,
     hIso: iso(home), aIso: iso(away),
   };
+  // Knockout awareness: the fixtures feed carries the round ("Round of 32",
+  // "Quarter-finals"…). A knockout call is a 90-MINUTE call — level after 90
+  // goes to extra time & pens and is graded as the draw — so the card and
+  // captions say that out loud instead of looking naive when it happens.
+  const roundName = f.matchday || f.league?.round || '';
+  const knockout = /round of \d+|quarter|semi|final|knockout|play-?off/i.test(roundName) && !/group/i.test(roundName);
+  if (knockout) {
+    cardData.footNote = 'Knockout — our call is the 90-minute result. Level after 90 goes to extra time & pens.';
+  }
 
   await withPage(async (page) => {
     await page.evaluate((d) => window.renderPrematch(d), cardData);
@@ -591,9 +635,11 @@ async function generatePrematch(externalId) {
     ...reasons.slice(0, 3).map(r => `• ${r.text}`),
     ...(top ? ['', `Most likely score: ${top.score} (${pct(top.probability)})`] : []),
     '',
+    ...(knockout ? [`${roundName ? roundName + ' — ' : ''}our call is the 90-minute result; level after 90 goes to extra time & penalties.`] : []),
+    '',
     'The forecast locks 10 minutes before kickoff — the locked call is what we grade ourselves on, in public.',
     'oddyessa.com',
-  ].join('\n');
+  ].filter((l, i, a) => !(l === '' && a[i - 1] === '')).join('\n');
 
   const tags = buildHashtags([[home, away]]);
   let xCap = [
