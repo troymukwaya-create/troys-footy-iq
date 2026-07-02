@@ -1177,7 +1177,9 @@
       }
     }
   ],
-  "verdictWait": {},
+  "verdictWait": {
+    "apf_1567308": 1
+  },
   "pending": {
     "apf_1562586": {
       "kind": "prematch",
