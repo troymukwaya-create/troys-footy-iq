@@ -579,6 +579,18 @@ ON CONFLICT (slug) DO NOTHING;
 ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS ft_home_goals INT;
 ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS ft_away_goals INT;
 
+-- Knockout decider (2026-07-02). How a FINISHED game was decided:
+-- 'FT' (90 minutes) · 'AET' (extra time) · 'PEN' (penalty shootout).
+-- pen_* = the shootout score only; decided_winner = 'HOME'|'AWAY' for
+-- AET/PEN games (the advancing side). Grading/Brier ALWAYS stays on the
+-- 90-minute ft_* score (1X2 market convention) — these columns exist so
+-- every display surface (cards, ledger, captions) can tell the whole
+-- story: "FT 2–2 · Belgium win 4–2 on pens".
+ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS decided_by VARCHAR(4);
+ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS pen_home_goals INT;
+ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS pen_away_goals INT;
+ALTER TABLE fixtures ADD COLUMN IF NOT EXISTS decided_winner VARCHAR(4);
+
 -- Learned national-team Elo. Written by engine/nationalTeams.applyResult
 -- since launch, but the table was never in the schema — every persist was
 -- silently swallowed by .catch(). This makes Elo learning survive restarts.

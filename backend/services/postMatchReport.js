@@ -10,6 +10,7 @@ import { getLockedWcPredictionsMap } from './wcDisplayPrediction.js';
 import api from './apisports.js';
 import { buildStory, polishStory } from './matchNarrative.js';
 import { gradeOutcome, gradeScoreline, gradeMatch, outcomeBlurb } from '../engine/grading.js';
+import { deciderOf } from './resultService.js';
 
 // Outcome from a final score, in the same vocabulary the ledger uses.
 function outcomeOf(home, away) {
@@ -42,6 +43,20 @@ export async function buildPostMatchReport(match, matchId) {
   const ft = {
     home: match.fullTime?.home ?? result.home,
     away: match.fullTime?.away ?? result.away,
+  };
+  // Knockout decider — 'FT' | 'AET' | 'PEN' + advancing side + pens score.
+  // DISPLAY-ONLY: grading below stays on the 90' ft score; this exists so
+  // the verdict/receipt can say "2–2 · Belgium win 4–2 on pens" instead of
+  // looking blind to what every fan just watched.
+  const dec = deciderOf(match);
+  const advancedName = dec.winner === 'HOME' ? (match.homeTeam?.name || 'Home')
+    : dec.winner === 'AWAY' ? (match.awayTeam?.name || 'Away') : null;
+  const decided = dec.decidedBy === 'FT' ? null : {
+    by: dec.decidedBy,                             // 'AET' | 'PEN'
+    winner: dec.winner,                            // 'HOME' | 'AWAY' | null
+    advanced: advancedName,                        // team name
+    penalty: dec.decidedBy === 'PEN' ? { home: dec.penH, away: dec.penA } : null,
+    finalScore: result,                            // includes extra time
   };
 
   const [lockedMap, matchStats, events] = await Promise.all([
@@ -138,11 +153,19 @@ export async function buildPostMatchReport(match, matchId) {
       predictedOutcome, predictedProb, outcomeCorrect, scoreline, events,
     });
     const pickName = predictedOutcome === 'HOME' ? homeName : predictedOutcome === 'AWAY' ? awayName : 'a draw';
-    const text = await polishStory(
+    let text = await polishStory(
       built,
       { homeName, awayName, ft, pickName, pct: `${Math.round(predictedProb)}%`, outcomeCorrect },
       `${matchId}:${ft.home}-${ft.away}`,
     );
+    // Decider sentence appended AFTER polish — deterministic, so the pens/ET
+    // fact can never be dropped or reworded into something wrong.
+    if (decided?.advanced) {
+      const deciderLine = decided.by === 'PEN'
+        ? `${decided.advanced} advanced ${decided.penalty?.home ?? '?'}–${decided.penalty?.away ?? '?'} on penalties.`
+        : `${decided.advanced} won it ${decided.finalScore.home}–${decided.finalScore.away} in extra time.`;
+      if (!text.includes('penalt') && !text.includes('extra time')) text = `${text.trim()} ${deciderLine}`;
+    }
     story = { kind: built.kind, tag: built.tag, minute: built.minute, text };
   } catch (err) {
     console.error('[postMatchReport] story build failed:', err.message);
@@ -152,6 +175,9 @@ export async function buildPostMatchReport(match, matchId) {
     status: 'FINISHED',
     result,
     ftResult: ft,
+    // 'AET'/'PEN' context (null for a normal 90' finish) — advancing side,
+    // shootout score, final-after-ET score. Display-only; never graded.
+    decided,
     // The exact pre-match display object — probabilities, topScorelines,
     // overUnder, btts, expectedGoals, model/market split, lockedAt.
     probability: locked,
@@ -168,6 +194,7 @@ export async function buildPostMatchReport(match, matchId) {
       scoreline,
       marketCalls,
       story,
+      decided,
       brier: scoredRow?.brier_score != null ? Number(scoredRow.brier_score) : brierFor(p, actualOutcome),
       inLedger: !!scoredRow,
       lockedAt: locked.lockedAt || null,

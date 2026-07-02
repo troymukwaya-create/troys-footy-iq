@@ -31,6 +31,36 @@ export function outcome90(ftHome, ftAway, finalHome = null, finalAway = null) {
 }
 
 /**
+ * How a finished game was decided — 'FT' | 'AET' | 'PEN' — plus the
+ * advancing side and the shootout score, normalised across both providers.
+ * API-Football rows carry statusRaw ('FT'/'AET'/'PEN') + penalty{home,away};
+ * football-data rows carry duration ('REGULAR'/'EXTRA_TIME'/
+ * 'PENALTY_SHOOTOUT') + winner ('HOME_TEAM'/'AWAY_TEAM'/'DRAW').
+ * The advancing side is DISPLAY-ONLY — grading stays on the 90' ft_* score.
+ */
+export function deciderOf(match) {
+  const raw = String(match.statusRaw || '').toUpperCase();
+  const dur = String(match.duration || '').toUpperCase();
+  const decidedBy = raw === 'PEN' || dur === 'PENALTY_SHOOTOUT' ? 'PEN'
+    : raw === 'AET' || dur === 'EXTRA_TIME' ? 'AET'
+    : 'FT';
+  const penH = match.penalty?.home ?? null;
+  const penA = match.penalty?.away ?? null;
+  let winner = null;
+  if (decidedBy === 'PEN') {
+    if (penH != null && penA != null && penH !== penA) winner = penH > penA ? 'HOME' : 'AWAY';
+    else if (match.winner === 'HOME_TEAM') winner = 'HOME';
+    else if (match.winner === 'AWAY_TEAM') winner = 'AWAY';
+  } else if (decidedBy === 'AET') {
+    const h = match.score?.home, a = match.score?.away; // final score includes ET
+    if (h != null && a != null && h !== a) winner = h > a ? 'HOME' : 'AWAY';
+    else if (match.winner === 'HOME_TEAM') winner = 'HOME';
+    else if (match.winner === 'AWAY_TEAM') winner = 'AWAY';
+  }
+  return { decidedBy, penH: decidedBy === 'PEN' ? penH : null, penA: decidedBy === 'PEN' ? penA : null, winner };
+}
+
+/**
  * Ingest results for recently finished matches.
  * Pipeline:
  *   1. Fetch finished matches from football-data.org (last N days)
@@ -99,6 +129,10 @@ export async function ingestResults(lookbackDays = 3) {
 
     const ft90Home = match.fullTime?.home ?? match.score.home;
     const ft90Away = match.fullTime?.away ?? match.score.away;
+    // Knockout decider (display-only; grading stays on ft_*). The extra
+    // `decided_by IS NULL` arm backfills already-FINISHED rows once (e.g.
+    // pens games ingested before these columns existed).
+    const dec = deciderOf(match);
 
     const result = await safeQuery(
       `UPDATE fixtures SET
@@ -106,10 +140,15 @@ export async function ingestResults(lookbackDays = 3) {
         home_goals = $1,
         away_goals = $2,
         ft_home_goals = $3,
-        ft_away_goals = $4
-      WHERE external_id = $5 AND (status != 'FINISHED' OR home_goals IS NULL OR ft_home_goals IS NULL)
+        ft_away_goals = $4,
+        decided_by = $5,
+        pen_home_goals = $6,
+        pen_away_goals = $7,
+        decided_winner = $8
+      WHERE external_id = $9 AND (status != 'FINISHED' OR home_goals IS NULL OR ft_home_goals IS NULL OR decided_by IS NULL)
       RETURNING id`,
-      [match.score.home, match.score.away, ft90Home, ft90Away, match.id]
+      [match.score.home, match.score.away, ft90Home, ft90Away,
+        dec.decidedBy, dec.penH, dec.penA, dec.winner, match.id]
     );
 
     if (result?.rows?.[0]) updated++;
@@ -255,6 +294,7 @@ export async function getRecentResults(limit = 20) {
       mp.value_edge_home, mp.value_edge_draw, mp.value_edge_away,
       p.home_team, p.away_team, p.risk_level, p.model_version,
       f.home_goals, f.away_goals, f.ft_home_goals, f.ft_away_goals,
+      f.decided_by, f.pen_home_goals, f.pen_away_goals, f.decided_winner,
       f.match_date
     FROM model_performance mp
     JOIN predictions p ON mp.prediction_id = p.id
