@@ -106,7 +106,8 @@
     "apf_1567306",
     "apf_1567307",
     "apf_1567308",
-    "apf_1562586"
+    "apf_1562586",
+    "apf_1567311"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1199,22 +1200,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567311",
+      "label": "Spain v Austria",
+      "at": "2026-07-02T22:50:39.407Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1567311": {
-      "kind": "prematch",
-      "label": "Spain v Austria",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1567309": {
       "kind": "prematch",
       "label": "Portugal v Croatia",
