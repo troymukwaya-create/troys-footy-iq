@@ -104,7 +104,8 @@
     "apf_1564789",
     "apf_1565177",
     "apf_1567306",
-    "apf_1567307"
+    "apf_1567307",
+    "apf_1567308"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1175,27 +1176,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567308",
+      "label": "Belgium 2–2 Senegal",
+      "at": "2026-07-02T07:45:47.716Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1567308": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1562586": {
       "kind": "prematch",
       "label": "USA v Bosnia & Herzegovina",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1567308": {
-      "kind": "match",
-      "label": "Belgium 2–2 Senegal",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
