@@ -109,7 +109,8 @@
     "apf_1562586",
     "apf_1567311",
     "apf_1567309",
-    "apf_1567312"
+    "apf_1567312",
+    "apf_1565178"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1235,24 +1236,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1565178": 1
-  },
-  "pending": {
-    "apf_1565178": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1565178",
       "label": "Australia v Egypt",
+      "at": "2026-07-03T22:44:33.490Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
-    },
+    }
+  ],
+  "verdictWait": {},
+  "pending": {
     "apf_1565179": {
       "kind": "prematch",
       "label": "Argentina v Cape Verde Islands",
