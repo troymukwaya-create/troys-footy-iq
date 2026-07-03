@@ -108,7 +108,8 @@
     "apf_1567308",
     "apf_1562586",
     "apf_1567311",
-    "apf_1567309"
+    "apf_1567309",
+    "apf_1567312"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1223,23 +1224,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1567312": 1
-  },
-  "pending": {
-    "apf_1567312": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567312",
       "label": "Switzerland v Algeria",
+      "at": "2026-07-03T11:02:24.992Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
