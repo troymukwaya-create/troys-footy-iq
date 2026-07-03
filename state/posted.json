@@ -1226,6 +1226,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1567312": {
+      "kind": "prematch",
+      "label": "Switzerland v Algeria",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
