@@ -1250,6 +1250,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1565179": {
+      "kind": "prematch",
+      "label": "Argentina v Cape Verde Islands",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
