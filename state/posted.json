@@ -107,7 +107,8 @@
     "apf_1567307",
     "apf_1567308",
     "apf_1562586",
-    "apf_1567311"
+    "apf_1567311",
+    "apf_1567309"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1211,22 +1212,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567309",
+      "label": "Portugal v Croatia",
+      "at": "2026-07-03T05:02:49.456Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1567309": {
-      "kind": "prematch",
-      "label": "Portugal v Croatia",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1567312": {
       "kind": "prematch",
       "label": "Switzerland v Algeria",
