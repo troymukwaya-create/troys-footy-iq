@@ -110,7 +110,8 @@
     "apf_1567311",
     "apf_1567309",
     "apf_1567312",
-    "apf_1565178"
+    "apf_1565178",
+    "apf_1565179"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1247,22 +1248,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1565179",
+      "label": "Argentina v Cape Verde Islands",
+      "at": "2026-07-04T01:17:15.582Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
   "verdictWait": {},
   "pending": {
-    "apf_1565179": {
-      "kind": "prematch",
-      "label": "Argentina v Cape Verde Islands",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
     "apf_1567310": {
       "kind": "prematch",
       "label": "Colombia v Ghana",
