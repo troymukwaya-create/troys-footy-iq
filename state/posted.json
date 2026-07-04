@@ -1286,6 +1286,18 @@
       "attempts": {
         "instagram": 1
       }
+    },
+    "apf_1569870": {
+      "kind": "prematch",
+      "label": "Paraguay v France",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
     }
   }
 }
