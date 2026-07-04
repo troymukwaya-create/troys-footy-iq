@@ -111,7 +111,8 @@
     "apf_1567309",
     "apf_1567312",
     "apf_1565178",
-    "apf_1565179"
+    "apf_1565179",
+    "apf_1567310"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1259,21 +1260,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1567310": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567310",
       "label": "Colombia v Ghana",
+      "at": "2026-07-04T04:54:25.532Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
