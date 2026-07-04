@@ -112,7 +112,8 @@
     "apf_1567312",
     "apf_1565178",
     "apf_1565179",
-    "apf_1567310"
+    "apf_1567310",
+    "apf_1567824"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1271,24 +1272,21 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1567824": 1
-  },
-  "pending": {
-    "apf_1567824": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1567824",
       "label": "Canada v Morocco",
+      "at": "2026-07-04T21:33:46.140Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
-    },
+    }
+  ],
+  "verdictWait": {},
+  "pending": {
     "apf_1569870": {
       "kind": "prematch",
       "label": "Paraguay v France",
