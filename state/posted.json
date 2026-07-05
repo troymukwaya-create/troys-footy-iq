@@ -113,7 +113,8 @@
     "apf_1565178",
     "apf_1565179",
     "apf_1567310",
-    "apf_1567824"
+    "apf_1567824",
+    "apf_1569870"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1283,21 +1284,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1569870": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1569870",
       "label": "Paraguay v France",
+      "at": "2026-07-05T01:20:18.173Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
