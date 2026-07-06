@@ -115,7 +115,8 @@
     "apf_1567310",
     "apf_1567824",
     "apf_1569870",
-    "apf_1568100"
+    "apf_1568100",
+    "apf_1570714"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1307,21 +1308,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1570714": {
+    },
+    {
       "kind": "match",
+      "id": "apf_1570714",
       "label": "Mexico 2–3 England",
+      "at": "2026-07-06T13:29:17.795Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
