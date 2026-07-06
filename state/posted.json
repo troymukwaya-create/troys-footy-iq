@@ -114,7 +114,8 @@
     "apf_1565179",
     "apf_1567310",
     "apf_1567824",
-    "apf_1569870"
+    "apf_1569870",
+    "apf_1568100"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1295,23 +1296,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1568100": 1
-  },
-  "pending": {
-    "apf_1568100": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1568100",
       "label": "Brazil v Norway",
+      "at": "2026-07-06T05:41:05.621Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
