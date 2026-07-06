@@ -1321,6 +1321,21 @@
       }
     }
   ],
-  "verdictWait": {},
-  "pending": {}
+  "verdictWait": {
+    "apf_1576756": 1
+  },
+  "pending": {
+    "apf_1570715": {
+      "kind": "prematch",
+      "label": "USA v Belgium",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
