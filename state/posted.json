@@ -116,7 +116,8 @@
     "apf_1567824",
     "apf_1569870",
     "apf_1568100",
-    "apf_1570714"
+    "apf_1570714",
+    "apf_1576756"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1319,27 +1320,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1576756",
+      "label": "Portugal 0–1 Spain",
+      "at": "2026-07-07T05:41:14.521Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1576756": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1570715": {
       "kind": "prematch",
       "label": "USA v Belgium",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1576756": {
-      "kind": "match",
-      "label": "Portugal 0–1 Spain",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
