@@ -117,7 +117,8 @@
     "apf_1569870",
     "apf_1568100",
     "apf_1570714",
-    "apf_1576756"
+    "apf_1576756",
+    "apf_1570715"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1331,21 +1332,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1570715": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1570715",
       "label": "USA v Belgium",
+      "at": "2026-07-07T08:54:42.535Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
