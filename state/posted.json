@@ -118,7 +118,8 @@
     "apf_1568100",
     "apf_1570714",
     "apf_1576756",
-    "apf_1570715"
+    "apf_1570715",
+    "apf_1576804"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1343,27 +1344,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1576804",
+      "label": "Argentina 3–2 Egypt",
+      "at": "2026-07-07T23:38:36.428Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1576804": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1576805": {
       "kind": "prematch",
       "label": "Switzerland v Colombia",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1576804": {
-      "kind": "match",
-      "label": "Argentina 3–2 Egypt",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
