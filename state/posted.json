@@ -119,7 +119,8 @@
     "apf_1570714",
     "apf_1576756",
     "apf_1570715",
-    "apf_1576804"
+    "apf_1576804",
+    "apf_1576805"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1355,23 +1356,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1576805": 1
-  },
-  "pending": {
-    "apf_1576805": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1576805",
       "label": "Switzerland v Colombia",
+      "at": "2026-07-08T04:28:19.349Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
