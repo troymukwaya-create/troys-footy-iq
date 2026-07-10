@@ -120,7 +120,8 @@
     "apf_1576756",
     "apf_1570715",
     "apf_1576804",
-    "apf_1576805"
+    "apf_1576805",
+    "apf_1578539"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1367,23 +1368,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {
-    "apf_1578539": 1
-  },
-  "pending": {
-    "apf_1578539": {
-      "kind": "prematch",
+    },
+    {
+      "kind": "match",
+      "id": "apf_1578539",
       "label": "France v Morocco",
+      "at": "2026-07-10T00:06:00.127Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
