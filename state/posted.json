@@ -121,7 +121,8 @@
     "apf_1570715",
     "apf_1576804",
     "apf_1576805",
-    "apf_1578539"
+    "apf_1578539",
+    "apf_1581821"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1379,21 +1380,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1581821": {
+    },
+    {
       "kind": "match",
+      "id": "apf_1581821",
       "label": "Spain 2–1 Belgium",
+      "at": "2026-07-10T23:17:28.974Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
