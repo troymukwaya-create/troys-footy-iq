@@ -22,7 +22,8 @@
     "apf_1489420",
     "apf_1489419",
     "apf_1561329",
-    "apf_1567306"
+    "apf_1567306",
+    "apf_1581037"
   ],
   "receipts": [
     "apf_1538999",
@@ -1391,21 +1392,19 @@
         "x": "ok",
         "instagram": "gaveup"
       }
-    }
-  ],
-  "verdictWait": {},
-  "pending": {
-    "apf_1581037": {
+    },
+    {
       "kind": "prematch",
+      "id": "apf_1581037",
       "label": "Norway v England",
+      "at": "2026-07-11T20:13:47.301Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "gaveup"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
