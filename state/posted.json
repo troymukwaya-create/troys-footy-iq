@@ -1394,5 +1394,18 @@
     }
   ],
   "verdictWait": {},
-  "pending": {}
+  "pending": {
+    "apf_1581037": {
+      "kind": "prematch",
+      "label": "Norway v England",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
