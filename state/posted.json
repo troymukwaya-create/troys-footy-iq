@@ -1405,13 +1405,23 @@
       }
     }
   ],
-  "verdictWait": {
-    "apf_1581037": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1582681": {
       "kind": "prematch",
       "label": "Argentina v Switzerland",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    },
+    "apf_1581037": {
+      "kind": "match",
+      "label": "Norway 1–1 England",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
