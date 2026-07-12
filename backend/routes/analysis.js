@@ -528,6 +528,16 @@ router.get('/:matchId/ai', async (req, res) => {
     });
   }
 
+  // A FINISHED match caches the post-match report (verdict + story) under this
+  // key, which has NO `.match` field. The pre-match AI insight doesn't apply —
+  // the on-site receipt already carries the graded verdict + match narrative —
+  // so return cleanly instead of feeding an undefined match into getAIInsights
+  // (which 500'd on `match.homeTeam`). Fixes the /analysis/:id/ai 500 on
+  // settled match pages.
+  if (!baseAnalysis.match || baseAnalysis.status === 'FINISHED' || baseAnalysis.verdict) {
+    return res.json({ ai: null, source: 'settled' });
+  }
+
   try {
     const ai = await getAIInsights(
       baseAnalysis.match,
@@ -581,6 +591,9 @@ function computeFormFromMatches(matches, teamId) {
 
 // ─── AI ANALYSIS via Claude ─────────────────────────────────────────
 async function getAIInsights(match, homeStats, awayStats, h2h, prob) {
+  // Defensive: the /ai route must never 500. Without a match or model output
+  // there is nothing to send Claude — return null and let the route answer 200.
+  if (!match || !prob?.probabilities) return null;
   const home = match.homeTeam?.name || 'Home';
   const away = match.awayTeam?.name || 'Away';
 
