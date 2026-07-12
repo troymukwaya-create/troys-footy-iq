@@ -123,7 +123,8 @@
     "apf_1576804",
     "apf_1576805",
     "apf_1578539",
-    "apf_1581821"
+    "apf_1581821",
+    "apf_1581037"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1403,27 +1404,24 @@
         "x": "ok",
         "instagram": "gaveup"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1581037",
+      "label": "Norway 1–1 England",
+      "at": "2026-07-12T09:17:44.967Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "gaveup"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1581037": 1
-  },
+  "verdictWait": {},
   "pending": {
     "apf_1582681": {
       "kind": "prematch",
       "label": "Argentina v Switzerland",
-      "platforms": {
-        "telegram": "ok",
-        "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
-      }
-    },
-    "apf_1581037": {
-      "kind": "match",
-      "label": "Norway 1–1 England",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
