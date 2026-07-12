@@ -309,9 +309,16 @@ export function MatchAnalysisPanel({ fixture, analysis, isLoading, onBack }) {
                 <div className="card" style={{ padding: '32px 16px', textAlign: 'center' }}>
                   <div style={{ fontSize: 24, marginBottom: 8 }}>✅</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>Match Completed</div>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)', marginBottom: analysis.decided?.advanced ? 4 : 8 }}>
                     {analysis.result?.home ?? '?'} — {analysis.result?.away ?? '?'}
                   </div>
+                  {analysis.decided?.advanced && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#C9A227', marginBottom: 8 }}>
+                      {analysis.decided.by === 'PEN'
+                        ? `${analysis.decided.advanced} went through${analysis.decided.penalty?.home != null ? ` ${analysis.decided.penalty.home}–${analysis.decided.penalty.away}` : ''} on penalties`
+                        : `${analysis.decided.advanced} won it in extra time`}
+                    </div>
+                  )}
                   <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                     We didn't lock a public call for this match — and we never add predictions after the result.
                   </div>

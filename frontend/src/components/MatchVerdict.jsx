@@ -88,6 +88,16 @@ export function MatchVerdict({ verdict, prob, home, away, homeColor, awayColor }
       : null);
   const headline = verdict.assessment?.headline || t.headline;
 
+  // Knockout decider (AET/pens) — DISPLAY ONLY. The grade above is the
+  // 90-minute result (1X2 market convention); this just tells the reader who
+  // actually went through so the receipt never looks blind to what they watched.
+  const decided = verdict.decided || null;
+  const deciderText = decided?.advanced
+    ? (decided.by === 'PEN'
+        ? `${decided.advanced} went through${decided.penalty?.home != null ? ` ${decided.penalty.home}–${decided.penalty.away}` : ''} on penalties`
+        : `${decided.advanced} won it ${decided.finalScore?.home}–${decided.finalScore?.away} in extra time`)
+    : null;
+
   // Settled seam banner — the matchup motif with the final score on the fold.
   const hv = {
     home, away, league: '', stage: '', state: 'settled',
@@ -141,7 +151,12 @@ export function MatchVerdict({ verdict, prob, home, away, homeColor, awayColor }
           <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>
             {actualName} <span style={mono}>{sl?.actual || ''}</span>
           </div>
-          <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 4 }}>Full-time, 90 minutes</div>
+          <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 4 }}>{decided ? 'After 90 minutes' : 'Full-time, 90 minutes'}</div>
+          {deciderText && (
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: TONE.gold, marginTop: 5 }}>
+              {deciderText}
+            </div>
+          )}
         </div>
       </div>
 
