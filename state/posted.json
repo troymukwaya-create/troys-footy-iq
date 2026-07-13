@@ -125,7 +125,8 @@
     "apf_1578539",
     "apf_1581821",
     "apf_1581037",
-    "apf_1582681"
+    "apf_1582681",
+    "apf_1583651"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1426,6 +1427,17 @@
         "telegram": "ok",
         "x": "ok",
         "instagram": "gaveup"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1583651",
+      "label": "Vietnam 2–1 Gangwon FC",
+      "at": "2026-07-13T11:42:37.868Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
       }
     }
   ],
