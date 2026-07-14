@@ -127,7 +127,8 @@
     "apf_1581821",
     "apf_1581037",
     "apf_1582681",
-    "apf_1583651"
+    "apf_1583651",
+    "apf_1585131"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1446,6 +1447,17 @@
       "id": "apf_1585131",
       "label": "France v Spain",
       "at": "2026-07-14T17:18:45.075Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1585131",
+      "label": "France 0–2 Spain",
+      "at": "2026-07-14T22:37:32.799Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
