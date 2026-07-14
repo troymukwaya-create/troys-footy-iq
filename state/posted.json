@@ -23,7 +23,8 @@
     "apf_1489419",
     "apf_1561329",
     "apf_1567306",
-    "apf_1581037"
+    "apf_1581037",
+    "apf_1585131"
   ],
   "receipts": [
     "apf_1538999",
@@ -1434,6 +1435,17 @@
       "id": "apf_1583651",
       "label": "Vietnam 2–1 Gangwon FC",
       "at": "2026-07-13T11:42:37.868Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1585131",
+      "label": "France v Spain",
+      "at": "2026-07-14T17:18:45.075Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
