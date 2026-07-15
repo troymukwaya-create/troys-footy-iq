@@ -24,7 +24,8 @@
     "apf_1561329",
     "apf_1567306",
     "apf_1581037",
-    "apf_1585131"
+    "apf_1585131",
+    "apf_1586077"
   ],
   "receipts": [
     "apf_1538999",
@@ -1458,6 +1459,17 @@
       "id": "apf_1585131",
       "label": "France 0–2 Spain",
       "at": "2026-07-14T22:37:32.799Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1586077",
+      "label": "England v Argentina",
+      "at": "2026-07-15T17:39:46.834Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
