@@ -129,7 +129,8 @@
     "apf_1581037",
     "apf_1582681",
     "apf_1583651",
-    "apf_1585131"
+    "apf_1585131",
+    "apf_1586077"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1475,10 +1476,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "apf_1586077",
+      "label": "England 1–2 Argentina",
+      "at": "2026-07-15T23:38:41.397Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "apf_1586077": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
