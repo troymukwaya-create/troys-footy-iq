@@ -130,7 +130,8 @@
     "apf_1582681",
     "apf_1583651",
     "apf_1585131",
-    "apf_1586077"
+    "apf_1586077",
+    "fd_554929"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1487,10 +1488,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "fd_554929",
+      "label": "EC Vitória 1–0 CR Vasco da Gama",
+      "at": "2026-07-17T06:03:38.159Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "fd_554929": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
