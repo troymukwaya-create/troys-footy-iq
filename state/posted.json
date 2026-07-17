@@ -131,7 +131,8 @@
     "apf_1583651",
     "apf_1585131",
     "apf_1586077",
-    "fd_554929"
+    "fd_554929",
+    "fd_554921"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1499,10 +1500,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "fd_554921",
+      "label": "Botafogo FR 2–1 Santos FC",
+      "at": "2026-07-17T10:15:30.426Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "fd_554921": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
