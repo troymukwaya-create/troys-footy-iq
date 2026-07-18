@@ -134,7 +134,8 @@
     "fd_554929",
     "fd_554921",
     "fd_554925",
-    "fd_554927"
+    "fd_554927",
+    "fd_554770"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1535,10 +1536,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "fd_554770",
+      "label": "EC Bahia 2–0 Chapecoense AF",
+      "at": "2026-07-18T13:47:08.062Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "fd_554770": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
