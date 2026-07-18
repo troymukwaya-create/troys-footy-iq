@@ -1513,8 +1513,19 @@
       }
     }
   ],
-  "verdictWait": {
-    "fd_554925": 1
-  },
-  "pending": {}
+  "verdictWait": {},
+  "pending": {
+    "fd_554925": {
+      "kind": "match",
+      "label": "Fluminense FC 1–1 RB Bragantino",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "failed"
+      },
+      "attempts": {
+        "instagram": 1
+      }
+    }
+  }
 }
