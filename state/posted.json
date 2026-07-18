@@ -132,7 +132,8 @@
     "apf_1585131",
     "apf_1586077",
     "fd_554929",
-    "fd_554921"
+    "fd_554921",
+    "fd_554925"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1511,23 +1512,19 @@
         "x": "ok",
         "instagram": "ok"
       }
-    }
-  ],
-  "verdictWait": {
-    "fd_554925": 1
-  },
-  "pending": {
-    "fd_554925": {
+    },
+    {
       "kind": "match",
+      "id": "fd_554925",
       "label": "Fluminense FC 1–1 RB Bragantino",
+      "at": "2026-07-18T09:01:40.069Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
-        "instagram": "failed"
-      },
-      "attempts": {
-        "instagram": 1
+        "instagram": "ok"
       }
     }
-  }
+  ],
+  "verdictWait": {},
+  "pending": {}
 }
