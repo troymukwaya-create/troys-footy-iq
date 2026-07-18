@@ -133,7 +133,8 @@
     "apf_1586077",
     "fd_554929",
     "fd_554921",
-    "fd_554925"
+    "fd_554925",
+    "fd_554927"
   ],
   "seededAt": "2026-06-12T21:38:08.075Z",
   "log": [
@@ -1523,10 +1524,19 @@
         "x": "ok",
         "instagram": "ok"
       }
+    },
+    {
+      "kind": "match",
+      "id": "fd_554927",
+      "label": "Mirassol FC 2–1 Grêmio FBPA",
+      "at": "2026-07-18T11:28:05.517Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
     }
   ],
-  "verdictWait": {
-    "fd_554927": 1
-  },
+  "verdictWait": {},
   "pending": {}
 }
