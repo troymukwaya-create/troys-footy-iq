@@ -25,7 +25,8 @@
     "apf_1567306",
     "apf_1581037",
     "apf_1585131",
-    "apf_1586077"
+    "apf_1586077",
+    "apf_1591865"
   ],
   "receipts": [
     "apf_1538999",
@@ -1554,6 +1555,17 @@
       "id": "apf_1586132",
       "label": "Vietnam 4–0 Myanmar",
       "at": "2026-07-18T15:37:03.484Z",
+      "platforms": {
+        "telegram": "ok",
+        "x": "ok",
+        "instagram": "ok"
+      }
+    },
+    {
+      "kind": "prematch",
+      "id": "apf_1591865",
+      "label": "France v England",
+      "at": "2026-07-18T19:45:32.437Z",
       "platforms": {
         "telegram": "ok",
         "x": "ok",
