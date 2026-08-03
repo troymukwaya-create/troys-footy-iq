@@ -10,6 +10,7 @@ import { safeQuery, isDbAvailable } from '../db/index.js';
 import { getPredictions, getPredictionByMatch } from '../services/predictionService.js';
 import { computeLedger, computeShadowLedger } from '../services/ledger.js';
 import { fanbrainFlagState } from '../config/fanbrainFlags.js';
+import { LOCKED_MODEL_VERSIONS } from '../services/wcDisplayPrediction.js';
 
 const router = Router();
 
@@ -30,6 +31,8 @@ router.get('/shadow', async (req, res) => {
 
 // ─── GET /api/performance ───────────────────────────────────────────
 // Returns aggregated model performance: overall + per-run history.
+// `overall` counts LOCKED model versions only (the public headline);
+// experimental tracks appear in `perModel` flagged locked=false.
 router.get('/', async (req, res) => {
   try {
     if (!isDbAvailable()) {
@@ -39,18 +42,24 @@ router.get('/', async (req, res) => {
       });
     }
 
-    // Overall lifetime metrics from model_performance table
+    // Overall lifetime metrics — locked model versions ONLY. This is the
+    // headline number the site advertises (BrierScoreHero, HonestBar,
+    // LedgerStrip all read it), so experimental tracks like the club
+    // hybrid-dc-v2 ingest must never dilute it. They stay visible in
+    // perModel below under their own version.
     const overall = await safeQuery(`
       SELECT
         COUNT(*)::int as total_predictions,
-        COUNT(*) FILTER (WHERE prediction_correct = true)::int as correct,
-        ROUND(AVG(CASE WHEN prediction_correct THEN 100.0 ELSE 0 END)::numeric, 1) as accuracy,
-        ROUND(AVG(brier_score)::numeric, 4) as avg_brier,
-        ROUND(AVG(log_loss)::numeric, 4) as avg_log_loss,
-        MIN(created_at) as first_evaluation,
-        MAX(created_at) as last_evaluation
-      FROM model_performance
-    `);
+        COUNT(*) FILTER (WHERE mp.prediction_correct = true)::int as correct,
+        ROUND(AVG(CASE WHEN mp.prediction_correct THEN 100.0 ELSE 0 END)::numeric, 1) as accuracy,
+        ROUND(AVG(mp.brier_score)::numeric, 4) as avg_brier,
+        ROUND(AVG(mp.log_loss)::numeric, 4) as avg_log_loss,
+        MIN(mp.created_at) as first_evaluation,
+        MAX(mp.created_at) as last_evaluation
+      FROM model_performance mp
+      JOIN predictions p ON mp.prediction_id = p.id
+      WHERE p.model_version = ANY($1)
+    `, [LOCKED_MODEL_VERSIONS]);
 
     // Recent model runs (backtests + evaluations)
     const runs = await safeQuery(`
@@ -75,10 +84,13 @@ router.get('/', async (req, res) => {
 
     // Per-model ledger: WC, friendlies and club models are different
     // prediction problems — each keeps its own public track record so no
-    // model's results can dilute (or inflate) another's.
+    // model's results can dilute (or inflate) another's. `locked` marks
+    // the versions that make up the headline `overall`; the rest are
+    // experimental tracks.
     const perModel = await safeQuery(`
       SELECT
         p.model_version,
+        (p.model_version = ANY($1)) as locked,
         COUNT(*)::int as total_predictions,
         COUNT(*) FILTER (WHERE mp.prediction_correct = true)::int as correct,
         ROUND(AVG(CASE WHEN mp.prediction_correct THEN 100.0 ELSE 0 END)::numeric, 1) as accuracy,
@@ -90,7 +102,7 @@ router.get('/', async (req, res) => {
       JOIN predictions p ON mp.prediction_id = p.id
       GROUP BY p.model_version
       ORDER BY MAX(mp.created_at) DESC
-    `);
+    `, [LOCKED_MODEL_VERSIONS]);
 
     // The two-number ledger (blended vs pure-model vs market-only Brier + CLV).
     // Additive — the existing fields above are untouched. Never fails the route.

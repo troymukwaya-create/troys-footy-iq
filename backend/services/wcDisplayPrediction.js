@@ -32,7 +32,10 @@ const MODEL_VERSION = 'wc-elo-market-v1';
 // so the public Brier can be read per-model (WC vs friendlies vs club) —
 // same Elo+market engine, different prediction problem, separate ledger.
 export const INTL_MODEL_VERSION = 'intl-elo-market-v1';
-const LOCKED_MODEL_VERSIONS = [MODEL_VERSION, INTL_MODEL_VERSION];
+// The only model versions whose results may enter the public headline
+// ledger (routes/performance.js `overall`). Experimental tracks score
+// into perModel under their own version but never dilute this list.
+export const LOCKED_MODEL_VERSIONS = [MODEL_VERSION, INTL_MODEL_VERSION];
 const PRE_LOCK_TTL_S = 600;     // pre-lock predictions shared for 10 min
 const TOA_EVENTS_TTL_S = 600;   // one odds snapshot shared by all callers
 
