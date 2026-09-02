@@ -293,7 +293,10 @@ export function registerBroadcastSink(fn) {
 }
 
 export function broadcast(type, payload) {
-  if (sink) sink(type, payload);
+  // Mirrors runtimeStats.getClientCount(): a misbehaving registered function
+  // must never destabilise the caller. Task 3 registers a sink that does
+  // JSON.stringify + ws.send, both of which can throw.
+  try { if (sink) sink(type, payload); } catch { /* a bad sink must never break the caller */ }
 }
 
 export default { broadcast, registerBroadcastSink };
@@ -418,9 +421,12 @@ Now edit `backend/app.js`. **Delete** each of these regions (line numbers refer 
 | 50 | `import initJobs from './jobs/scheduler.js'` | cron lives in server.js |
 | 79 | `import { registerClientCounter } …` | WebSocket-only |
 | 84–105 | `const port`, `createServer`, `wss`, `clients`, `registerClientCounter(...)`, `wss.on('connection')`, `export function broadcast` | all in-process transport state |
-| 263–314 | `async function seedInitialData()` | makes ~12 API calls; must never run serverless |
-| 316–378 | `async function startServer()` **and** its `startServer().catch(...)` call, including the `keepWarm` self-ping to the Render URL | the Render host no longer exists |
-| 380–386 | `gracefulShutdown` and the `SIGTERM`/`SIGINT` handlers | no process to shut down |
+| 260–314 | the `SEED INITIAL DATA` comment and `async function seedInitialData()` | makes ~12 API calls; must never run serverless |
+| 316–357 | the `START SERVER` comment and `async function startServer()`, including the `keepWarm` self-ping to the Render URL | the Render host no longer exists |
+| 359–362 | the `startServer().catch(...)` invocation | nothing to start |
+| 364–386 | the `GRACEFUL SHUTDOWN` comment, `gracefulShutdown()`, and the `SIGTERM`/`SIGINT` handlers | no process to shut down |
+
+All four ranges were verified against this branch with `grep -n` — `server.js` is 386 lines, `seedInitialData` closes at 314, `startServer` closes at 357, and `gracefulShutdown` opens at 364.
 
 **Keep** everything else: the dotenv bootstrap, every router import, `const app = express()`, CORS, `express.json()`, the response-time logger, `/health`, `/api/health`, `/api/status`, the whole `safeMount` block, the `/api/debug` mount, and `/api/model/performance`.
 
