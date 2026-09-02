@@ -1089,8 +1089,13 @@ test('returns null when NARRATIVE_POLISH is off', async () => {
 node --test backend/tests/aiGuard.test.js
 ```
 
-Expected: FAIL — the function attempts a network call and rejects or times out
-rather than returning `null`.
+Expected: **PASS, not fail** — and that is the problem this step exists to
+expose. `db/index.js:23` defaults `dbAvailable` to `false` and only `initDb()`
+flips it, which no test imports. So `query()` throws immediately, the existing
+`catch` returns `null`, and a bare `result === null` assertion passes with or
+without the guard. The tests must therefore also assert that `console.error`
+was NOT called: the catch path always logs, the guard path never does. Verify
+the tests discriminate by commenting the guard out and confirming they fail.
 
 - [ ] **Step 3: Add the guard**
 
