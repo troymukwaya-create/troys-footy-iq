@@ -4,7 +4,7 @@
 
 **Goal:** Move the Oddyessa API off the suspended Render instance onto Vercel serverless functions backed by Neon Postgres, so `oddyessa.com` serves live data again at $0/month.
 
-**Architecture:** The Express app is extracted from `server.js` into a transport-agnostic `app.js`. `server.js` remains the local dev entry (HTTP + WebSocket + cron); a new `api/index.js` exports the same app as a Vercel serverless handler. Two pieces of in-process state that cannot survive serverless — the admin session store and the WebSocket `broadcast` — are replaced with a stateless signed token and a registerable sink.
+**Architecture:** The Express app is extracted from `server.js` into a transport-agnostic `app.js`. `server.js` remains the local dev entry (HTTP + WebSocket + cron); a new `api/index.mjs` exports the same app as a Vercel serverless handler. Two pieces of in-process state that cannot survive serverless — the admin session store and the WebSocket `broadcast` — are replaced with a stateless signed token and a registerable sink.
 
 **Tech Stack:** Node 24 (Vercel) / 25 (local), ESM, Express 5, `pg`, Vercel Hobby, Neon Postgres Free. Tests use Node's built-in `node:test` runner — **no new dependencies**.
 
@@ -786,7 +786,7 @@ Do **not** commit the connection string.
 ## Task 6: Vercel serverless entry
 
 **Files:**
-- Create: `api/index.js` (repository root)
+- Create: `api/index.mjs` (repository root)
 - Create: `vercel.json` (repository root)
 - Delete: `frontend/vercel.json`
 
@@ -796,7 +796,7 @@ Do **not** commit the connection string.
 
 - [ ] **Step 1: Create the function entry**
 
-Create `api/index.js`:
+Create `api/index.mjs` — the `.mjs` extension makes it unambiguously ESM without touching the root `package.json`, whose `"type"` also governs `scratch/*.js`:
 
 ```js
 // Vercel serverless entry. An Express app is already a (req, res) handler,
@@ -841,7 +841,7 @@ git rm frontend/vercel.json
 
 In the Vercel dashboard → project `frontend` → Settings → Build & Deployment → **Root Directory**: change from `frontend` to empty (repository root), then save.
 
-This is required. With the root set to `frontend/`, `api/index.js` cannot import `../backend/app.js` because files outside the root are not uploaded.
+This is required. With the root set to `frontend/`, `api/index.mjs` cannot import `../backend/app.js` because files outside the root are not uploaded.
 
 - [ ] **Step 5: Set environment variables (manual)**
 
@@ -862,7 +862,7 @@ In Vercel → Settings → Environment Variables, for **Production**:
 - [ ] **Step 6: Deploy and verify the API responds**
 
 ```bash
-git add api/index.js vercel.json
+git add api/index.mjs vercel.json
 git commit -m "feat(vercel): serve the express app as a serverless function"
 git push -u origin feat/serverless-foundation
 ```
@@ -1017,9 +1017,31 @@ git commit -m "feat(frontend): poll live fixtures same-origin, drop websockets"
 ## Task 8: Fail closed when no AI key is configured
 
 `services/ai.js:47` sends `x-api-key: process.env.ANTHROPIC_API_KEY` with no
-guard. With the key deliberately unset (spec §4.3), every match-page request
-would send `undefined` and 401-loop against Anthropic — logging failures via
-`recordApiCall` and polluting the admin health panel.
+guard.
+
+**Corrected premise (verified 2026-09-03).** The original version of this task
+claimed the unguarded call would 401-loop on every match page. That is wrong.
+`services/ai.js` is imported by **nobody** — `analyzeFixture` has no callers
+outside the module's own default export. Every *live* Anthropic path is already
+guarded and degrades to a "not configured" response when the key is absent:
+
+| Path | Guard |
+|---|---|
+| `routes/ai.js:213` | returns a friendly "key not configured" reply |
+| `routes/analysis.js:417`, `:500` | `return res.json({ ai: null, source: 'disabled' })` |
+| `services/modelAnalyst.js:32` | `if (!hasValidKey()) return` |
+| `services/scout.js:66` | `if (!... || !process.env.ANTHROPIC_API_KEY) return null` |
+| `services/analyst.js:199`, `:377` | returns "key not configured" text |
+| `services/matchNarrative.js:195` | `if (NARRATIVE_POLISH === 'off' \|\| !key) return story.text` |
+
+**Spec §4.3 is therefore already satisfied without this task** — with the key
+unset, no live path issues a request and nothing is billed.
+
+This task remains worth doing for one narrow reason: `services/ai.js` is the
+single Anthropic caller in the tree with no guard, so wiring it up later would
+silently reintroduce unauthenticated requests. Two lines removes that trap.
+It is defence-in-depth, not a fix for live behaviour — do not let the report
+claim otherwise. Deleting the dead module outright is deferred to Plan 2.
 
 **Files:**
 - Modify: `backend/services/ai.js` (top of `analyzeFixture`, line 8)
