@@ -49,7 +49,7 @@ async function livePollLoop() {
     
     const r = await axios.get('https://api.football-data.org/v4/matches', {
       headers: { 'X-Auth-Token': process.env.FOOTBALLDATA_TOKEN },
-      params: { competitions: 'PL,PD,BL1,SA,FL1,BSA,CL', status: 'IN_PLAY,PAUSED' },
+      params: { competitions: Object.keys(FD_LEAGUES).join(','), status: 'IN_PLAY,PAUSED' },
       timeout: 8000,
     });
 

@@ -23,7 +23,7 @@ import { getBarColor } from '../constants/nationColors.js';
 import { flagChipUrl, emailFlagStrips } from '../constants/nationFlags.js';
 
 const SITE = 'https://oddyessa.com';
-const PUBLIC_API = (process.env.PUBLIC_API_URL || 'https://troys-footy-iq-api.onrender.com').replace(/\/+$/, '');
+const PUBLIC_API = (process.env.PUBLIC_API_URL || 'https://oddyessa.com').replace(/\/+$/, '');
 const MAX_MATCHES = 10;
 
 // ─── Data ───────────────────────────────────────────────────────────

@@ -373,7 +373,10 @@ router.get('/finished', async (req, res) => {
 // GET /api/fixtures/live
 router.get('/live', async (req, res) => {
   try {
-    const live = api.hasKey() ? await api.getLiveFixtures() : [];
+    // football-data.org is the only live source on the free stack — APISPORTS_KEY
+    // is deliberately unset. Free-tier scores are delayed, which is accepted:
+    // the product grades after full time, not in-play.
+    const live = await fd.getLiveMatches().catch(() => []);
     // Attach the locked pre-kickoff prediction to live WC matches — the card
     // can then show "we called it X% before kickoff" while the game runs.
     // Club live matches carry no prediction; the frontend renders them without

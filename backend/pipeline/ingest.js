@@ -9,19 +9,12 @@
 import { query, getClient } from '../db/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { FD_LEAGUES } from '../constants/leagues.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const FD_BASE = 'https://api.football-data.org/v4';
-
-const LEAGUES = {
-  PL:  { name: 'Premier League',  country: 'England' },
-  PD:  { name: 'La Liga',         country: 'Spain'   },
-  BL1: { name: 'Bundesliga',      country: 'Germany' },
-  SA:  { name: 'Serie A',         country: 'Italy'   },
-  FL1: { name: 'Ligue 1',         country: 'France'  },
-};
 
 // ─── Rate limiter (football-data.org free tier: 10 req/min) ────────
 let lastRequestTime = 0;
@@ -55,7 +48,7 @@ async function fetchFD(path) {
  * Fetches all finished matches, computes rolling stats, and stores everything.
  */
 export async function ingestSeason(leagueCode, season) {
-  const leagueInfo = LEAGUES[leagueCode];
+  const leagueInfo = FD_LEAGUES[leagueCode];
   if (!leagueInfo) throw new Error(`Unknown league: ${leagueCode}`);
 
   console.log(`\n═══ Ingesting ${leagueInfo.name} ${season}/${season + 1} ═══`);
@@ -219,7 +212,7 @@ async function upsertStatsSnapshot(teamId, leagueId, season, stats) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const leagueCodes = args[0] ? [args[0]] : Object.keys(LEAGUES);
+  const leagueCodes = args[0] ? [args[0]] : Object.keys(FD_LEAGUES);
   const seasons = args[1] ? [parseInt(args[1])] : [2021, 2022, 2023, 2024, 2025];
 
   console.log('═══════════════════════════════════════════');
