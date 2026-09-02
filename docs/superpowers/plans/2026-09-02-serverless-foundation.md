@@ -520,7 +520,7 @@ Leave `precomputeDemoPredictions()` and `seedInitialData()` where they are — t
 - [ ] **Step 6: Run the tests to verify they pass**
 
 ```bash
-node --test backend/tests/
+node --test backend/tests/*.test.js
 ```
 
 Expected: PASS across `adminAuth`, `broadcast` and `app` tests.
@@ -1068,7 +1068,7 @@ git commit -m "fix(ai): return null when no key is configured instead of 401-loo
 - [ ] **Step 1: Run the full test suite**
 
 ```bash
-node --test backend/tests/
+node --test backend/tests/*.test.js
 ```
 
 Expected: all tests pass.
