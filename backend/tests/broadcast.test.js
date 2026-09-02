@@ -23,3 +23,9 @@ test('a sink can be unregistered', () => {
   broadcast('B', 2);
   assert.equal(calls, 1);
 });
+
+test('a throwing sink does not break the caller', () => {
+  registerBroadcastSink(() => { throw new Error('sink error'); });
+  assert.doesNotThrow(() => broadcast('BAD_PAYLOAD', { malformed: true }));
+  registerBroadcastSink(null);
+});

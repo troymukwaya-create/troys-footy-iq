@@ -10,7 +10,7 @@ export function registerBroadcastSink(fn) {
 }
 
 export function broadcast(type, payload) {
-  if (sink) sink(type, payload);
+  try { if (sink) sink(type, payload); } catch { /* a bad sink must never break the caller */ }
 }
 
 export default { broadcast, registerBroadcastSink };
