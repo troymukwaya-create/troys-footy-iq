@@ -836,6 +836,8 @@ In Vercel → Settings → Environment Variables, for **Production**:
 
 **Delete** `VITE_API_URL` if present — Task 7 depends on it being unset so the frontend falls back to same-origin `/api`. Do not set `APISPORTS_KEY`, `THE_ODDS_API_KEY` or `ANTHROPIC_API_KEY`.
 
+> **Clearing the dashboard variable is not sufficient on its own.** `frontend/.env.production` is committed to the repo and hardcodes both `VITE_API_URL` and `VITE_WS_URL` to the decommissioned Render host. Task 7 Step 0 deletes that file. Skipping it can leave the production build pointing at a suspended service with no visible error at deploy time.
+
 - [ ] **Step 6: Deploy and verify the API responds**
 
 ```bash
@@ -872,12 +874,36 @@ Expected: `200` five times. This is the direct regression test for the Task 1 bl
 ## Task 7: Frontend same-origin API and polling
 
 **Files:**
+- Delete: `frontend/.env.production`
 - Modify: `frontend/src/hooks/useRealTime.js` (whole file)
 - Test: manual verification in the browser
 
 **Interfaces:**
 - Consumes: `/api/fixtures/live` served from Task 6.
 - Produces: `useRealTime()` with the same call signature, backed by polling instead of WebSocket.
+
+- [ ] **Step 0: Delete the committed production env file**
+
+`frontend/.env.production` is tracked in git (`.gitignore:11` exempts it deliberately) and pins both variables to the dead Render host:
+
+```
+VITE_API_URL=https://troys-footy-iq-api.onrender.com
+VITE_WS_URL=wss://troys-footy-iq-api.onrender.com
+```
+
+Both are now wrong: the host is decommissioned, and `VITE_WS_URL` refers to a WebSocket path this task removes. With the file present, a production build can bake the dead host into the bundle regardless of what the Vercel dashboard says.
+
+```bash
+git rm frontend/.env.production
+```
+
+Then confirm nothing else reintroduces it:
+
+```bash
+git grep -n "VITE_API_URL\|VITE_WS_URL" -- frontend | grep -v "src/"
+```
+
+Expected: no output.
 
 - [ ] **Step 1: Confirm the live-fixtures response shape**
 
