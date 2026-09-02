@@ -540,7 +540,7 @@ git commit -m "refactor(server): split express app from the listener, ws and cro
 
 **Files:**
 - Modify: `backend/constants/leagues.js` (whole file)
-- Modify: `backend/services/footballdata.js:26` (`LEAGUE_CODES`)
+- Modify: `backend/services/footballdata.js:25` (`LEAGUE_CODES`)
 - Test: `backend/tests/leagues.test.js` (create)
 
 **Interfaces:**
@@ -620,10 +620,10 @@ export const APF_LEAGUES = {};
 
 - [ ] **Step 4: Update LEAGUE_CODES in footballdata.js**
 
-In `backend/services/footballdata.js`, replace line 26:
+In `backend/services/footballdata.js`, replace line 25 — note the trailing comment, which must go too:
 
 ```js
-export const LEAGUE_CODES = ['PL', 'PD', 'BL1', 'SA', 'FL1', 'BSA', 'CL', 'EL', 'ELC'];
+export const LEAGUE_CODES = ['PL', 'PD', 'BL1', 'SA', 'FL1', 'BSA', 'CL', 'EL', 'ELC']; // EL = Europa League
 ```
 
 with:
