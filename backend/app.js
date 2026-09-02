@@ -98,7 +98,11 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(async (_req, _res, next) => { await ensureReady(); next(); });
+const READY_EXEMPT = new Set(['/health', '/api/health']);
+app.use(async (req, _res, next) => {
+  if (!READY_EXEMPT.has(req.path)) await ensureReady();
+  next();
+});
 
 // ─── RESPONSE TIME LOGGING ──────────────────────────────────────────
 app.use((req, res, next) => {
@@ -237,7 +241,9 @@ app.get('/api/model/performance', async (_req, res) => {
 // instance and is memoized for the rest of its life. Deliberately excludes
 // seedInitialData() and precomputeDemoPredictions() — both are expensive and
 // seeding spends football-data.org quota. Those remain in server.js.
+const BOOTSTRAP_RETRY_MS = 30_000;
 let readyPromise = null;
+let lastFailureAt = 0;
 
 async function bootstrap() {
   await initDb();
@@ -248,12 +254,15 @@ async function bootstrap() {
 }
 
 export function ensureReady() {
-  if (!readyPromise) {
-    readyPromise = bootstrap().catch((err) => {
-      console.error('[app] bootstrap failed:', err.message);
-      readyPromise = null;   // let the next request retry
-    });
-  }
+  if (readyPromise) return readyPromise;
+  // After a failure, serve requests immediately for a cooldown window rather
+  // than re-paying the DB connect timeout on every single request.
+  if (Date.now() - lastFailureAt < BOOTSTRAP_RETRY_MS) return Promise.resolve();
+  readyPromise = bootstrap().catch((err) => {
+    console.error('[app] bootstrap failed:', err.message);
+    lastFailureAt = Date.now();
+    readyPromise = null;   // let a later request retry, after the cooldown
+  });
   return readyPromise;
 }
 
