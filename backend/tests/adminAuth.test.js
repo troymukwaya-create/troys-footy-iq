@@ -44,3 +44,12 @@ test('password comparison still works', () => {
   assert.equal(passwordMatches('wrong'), false);
   assert.equal(passwordMatches(''), false);
 });
+
+test('extending the plaintext expiry of a valid token is rejected', () => {
+  const token = mintToken();
+  const [expiresAt, nonce, sig] = token.split('.');
+  // Extend expiry to far future, but keep original nonce and signature
+  // This should be rejected because expiresAt is part of the HMAC input
+  const tampered = `${Date.now() + 10 * 365 * 24 * 60 * 60 * 1000}.${nonce}.${sig}`;
+  assert.equal(isValidToken(tampered), false);
+});
