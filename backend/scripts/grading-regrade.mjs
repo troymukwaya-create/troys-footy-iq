@@ -3,7 +3,7 @@
 //   node backend/scripts/grading-regrade.mjs
 import { gradeOutcome, gradeMatch, gradeScoreline } from '../engine/grading.js';
 
-const API = process.env.ODDYESSA_API || 'https://troys-footy-iq-api.onrender.com/api';
+const API = process.env.ODDYESSA_API || 'https://oddyessa.com/api';
 
 const rows = await fetch(`${API}/results/recent`)
   .then((r) => r.json())
