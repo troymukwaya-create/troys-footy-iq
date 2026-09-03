@@ -13,7 +13,7 @@ import { sendEmail, emailEnabled } from '../services/email.js';
 
 const router = Router();
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const PUBLIC_API = (process.env.PUBLIC_API_URL || 'https://troys-footy-iq-api.onrender.com').replace(/\/+$/, '');
+const PUBLIC_API = (process.env.PUBLIC_API_URL || 'https://oddyessa.com').replace(/\/+$/, '');
 
 router.post('/', async (req, res) => {
   try {

@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { query } from '../db/index.js';
 import dataRouter from '../services/dataRouter.js';
-import { broadcast } from '../server.js';
+import { broadcast } from '../services/broadcast.js';
 import { FD_LEAGUES } from '../constants/leagues.js';
 import { processEvent, predictInPlay, registerMatch, getMatchState, predictPreMatch } from '../engine/inferenceEngine.js';
 import { evaluateStoredPredictions } from '../pipeline/evaluate.js';
@@ -49,7 +49,7 @@ async function livePollLoop() {
     
     const r = await axios.get('https://api.football-data.org/v4/matches', {
       headers: { 'X-Auth-Token': process.env.FOOTBALLDATA_TOKEN },
-      params: { competitions: 'PL,PD,BL1,SA,FL1,BSA,CL', status: 'IN_PLAY,PAUSED' },
+      params: { competitions: Object.keys(FD_LEAGUES).join(','), status: 'IN_PLAY,PAUSED' },
       timeout: 8000,
     });
 

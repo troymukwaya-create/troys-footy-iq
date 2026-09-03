@@ -6,6 +6,11 @@ import { CHAT_MODEL } from '../config/models.js';
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
 export async function analyzeFixture(fixture) {
+  // AI is off by default on the free stack (spec §4.3). Fail closed rather
+  // than firing an unauthenticated request at Anthropic on every match view.
+  if (!process.env.ANTHROPIC_API_KEY || process.env.NARRATIVE_POLISH === 'off') {
+    return null;
+  }
   try {
     const homeRes = await query(`SELECT * FROM team_season_stats WHERE team_id = $1`, [fixture.home_team_id]);
     const awayRes = await query(`SELECT * FROM team_season_stats WHERE team_id = $1`, [fixture.away_team_id]);
